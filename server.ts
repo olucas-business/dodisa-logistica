@@ -2,14 +2,17 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { GoogleGenAI, Type } from "@google/genai";
-import { neon } from "@neondatabase/serverless";
+import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
-const sql = neon(process.env.DATABASE_URL!);
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 app.use(express.json({ limit: "50mb" }));
 
@@ -1034,24 +1037,19 @@ export const DEPRECATED_DEFAULT_DB: any = {
   ]
 };
 
-// Ensure database file exists
-let dbTableReady: Promise<void> | null = null;
-function ensureTable(): Promise<void> {
-  if (!dbTableReady) {
-    dbTableReady = sql`CREATE TABLE IF NOT EXISTS app_state (id INT PRIMARY KEY, data JSONB NOT NULL)`.then(() => undefined);
-  }
-  return dbTableReady;
-}
-
 async function loadDB(): Promise<Database> {
-  await ensureTable();
   try {
-    const rows = await sql`SELECT data FROM app_state WHERE id = 1`;
-    if (rows.length === 0) {
-      await sql`INSERT INTO app_state (id, data) VALUES (1, ${JSON.stringify(DEFAULT_DB)}::jsonb)`;
+    const { data: row, error } = await supabase
+      .from("app_state")
+      .select("data")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error) throw error;
+    if (!row) {
+      await supabase.from("app_state").insert({ id: 1, data: DEFAULT_DB });
       return DEFAULT_DB;
     }
-    const db = rows[0].data as Database;
+    const db = row.data as Database;
     let modified = false;
     if (!db.tires) {
       db.tires = DEFAULT_DB.tires || [];
@@ -1097,7 +1095,8 @@ async function loadDB(): Promise<Database> {
 
 async function saveDB(db: Database): Promise<void> {
   try {
-    await sql`UPDATE app_state SET data = ${JSON.stringify(db)}::jsonb WHERE id = 1`;
+    const { error } = await supabase.from("app_state").update({ data: db }).eq("id", 1);
+    if (error) throw error;
   } catch (error) {
     console.error("Erro ao salvar DB:", error);
   }

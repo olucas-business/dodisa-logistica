@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS public.app_state (
+  id INT PRIMARY KEY,
+  data JSONB NOT NULL
+);
