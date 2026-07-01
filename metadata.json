@@ -1,0 +1,6 @@
+{
+  "name": "DODISA LOGISTICA",
+  "description": "Sistema completo de controle logístico, gestão de frotas, motoristas, fretes, financeiro e assistente inteligente de IA para transportadoras.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,1136 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Custom theme tokens for Tailwind CSS v4 */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-navbar: var(--navbar);
+  --color-card-secondary: var(--card-secondary);
+  --color-auxiliary-text: var(--auxiliary-text);
+
+  /* Map gray, slate, and zinc utility classes to our premium color scale variables */
+  --color-gray-50: var(--gray-50);
+  --color-gray-100: var(--gray-100);
+  --color-gray-150: var(--gray-150);
+  --color-gray-200: var(--gray-200);
+  --color-gray-250: var(--gray-250);
+  --color-gray-300: var(--gray-300);
+  --color-gray-400: var(--gray-400);
+  --color-gray-500: var(--gray-500);
+  --color-gray-600: var(--gray-600);
+  --color-gray-700: var(--gray-700);
+  --color-gray-800: var(--gray-800);
+  --color-gray-900: var(--gray-900);
+  --color-gray-950: var(--gray-950);
+
+  --color-slate-50: var(--gray-50);
+  --color-slate-100: var(--gray-100);
+  --color-slate-150: var(--gray-150);
+  --color-slate-200: var(--gray-200);
+  --color-slate-250: var(--gray-250);
+  --color-slate-300: var(--gray-300);
+  --color-slate-400: var(--gray-400);
+  --color-slate-500: var(--gray-500);
+  --color-slate-600: var(--gray-600);
+  --color-slate-700: var(--gray-700);
+  --color-slate-800: var(--gray-800);
+  --color-slate-900: var(--gray-900);
+  --color-slate-950: var(--gray-950);
+
+  --color-zinc-50: var(--gray-50);
+  --color-zinc-100: var(--gray-100);
+  --color-zinc-150: var(--gray-150);
+  --color-zinc-200: var(--gray-200);
+  --color-zinc-250: var(--gray-250);
+  --color-zinc-300: var(--gray-300);
+  --color-zinc-400: var(--gray-400);
+  --color-zinc-500: var(--gray-500);
+  --color-zinc-600: var(--gray-600);
+  --color-zinc-700: var(--gray-700);
+  --color-zinc-800: var(--gray-800);
+  --color-zinc-900: var(--gray-900);
+  --color-zinc-950: var(--gray-950);
+
+  /* Animation keyframes and names for Tailwind CSS v4 */
+  --animate-fade-in: fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-scale-in: scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-slide-in: slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-fade-scale-in: fade-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scale-in {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  @keyframes slide-in {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes fade-scale-in {
+    0% { transform: scale(0.96); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+}
+
+:root {
+  --background: #F4F6FA;
+  --foreground: #0B0F19;
+  --card: #FFFFFF;
+  --card-hover: #EEF2F6;
+  --card-secondary: #FFFFFF;
+  --card-foreground: #0B0F19;
+  --muted: #EEF2F6;
+  --muted-foreground: #475E75;
+  --border: #D4DFEE;
+  --input: #D4DFEE;
+  --primary: #4F46E5;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EEF2F6;
+  --secondary-foreground: #0B0F19;
+  --accent: #EEF2FF;
+  --accent-foreground: #4F46E5;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --sidebar: #FFFFFF;
+  --navbar: #FFFFFF;
+  --auxiliary-text: #475E75;
+
+  --color-text-primary: #0B0F19;      /* Deep premium blue-black */
+  --color-text-secondary: #475E75;    /* Sophisticated blue-gray */
+  --color-text-muted: #73889B;        /* Muted slate blue */
+  --color-text-blue: #2563EB;
+  --color-text-emerald: #059669;
+  --color-text-amber: #D97706;
+  --color-text-rose: #E11D48;
+  --color-text-purple: #7C3AED;
+  --color-text-indigo: #4F46E5;
+
+  /* Custom Light Mode non-gray scales (cool blue-slate) */
+  --gray-50: #F8FAFC;
+  --gray-100: #EEF2F6;
+  --gray-150: #E4EBF4;
+  --gray-200: #DAE3EF;
+  --gray-250: #C3D2E2;
+  --gray-300: #A9BFD3;
+  --gray-400: #819CB5;
+  --gray-500: #5D7B97;
+  --gray-600: #47617B;
+  --gray-700: #33495C;
+  --gray-800: #1E2E3E;
+  --gray-900: #0F1822;
+  --gray-950: #080C11;
+}
+
+html.dark, body.dark {
+  --background: #0B0F19;
+  --foreground: #F1F5F9;
+  --card: #121B2E;
+  --card-hover: #1E2942;
+  --card-secondary: #121B2E;
+  --card-foreground: #F1F5F9;
+  --muted: #1E2942;
+  --muted-foreground: #94A3B8;
+  --border: #1F2E4D;
+  --input: #1F2E4D;
+  --primary: #6366F1;
+  --primary-foreground: #FFFFFF;
+  --secondary: #1E2942;
+  --secondary-foreground: #F1F5F9;
+  --accent: #1E1B4B;
+  --accent-foreground: #C7D2FE;
+  --destructive: #EF4444;
+  --destructive-foreground: #FAFAFA;
+  --sidebar: #090D16;
+  --navbar: #090D16;
+  --auxiliary-text: #94A3B8;
+
+  --color-text-primary: #F1F5F9;      /* Title / Header */
+  --color-text-secondary: #94A3B8;    /* Texto principal */
+  --color-text-muted: #64748B;        /* Secondary/Auxiliary text */
+  --color-text-blue: #3B82F6;         /* Bright blue */
+  --color-text-emerald: #10B981;      /* Bright green */
+  --color-text-amber: #F59E0B;        /* Amber yellow */
+  --color-text-rose: #EF4444;         /* Rich red */
+  --color-text-purple: #A78BFA;       /* Luminous purple */
+  --color-text-indigo: #818CF8;       /* Luminous indigo */
+
+  /* Custom Dark Mode non-gray scales (cosmic midnight space blues) */
+  --gray-50: #16223F;
+  --gray-100: #121B2E;
+  --gray-150: #1B2945;
+  --gray-200: #1F2E4D;
+  --gray-250: #293B5E;
+  --gray-300: #354D7A;
+  --gray-400: #526C9E;
+  --gray-500: #7892C2;
+  --gray-600: #9EB5DE;
+  --gray-700: #C2D3EF;
+  --gray-800: #E2EDFC;
+  --gray-900: #F1F6FE;
+  --gray-950: #FAFBFD;
+}
+
+/* Base Body Adjustments */
+html, body, #root {
+  font-family: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 15px !important;
+  line-height: 1.625 !important; /* Increased spacing between lines */
+  color: var(--color-text-primary) !important; /* Dynamic graphite/black text for maximum contrast and theme cohesion */
+  background-color: var(--background) !important; /* Dynamic responsive background */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh !important;
+  width: 100% !important;
+}
+
+/* Ensure minimum text size of 15px and consistent weights for standard text blocks */
+p, li {
+  font-size: 15px;
+  font-weight: 500;
+  font-family: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+th, input, select, textarea, button {
+  font-size: 15px;
+  font-family: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Specific Typographic Weights for Plus Jakarta Sans across the system */
+.font-light { font-weight: 300 !important; }
+.font-normal { font-weight: 400 !important; }
+.font-medium { font-weight: 500 !important; }
+.font-semibold { font-weight: 600 !important; }
+.font-bold { font-weight: 700 !important; }
+.font-extrabold { font-weight: 800 !important; }
+.font-black { font-weight: 900 !important; }
+
+strong, b {
+  font-weight: 700 !important;
+}
+
+/* Prevent text color from being too light/unreadable */
+.text-gray-400, .text-slate-400 {
+  color: var(--color-text-muted) !important;
+}
+.text-gray-500, .text-slate-500 {
+  color: var(--color-text-secondary) !important;
+}
+.text-gray-300, .text-slate-300 {
+  color: var(--color-text-secondary) !important;
+}
+
+/* Form and Field Labels: 14px to 16px with weight 600 */
+label, .field-label, [role="label"] {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: var(--color-text-primary) !important;
+  margin-bottom: 0.5rem !important;
+  display: inline-block;
+}
+
+/* Main Titles: 28px to 36px */
+h1, .h1-title, [data-title="main"] {
+  font-size: 32px !important; /* Perfect middle point between 28px and 36px */
+  font-weight: 800 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--color-text-primary) !important;
+  line-height: 1.25 !important;
+}
+
+/* Subtitles: 20px to 24px */
+h2, .h2-title, h3, .h3-title, [data-title="sub"] {
+  font-size: 22px !important; /* Perfect middle point between 20px and 24px */
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--color-text-primary) !important;
+  line-height: 1.35 !important;
+}
+
+/* Cards Value Highlight: 26px to 34px in Bold */
+.card-kpi-value, .metric-value, .text-3xl,
+.bg-white.rounded-xl p.text-xl, 
+.bg-white.rounded-xl p.text-2xl, 
+.bg-white.rounded-xl p.text-3xl,
+.bg-white.rounded-2xl p.text-xl,
+.bg-white.rounded-2xl p.text-2xl,
+.bg-white.rounded-2xl p.text-3xl,
+.card p.text-xl,
+.card p.text-2xl,
+.card p.text-3xl {
+  font-family: "JetBrains Mono", monospace !important; /* Monospace numbers for high contrast financial visibility */
+  font-size: 30px !important; /* Solid 30px highlight */
+  font-weight: 800 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--color-text-primary) !important;
+  line-height: 1.2 !important;
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+
+/* Financial and KM Numbers Highlight: Huge visual distinction */
+.finance-number, .km-number {
+  font-family: "JetBrains Mono", monospace !important;
+  font-size: 30px !important;
+  font-weight: 800 !important;
+  color: var(--color-text-primary) !important;
+  letter-spacing: -0.02em !important;
+}
+
+.finance-number-green {
+  color: var(--color-text-emerald) !important;
+}
+
+.finance-number-red {
+  color: var(--color-text-rose) !important;
+}
+
+/* Custom generous Card spacing and padding */
+.card, .bg-white.rounded-xl, .bg-white.rounded-2xl {
+  padding: 1.75rem !important; /* Generous internal card spacing */
+  border-width: 1.5px !important;
+  border-color: #cbd5e1 !important; /* Slightly distinct border for high definition shape */
+  border-radius: 16px !important; /* 16px rounded corners */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03) !important;
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background-color: var(--card) !important;
+}
+
+.card:hover, .bg-white.rounded-xl:hover, .bg-white.rounded-2xl:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.08), 0 4px 12px -5px rgba(0, 0, 0, 0.03) !important;
+  border-color: #94a3b8 !important;
+}
+
+/* Table Readability and Spaciousness */
+.table-container, .overflow-x-auto {
+  overflow-x: auto !important;
+  border-radius: 12px !important;
+  border: 1.5px solid #cbd5e1 !important;
+  background-color: #ffffff !important;
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+}
+
+table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  min-width: 800px; /* Prevent tables from squeezing on smaller screens */
+}
+
+th {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #1e293b !important; /* Slate 800 for contrast */
+  background-color: #f1f5f9 !important; /* Soft light gray header background */
+  padding: 16px 20px !important; /* Spacious padding */
+  border-bottom: 2px solid #cbd5e1 !important;
+}
+
+td {
+  font-size: 15px !important;
+  color: #1e293b !important;
+  padding: 18px 20px !important; /* Generous padding for high readability */
+  border-bottom: 1px solid #e2e8f0 !important;
+  line-height: 1.5 !important;
+}
+
+tr:hover td {
+  background-color: #f8fafc !important; /* Subtle row highlights */
+}
+
+/* Dark mode and Dark contexts (like the Sidebar) */
+.bg-slate-900, .bg-slate-950, .bg-slate-800 {
+  color: #f8fafc !important; /* High-contrast white/light-gray */
+}
+
+.bg-slate-900 p, .bg-slate-900 span, .bg-slate-900 li, .bg-slate-900 a {
+  color: #e2e8f0 !important; /* Light slate text */
+}
+
+.bg-slate-900 .text-white, .bg-slate-950 .text-white {
+  color: #ffffff !important;
+}
+
+/* Buttons and Inputs: Large, modern, and accessible */
+input, select, textarea {
+  font-size: 15px !important;
+  padding: 12px 16px; /* Removed !important to let Tailwind custom padding work */
+  border-radius: 8px !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+/* Ensure Tailwind padding utility classes override the base padding rule */
+input.pl-5, select.pl-5, textarea.pl-5 { padding-left: 1.25rem !important; }
+input.pl-6, select.pl-6, textarea.pl-6 { padding-left: 1.5rem !important; }
+input.pl-7, select.pl-7, textarea.pl-7 { padding-left: 1.75rem !important; }
+input.pl-8, select.pl-8, textarea.pl-8 { padding-left: 2rem !important; }
+input.pl-9, select.pl-9, textarea.pl-9 { padding-left: 2.25rem !important; }
+input.pl-10, select.pl-10, textarea.pl-10 { padding-left: 2.5rem !important; }
+input.pl-11, select.pl-11, textarea.pl-11 { padding-left: 2.75rem !important; }
+input.pl-12, select.pl-12, textarea.pl-12 { padding-left: 3rem !important; }
+
+input.pr-5, select.pr-5, textarea.pr-5 { padding-right: 1.25rem !important; }
+input.pr-6, select.pr-6, textarea.pr-6 { padding-right: 1.5rem !important; }
+input.pr-7, select.pr-7, textarea.pr-7 { padding-right: 1.75rem !important; }
+input.pr-8, select.pr-8, textarea.pr-8 { padding-right: 2rem !important; }
+input.pr-9, select.pr-9, textarea.pr-9 { padding-right: 2.25rem !important; }
+input.pr-10, select.pr-10, textarea.pr-10 { padding-right: 2.5rem !important; }
+input.pr-11, select.pr-11, textarea.pr-11 { padding-right: 2.75rem !important; }
+input.pr-12, select.pr-12, textarea.pr-12 { padding-right: 3rem !important; }
+
+input:focus, select:focus, textarea:focus {
+  border-color: #2563eb !important; /* High contrast Royal Blue */
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  outline: none !important;
+}
+
+button {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important; /* Comfortable tap target size */
+  border-radius: 8px !important;
+  transition: all 0.15s ease-in-out;
+}
+
+/* Custom scrollbars */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.35);
+  border-radius: 9999px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.55);
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 15s linear infinite;
+}
+
+/* Custom smooth entrance animation for cards and widgets */
+.bg-card,
+.group\/block {
+  animation: fade-scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Smooth color transition for all letters and elements */
+p, span, h1, h2, h3, h4, h5, h6, label, td, th, input, select, textarea, button, a {
+  transition: color 0.3s ease-in-out, background-color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+}
+
+/* ========================================== */
+/* SELETORES E REGRAS DO TEMA ESCURO (DARK MODE) */
+/* ========================================== */
+
+html, body {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+/* Light mode text defaults */
+html:not(.dark) p, 
+html:not(.dark) span, 
+html:not(.dark) li, 
+html:not(.dark) label, 
+html:not(.dark) td, 
+html:not(.dark) th, 
+html:not(.dark) h1, 
+html:not(.dark) h2, 
+html:not(.dark) h3, 
+html:not(.dark) h4, 
+html:not(.dark) h5, 
+html:not(.dark) h6 {
+  color: var(--foreground);
+}
+
+/* HIGH-CONTRAST TYPOGRAPHY IN DARK MODE - NOT BLACK, AND HIGH HIERARCHICAL CONTRAST */
+html.dark h1, 
+html.dark h2, 
+html.dark h3, 
+html.dark h4, 
+html.dark h5, 
+html.dark h6,
+html.dark strong:not([class*="text-"]),
+html.dark .card-kpi-value, 
+html.dark .metric-value, 
+html.dark .finance-number, 
+html.dark .km-number,
+html.dark .font-bold {
+  color: #FFFFFF !important; /* Pure white crisp headings & values */
+}
+
+html.dark p:not([class*="text-"]), 
+html.dark span:not([class*="text-"]), 
+html.dark li:not([class*="text-"]), 
+html.dark label:not([class*="text-"]), 
+html.dark div:not([class*="bg-"]):not([class*="text-"]):not([class*="border-"]):not(.icon) {
+  color: #F1F5F9 !important; /* Premium light text #F1F5F9 for general text */
+}
+
+/* Map specific tailwind sub-text classes to the beautiful secondary #CBD5E1 and auxiliary #A8B3C7/#94A3B8 palettes */
+html.dark .text-slate-200, html.dark .text-gray-200, html.dark .text-zinc-200, html.dark .text-neutral-200,
+html.dark .text-slate-300, html.dark .text-gray-300, html.dark .text-zinc-300, html.dark .text-neutral-300 {
+  color: #F1F5F9 !important;
+}
+
+html.dark .text-slate-400, html.dark .text-gray-400, html.dark .text-zinc-400, html.dark .text-neutral-400 {
+  color: #CBD5E1 !important; /* Secondary elements */
+}
+
+html.dark .text-slate-500, html.dark .text-gray-500, html.dark .text-zinc-500, html.dark .text-neutral-500,
+html.dark .text-muted-foreground {
+  color: #A8B3C7 !important; /* Auxiliary elements */
+}
+
+html.dark .text-slate-600, html.dark .text-gray-600, html.dark .text-zinc-600, html.dark .text-neutral-600 {
+  color: #94A3B8 !important; /* Muted slate */
+}
+
+/* Map slate and gray typography for sub-titles in light mode */
+html:not(.dark) .text-slate-500, 
+html:not(.dark) .text-gray-500, 
+html:not(.dark) .text-zinc-500 {
+  color: var(--muted-foreground) !important;
+}
+
+/* Map colored accent text classes to highly vibrant values in both modes */
+.text-blue-600, .text-blue-500, .text-blue-400, .text-sky-500, .text-sky-400,
+html.dark .text-blue-400, html.dark .text-sky-400, html.dark .text-blue-500, html.dark .text-sky-500 {
+  color: var(--color-text-blue) !important;
+}
+.text-emerald-600, .text-emerald-500, .text-emerald-400, .text-green-500, .text-green-400,
+html.dark .text-emerald-400, html.dark .text-green-400, html.dark .text-emerald-500, html.dark .text-green-500 {
+  color: var(--color-text-emerald) !important;
+}
+.text-amber-600, .text-amber-500, .text-amber-400, .text-yellow-500, .text-yellow-400,
+html.dark .text-amber-400, html.dark .text-yellow-400, html.dark .text-amber-500, html.dark .text-yellow-500 {
+  color: var(--color-text-amber) !important;
+}
+.text-red-600, .text-red-500, .text-red-400, .text-rose-600, .text-rose-500, .text-rose-400,
+html.dark .text-rose-400, html.dark .text-red-400, html.dark .text-rose-500, html.dark .text-red-500 {
+  color: var(--color-text-rose) !important;
+}
+
+/* Background container conversions */
+html.dark .bg-white,
+html.dark .bg-slate-50,
+html.dark .bg-gray-50,
+html.dark .bg-slate-100,
+html.dark .bg-gray-100 {
+  background-color: var(--card) !important;
+}
+
+html.dark #erp-app-shell {
+  background-color: var(--background) !important;
+}
+
+/* Force dark mode cards to have correct borders, background, shadow, and hover effect */
+html.dark .card, 
+html.dark .bg-white.rounded-xl, 
+html.dark .bg-white.rounded-2xl {
+  background-color: var(--card) !important; /* #2A3648 */
+  border-color: var(--border) !important;   /* #4B5C78 */
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3) !important;
+}
+
+html.dark .card:hover, 
+html.dark .bg-white.rounded-xl:hover, 
+html.dark .bg-white.rounded-2xl:hover {
+  background-color: var(--card-hover) !important; /* #3F4F68 */
+  border-color: var(--border) !important;
+  transform: translateY(-4px) !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Sidebar and Navbar specific background overrides */
+html.dark aside,
+html.dark header {
+  background-color: var(--sidebar) !important;
+  border-color: var(--border) !important;
+}
+
+/* Ensure sidebar navigation buttons adapt nicely to premium colors */
+html.dark aside nav button:not(.bg-primary):hover {
+  background-color: var(--card-hover) !important;
+  color: #FFFFFF !important;
+}
+
+html.dark aside nav button.bg-primary {
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%) !important;
+  box-shadow: 0 4px 15px -3px rgba(59, 130, 246, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  border-color: #60a5fa !important;
+  color: #FFFFFF !important;
+}
+
+html.dark .border-gray-200,
+html.dark .border-gray-150,
+html.dark .border-slate-200,
+html.dark .border-slate-100,
+html.dark .border-gray-100,
+html.dark .border-blue-100 {
+  border-color: var(--border) !important;
+}
+
+/* Inputs, Textareas and Select overrides */
+html.dark input, 
+html.dark select, 
+html.dark textarea {
+  background-color: var(--muted) !important; /* #1F2937 */
+  border-color: var(--border) !important;   /* #4B5C78 */
+  color: #FFFFFF !important;
+  transition: border-color 200ms ease, box-shadow 200ms ease !important;
+}
+
+html.dark input:focus, 
+html.dark select:focus, 
+html.dark textarea:focus {
+  border-color: var(--primary) !important; /* #3B82F6 */
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+  outline: none !important;
+}
+
+html.dark input::placeholder, 
+html.dark textarea::placeholder {
+  color: #94A3B8 !important;
+}
+
+/* Table element overrides for high readability */
+html.dark .table-container, 
+html.dark .overflow-x-auto {
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
+}
+
+html.dark th {
+  background-color: var(--card-secondary) !important; /* #344256 */
+  color: #FFFFFF !important;
+  border-bottom: 2px solid var(--border) !important;
+}
+
+html.dark td {
+  color: #F1F5F9 !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+html.dark tr:hover td {
+  background-color: var(--card-hover) !important; /* #3F4F68 */
+}
+
+/* Map overlays adaptation */
+html.dark .bg-slate-900\/95,
+html.dark .bg-slate-950\/90,
+html.dark .bg-slate-950\/95 {
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
+}
+
+/* Ensure overlay modals look premium dark with soft blur */
+html.dark .bg-black\/50, html.dark .bg-white\/70, html.dark .bg-slate-900\/50, html.dark .bg-slate-950\/50 {
+  background-color: rgba(23, 32, 51, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* Fix shadow contrast in dark theme */
+html.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.5) !important;
+}
+html.dark .shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5) !important;
+}
+html.dark .shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* AI Assistant & Import panel widgets style adaptations */
+html.dark .bg-amber-50, html.dark .bg-yellow-50 {
+  background-color: rgba(251, 191, 36, 0.08) !important;
+  border-color: rgba(251, 191, 36, 0.2) !important;
+}
+html.dark .text-amber-900, html.dark .text-yellow-900 {
+  color: #fef08a !important;
+}
+
+html.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.08) !important;
+  border-color: rgba(59, 130, 246, 0.2) !important;
+}
+
+html.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+html.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+html.dark .bg-teal-50 {
+  background-color: rgba(20, 184, 166, 0.08) !important;
+  border-color: rgba(20, 184, 166, 0.2) !important;
+}
+
+html.dark .text-emerald-700 {
+  color: #34d399 !important; /* Brighter green */
+}
+html.dark .text-red-700 {
+  color: #f87171 !important; /* Brighter red */
+}
+html.dark .text-gray-600 {
+  color: #94a3b8 !important; /* Lighter gray */
+}
+html.dark .text-blue-800 {
+  color: #93c5fd !important; /* Brighter blue */
+}
+html.dark .text-teal-700 {
+  color: #2dd4bf !important; /* Brighter teal */
+}
+html.dark .text-amber-700 {
+  color: #fbbf24 !important; /* Brighter amber */
+}
+
+/* Recharts SVGs & Tooltips Theme-Aware Overrides */
+.recharts-cartesian-axis-tick-value, 
+.recharts-legend-item-text,
+.recharts-label {
+  fill: var(--foreground) !important;
+  font-family: "Plus Jakarta Sans", sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+
+html.dark .recharts-cartesian-axis-tick-value,
+html.dark .recharts-legend-item-text,
+html.dark .recharts-label {
+  fill: #FAFAFA !important;
+}
+
+/* Tooltip container styling */
+.recharts-default-tooltip {
+  background-color: var(--card) !important;
+  border: 1.5px solid var(--border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.recharts-tooltip-item {
+  color: var(--card-foreground) !important;
+  font-family: "Plus Jakarta Sans", sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.recharts-tooltip-label {
+  color: var(--muted-foreground) !important;
+  font-family: "Plus Jakarta Sans", sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+html.dark .recharts-tooltip-item {
+  color: #FFFFFF !important;
+}
+html.dark .recharts-tooltip-label {
+  color: #CBD5E1 !important;
+}
+
+/* CUSTOM CHART OVERRIDES - TRANSPARENT BACKS, HIGH CONTRAST LINES, CLEAR LEGENDS, MODERN TOOLTIP */
+.recharts-responsive-container,
+.recharts-wrapper {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+html.dark .recharts-cartesian-grid-horizontal line,
+html.dark .recharts-cartesian-grid-vertical line {
+  stroke: #475569 !important; /* Premium border #475569 for high-contrast lines */
+  stroke-opacity: 0.35 !important;
+}
+
+html.dark .recharts-reference-line line {
+  stroke: #64748B !important;
+  stroke-dasharray: 4 4 !important;
+}
+
+html.dark .recharts-legend-item-text {
+  color: #CBD5E1 !important;
+}
+
+html.dark .recharts-default-tooltip {
+  background-color: var(--card) !important; /* Premium card bg */
+  border: 1.5px solid var(--border) !important; /* Premium border */
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .recharts-tooltip-item-name,
+html.dark .recharts-tooltip-item-value,
+html.dark .recharts-tooltip-item {
+  color: #F8FAFC !important;
+}
+
+/* ============================================================ */
+/* INTERACTIVE MAP ADAPTATIONS (LIGHT & DARK MODES COHESION)    */
+/* ============================================================ */
+
+/* Dark Mode Map Adaptations */
+html.dark #mapa-logistico-container {
+  background-color: var(--background) !important;
+  border-color: var(--border) !important;
+}
+
+html.dark #mapa-logistico-container .bg-slate-900,
+html.dark #mapa-logistico-container .bg-slate-900\/60,
+html.dark #mapa-logistico-container .bg-slate-900\/40,
+html.dark #mapa-logistico-container .bg-slate-900\/20,
+html.dark #mapa-logistico-container .bg-slate-950,
+html.dark #mapa-logistico-container .bg-slate-950\/70,
+html.dark #mapa-logistico-container .bg-slate-950\/85,
+html.dark #mapa-logistico-container .bg-slate-950\/90,
+html.dark #mapa-logistico-container .bg-slate-950\/95,
+html.dark #mapa-logistico-container #map-canvas-container {
+  background-color: var(--card) !important; /* #263244 */
+  border-color: var(--border) !important;   /* #475569 */
+}
+
+html.dark #mapa-logistico-container .border-slate-800,
+html.dark #mapa-logistico-container .border-slate-800\/80,
+html.dark #mapa-logistico-container .border-slate-850,
+html.dark #mapa-logistico-container .border-slate-900,
+html.dark #mapa-logistico-container .border-slate-800\/70 {
+  border-color: var(--border) !important;
+}
+
+/* Light Mode Map Adaptations */
+html:not(.dark) #mapa-logistico-container {
+  background-color: #FFFFFF !important;
+  color: #09090B !important;
+  border-color: #E2E8F0 !important;
+}
+
+html:not(.dark) #mapa-logistico-container h2,
+html:not(.dark) #mapa-logistico-container h3,
+html:not(.dark) #mapa-logistico-container p.text-xl,
+html:not(.dark) #mapa-logistico-container p.text-2xl,
+html:not(.dark) #mapa-logistico-container p.text-3xl {
+  color: #09090B !important;
+}
+
+html:not(.dark) #mapa-logistico-container .bg-slate-900,
+html:not(.dark) #mapa-logistico-container .bg-slate-950,
+html:not(.dark) #mapa-logistico-container #map-canvas-container,
+html:not(.dark) #mapa-logistico-container .bg-slate-950\/85,
+html:not(.dark) #mapa-logistico-container .bg-slate-950\/90,
+html:not(.dark) #mapa-logistico-container .bg-slate-950\/95 {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+}
+
+html:not(.dark) #mapa-logistico-container .text-slate-400,
+html:not(.dark) #mapa-logistico-container .text-slate-300,
+html:not(.dark) #mapa-logistico-container .text-slate-500 {
+  color: #64748B !important;
+}
+
+html:not(.dark) #mapa-logistico-container .border-slate-800,
+html:not(.dark) #mapa-logistico-container .border-slate-800\/80,
+html:not(.dark) #mapa-logistico-container .border-slate-900 {
+  border-color: #E2E8F0 !important;
+}
+
+html:not(.dark) #mapa-logistico-container text {
+  fill: #475569 !important;
+}
+
+/* AI Query Assistant adaptations */
+html.dark #ai-assistant-card {
+  background: linear-gradient(135deg, var(--card) 0%, var(--background) 100%) !important;
+  border-color: var(--border) !important;
+}
+
+html:not(.dark) #ai-assistant-card {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%) !important;
+  border-color: #cbd5e1 !important;
+}
+
+html:not(.dark) #ai-assistant-card h3,
+html:not(.dark) #ai-assistant-card span {
+  color: #09090B !important;
+}
+
+html:not(.dark) #ai-assistant-card .border-gray-800 {
+  border-color: #cbd5e1 !important;
+}
+
+/* Analytics BI Component overrides */
+html.dark #modulo-analytics-container .bg-gradient-to-br.from-slate-900.to-slate-950 {
+  background: linear-gradient(135deg, var(--card) 0%, var(--background) 100%) !important;
+  border-color: var(--border) !important;
+}
+
+html:not(.dark) #modulo-analytics-container .bg-gradient-to-br.from-slate-900.to-slate-950 {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%) !important;
+  border-color: #cbd5e1 !important;
+  color: #09090B !important;
+}
+
+html:not(.dark) #modulo-analytics-container .bg-gradient-to-br.from-slate-900.to-slate-950 p,
+html:not(.dark) #modulo-analytics-container .bg-gradient-to-br.from-slate-900.to-slate-950 span {
+  color: #09090B !important;
+}
+
+html:not(.dark) #modulo-analytics-container .bg-gradient-to-br.from-slate-900.to-slate-950 span.text-gray-400 {
+  color: #64748B !important;
+}
+
+/* ============================================================ */
+/* GLOBAL UTILITY CLASS OVERRIDES IN DARK MODE (ANTI-PURE-BLACK)*/
+/* ============================================================ */
+
+/* Backgrounds mapping to main background (#162235) */
+html.dark .bg-slate-950,
+html.dark .bg-zinc-950,
+html.dark .bg-gray-950,
+html.dark .bg-neutral-950,
+html.dark .bg-black,
+html.dark .dark\:bg-zinc-950,
+html.dark .dark\:bg-slate-950,
+html.dark .dark\:bg-black {
+  background-color: var(--background) !important;
+}
+
+/* Backgrounds mapping to card background (#243447) */
+html.dark .bg-slate-900,
+html.dark .bg-zinc-900,
+html.dark .bg-gray-900,
+html.dark .bg-neutral-900,
+html.dark .dark\:bg-zinc-900,
+html.dark .dark\:bg-slate-900 {
+  background-color: var(--card) !important;
+}
+
+/* Backgrounds mapping to card secondary background or hover (#31475F) */
+html.dark .bg-slate-850,
+html.dark .bg-slate-800,
+html.dark .bg-zinc-800,
+html.dark .bg-gray-800,
+html.dark .bg-neutral-800,
+html.dark .dark\:bg-zinc-800,
+html.dark .dark\:bg-slate-800 {
+  background-color: var(--card-hover) !important;
+}
+
+/* Transparent variations of card and background mapped cleanly to cards */
+html.dark .bg-slate-950\/60,
+html.dark .bg-slate-950\/85,
+html.dark .bg-slate-950\/90,
+html.dark .bg-slate-950\/95,
+html.dark .bg-slate-900\/60,
+html.dark .bg-slate-900\/40,
+html.dark .bg-slate-900\/30,
+html.dark .bg-slate-900\/20,
+html.dark .dark\:bg-zinc-950\/40,
+html.dark .bg-zinc-950\/40,
+html.dark .bg-black\/50,
+html.dark .bg-slate-950\/80 {
+  background-color: rgba(36, 52, 71, 0.9) !important; /* Premium semi-transparent card background */
+}
+
+/* Hover variants in dark mode */
+html.dark .hover\:bg-slate-900:hover,
+html.dark .hover\:bg-zinc-900:hover,
+html.dark .hover\:bg-gray-900:hover,
+html.dark .hover\:bg-slate-950:hover,
+html.dark .hover\:bg-zinc-950:hover,
+html.dark .dark\:hover\:bg-zinc-950:hover,
+html.dark .dark\:hover\:bg-slate-950:hover,
+html.dark .hover\:bg-slate-800:hover,
+html.dark .hover\:bg-zinc-800:hover,
+html.dark .hover\:bg-slate-900\/40:hover {
+  background-color: var(--card-hover) !important; /* #31475F */
+}
+
+/* Borders mapping to border (#425A74) */
+html.dark .border-slate-800,
+html.dark .border-slate-900,
+html.dark .border-zinc-800,
+html.dark .border-gray-800,
+html.dark .border-neutral-800,
+html.dark .dark\:border-zinc-800,
+html.dark .dark\:border-slate-800,
+html.dark .border-slate-800\/80,
+html.dark .border-slate-800\/70,
+html.dark .border-slate-100\/60,
+html.dark .border-zinc-800\/50,
+html.dark .border-slate-800\/50,
+html.dark .border-zinc-800\/40,
+html.dark .border-slate-800\/40,
+html.dark .dark\:border-zinc-800\/50,
+html.dark .dark\:border-slate-800\/50,
+html.dark .dark\:border-zinc-800\/40,
+html.dark .dark\:border-slate-800\/40 {
+  border-color: var(--border) !important;
+}
+
+/* Dynamic text colors for ultra high-contrast and readability */
+html.dark .text-white {
+  color: #F8FAFC !important; /* Bright high-contrast white */
+}
+
+html.dark .text-slate-400,
+html.dark .text-gray-400,
+html.dark .text-zinc-400,
+html.dark .text-neutral-400,
+html.dark .text-slate-500,
+html.dark .text-gray-500,
+html.dark .text-zinc-500 {
+  color: #CBD5E1 !important; /* Text secundário: #CBD5E1 */
+}
+
+html.dark .text-slate-600,
+html.dark .text-gray-600,
+html.dark .text-zinc-600 {
+  color: #A8B3C7 !important; /* Text auxiliar */
+}
+
+/* Modal and dialog specific backdrops */
+html.dark .fixed.inset-0.bg-black\/60,
+html.dark .fixed.inset-0.bg-slate-950\/80,
+html.dark .fixed.inset-0.bg-white\/70,
+html.dark .fixed.inset-0.bg-slate-950\/50 {
+  background-color: rgba(22, 34, 53, 0.75) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+/* Ensure buttons and actions have modern elevation and blue accent */
+html.dark .bg-primary {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+html.dark .bg-primary:hover {
+  background-color: #3b82f6 !important;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+/* Calendar styling override in dark mode */
+html.dark .react-calendar,
+html.dark .calendar-container {
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
+}
+
+html.dark .react-calendar__tile--active,
+html.dark .calendar-tile-selected {
+  background-color: var(--primary) !important;
+  color: #FFFFFF !important;
+}
+
+/* Leaflet Map Custom Styling */
+.leaflet-container {
+  font-family: inherit !important;
+  background-color: #0b0f19 !important;
+}
+
+html:not(.dark) .leaflet-container {
+  background-color: #f1f5f9 !important;
+}
+
+.custom-leaflet-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Styled leaflet zoom buttons to match the sleek dashboard theme */
+.leaflet-bar {
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.leaflet-bar a {
+  background-color: #090d16 !important;
+  color: #94a3b8 !important;
+  border-bottom: 1px solid var(--border) !important;
+  transition: all 0.2s ease !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+html:not(.dark) .leaflet-bar a {
+  background-color: #ffffff !important;
+  color: #475569 !important;
+}
+
+html:not(.dark) .leaflet-bar a:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Dashed marching ants route line animation */
+@keyframes dash-animation {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.leaflet-interactive-route {
+  stroke-dasharray: 6, 4;
+  animation: dash-animation 2s linear infinite;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.5));
+}
+
+
+
