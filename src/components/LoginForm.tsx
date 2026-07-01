@@ -233,11 +233,11 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-5xl md:min-h-[600px] bg-card/85 dark:bg-slate-900/40 border border-border dark:border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row relative z-10 backdrop-blur-xl transition-colors duration-300"
+        className="w-full max-w-5xl md:min-h-[600px] bg-card/85 dark:bg-[#0F1729]/70 border border-border dark:border-[#1F2E4D] rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row relative z-10 backdrop-blur-xl transition-colors duration-300"
       >
         
         {/* LEFT PANEL: SLICK IA LOGISTICS PRESENTATION & STATS SHOWCASE */}
-        <div className="hidden md:flex md:w-[48%] bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50/20 dark:from-slate-950 dark:via-slate-900 dark:to-[#0A101D] border-r border-border dark:border-slate-800 p-8 flex-col justify-between relative overflow-hidden transition-colors duration-300">
+        <div className="hidden md:flex md:w-[48%] bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50/20 dark:from-[#0B0F19] dark:via-[#0A0E17] dark:to-[#060911] border-r border-border dark:border-[#1F2E4D] p-8 flex-col justify-between relative overflow-hidden transition-colors duration-300">
           <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/[0.03] rounded-full blur-3xl pointer-events-none" />
           
           {/* Subtle Vector Logistics Grid overlay */}
@@ -272,8 +272,8 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
             </div>
 
             {/* Simulated Live Cockpit Telemetry Widget */}
-            <div className="p-4 bg-white/60 dark:bg-slate-950/60 border border-border dark:border-slate-800 rounded-2xl space-y-3.5 shadow-inner backdrop-blur-sm">
-              <div className="flex items-center justify-between border-b border-border dark:border-slate-800 pb-2.5">
+            <div className="p-4 bg-white/60 dark:bg-[#0B0F19]/70 border border-border dark:border-[#1F2E4D] rounded-2xl space-y-3.5 shadow-inner backdrop-blur-sm">
+              <div className="flex items-center justify-between border-b border-border dark:border-[#1F2E4D] pb-2.5">
                 <span className="text-[10px] font-mono text-muted-foreground dark:text-slate-400 flex items-center gap-1.5 font-bold uppercase">
                   <Cpu className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                   DODISA AI ENGINE v2.5
@@ -285,11 +285,11 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/50 border border-border dark:border-slate-800/80 rounded-xl space-y-1">
+                <div className="p-2.5 bg-slate-50 dark:bg-[#121B2E]/50 border border-border dark:border-[#1F2E4D]/80 rounded-xl space-y-1">
                   <span className="text-[8px] text-muted-foreground dark:text-slate-500 uppercase font-mono font-bold tracking-wider">OCR Multimodal</span>
                   <p className="text-xs font-mono font-bold text-foreground dark:text-slate-200">Acurácia: <span className="text-emerald-600 dark:text-emerald-400">99.4%</span></p>
                 </div>
-                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/50 border border-border dark:border-slate-800/80 rounded-xl space-y-1">
+                <div className="p-2.5 bg-slate-50 dark:bg-[#121B2E]/50 border border-border dark:border-[#1F2E4D]/80 rounded-xl space-y-1">
                   <span className="text-[8px] text-muted-foreground dark:text-slate-500 uppercase font-mono font-bold tracking-wider">Cálculo de Rotas</span>
                   <p className="text-xs font-mono font-bold text-foreground dark:text-slate-200">Latência: <span className="text-blue-600 dark:text-blue-400">&lt; 150ms</span></p>
                 </div>
@@ -301,7 +301,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                   <span>Hub São Paulo</span>
                   <span>Porto de Santos</span>
                 </div>
-                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden relative">
+                <div className="h-1.5 w-full bg-slate-200 dark:bg-[#1E2942] rounded-full overflow-hidden relative">
                   <motion.div 
                     animate={{ 
                       left: ["-100%", "100%"]
@@ -320,7 +320,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
           </div>
 
           {/* Bottom Security Assurance info */}
-          <div className="border-t border-border dark:border-slate-800/80 pt-4 flex items-center gap-2.5 text-[10px] text-muted-foreground dark:text-slate-500 font-mono">
+          <div className="border-t border-border dark:border-[#1F2E4D]/80 pt-4 flex items-center gap-2.5 text-[10px] text-muted-foreground dark:text-slate-500 font-mono">
             <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
             <span>Infraestrutura segura em conformidade com a LGPD.</span>
           </div>
@@ -330,7 +330,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
         <div className="flex-1 p-6 md:p-10 flex flex-col justify-between relative bg-card dark:bg-transparent gap-8">
           
           {/* Mobile Brand Header */}
-          <div className="flex md:hidden items-center justify-between mb-8 pb-4 border-b border-border dark:border-slate-800">
+          <div className="flex md:hidden items-center justify-between mb-8 pb-4 border-b border-border dark:border-[#1F2E4D]">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 bg-blue-600/10 border border-blue-500/20 rounded-lg flex items-center justify-center">
                 <Truck className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
@@ -417,7 +417,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="ex: admin@transportadora.com"
-                        className="w-full bg-background dark:bg-slate-950/60 border border-border dark:border-slate-800 hover:border-muted-foreground/30 dark:hover:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-3 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all font-sans"
+                        className="w-full bg-background dark:bg-[#0B0F19]/70 border border-border dark:border-[#1F2E4D] hover:border-muted-foreground/30 dark:hover:border-[#293B5E] focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-3 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all font-sans"
                         required
                       />
                     </div>
@@ -442,7 +442,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full bg-background dark:bg-slate-950/60 border border-border dark:border-slate-800 hover:border-muted-foreground/30 dark:hover:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-10 py-3 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all font-sans"
+                        className="w-full bg-background dark:bg-[#0B0F19]/70 border border-border dark:border-[#1F2E4D] hover:border-muted-foreground/30 dark:hover:border-[#293B5E] focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-10 py-3 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all font-sans"
                         required
                       />
                       <button
@@ -462,7 +462,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                         type="checkbox"
                         checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)}
-                        className="accent-blue-600 rounded bg-background dark:bg-slate-950 border-border dark:border-slate-800 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
+                        className="accent-blue-600 rounded bg-background dark:bg-[#0B0F19] border-border dark:border-[#1F2E4D] focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
                       />
                       <span>Manter e-mail conectado</span>
                     </label>
@@ -500,7 +500,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                   </div>
 
                   {/* Register redirection option */}
-                  <div className="text-center pt-2 border-t border-border dark:border-slate-800/60 mt-4">
+                  <div className="text-center pt-2 border-t border-border dark:border-[#1F2E4D]/60 mt-4">
                     <p className="text-xs text-muted-foreground dark:text-slate-400 font-normal">
                       Novo por aqui?{" "}
                       <button
@@ -540,7 +540,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="ex: João Silva"
-                        className="w-full bg-background dark:bg-slate-950/60 border border-border dark:border-slate-800 hover:border-muted-foreground/30 dark:hover:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all"
+                        className="w-full bg-background dark:bg-[#0B0F19]/70 border border-border dark:border-[#1F2E4D] hover:border-muted-foreground/30 dark:hover:border-[#293B5E] focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all"
                         required
                       />
                     </div>
@@ -556,7 +556,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="ex: joao@transportadora.com"
-                        className="w-full bg-background dark:bg-slate-950/60 border border-border dark:border-slate-800 hover:border-muted-foreground/30 dark:hover:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all"
+                        className="w-full bg-background dark:bg-[#0B0F19]/70 border border-border dark:border-[#1F2E4D] hover:border-muted-foreground/30 dark:hover:border-[#293B5E] focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all"
                         required
                       />
                     </div>
@@ -575,7 +575,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           placeholder="ex: (11) 98888-7777"
-                          className="w-full bg-background dark:bg-slate-950/60 border border-border dark:border-slate-800 hover:border-muted-foreground/30 dark:hover:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all"
+                          className="w-full bg-background dark:bg-[#0B0F19]/70 border border-border dark:border-[#1F2E4D] hover:border-muted-foreground/30 dark:hover:border-[#293B5E] focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all"
                           required
                         />
                       </div>
@@ -589,7 +589,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                         <select
                           value={role}
                           onChange={(e) => setRole(e.target.value)}
-                          className="w-full bg-background dark:bg-slate-950/60 border border-border dark:border-slate-800 hover:border-muted-foreground/30 dark:hover:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-foreground dark:text-white outline-none transition-all appearance-none font-bold"
+                          className="w-full bg-background dark:bg-[#0B0F19]/70 border border-border dark:border-[#1F2E4D] hover:border-muted-foreground/30 dark:hover:border-[#293B5E] focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-foreground dark:text-white outline-none transition-all appearance-none font-bold"
                         >
                           <option value="Gerente" className="text-foreground bg-card">Gerente</option>
                           <option value="Coordenador" className="text-foreground bg-card">Coordenador</option>
@@ -612,7 +612,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Mínimo de 6 caracteres"
-                        className="w-full bg-background dark:bg-slate-950/60 border border-border dark:border-slate-800 hover:border-muted-foreground/30 dark:hover:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all"
+                        className="w-full bg-background dark:bg-[#0B0F19]/70 border border-border dark:border-[#1F2E4D] hover:border-muted-foreground/30 dark:hover:border-[#293B5E] focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-2.5 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all"
                         minLength={6}
                         required
                       />
@@ -678,7 +678,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="ex: joao@transportadora.com"
-                        className="w-full bg-background dark:bg-slate-950/60 border border-border dark:border-slate-800 hover:border-muted-foreground/30 dark:hover:border-slate-700 focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-3 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all"
+                        className="w-full bg-background dark:bg-[#0B0F19]/70 border border-border dark:border-[#1F2E4D] hover:border-muted-foreground/30 dark:hover:border-[#293B5E] focus:border-blue-500 dark:focus:border-blue-500/80 rounded-xl pl-10 pr-3 py-3 text-xs text-foreground dark:text-white placeholder-muted-foreground outline-none transition-all"
                         required
                       />
                     </div>
