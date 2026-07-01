@@ -154,7 +154,7 @@ export default function DriverWorkspace({
     setTimeout(() => setMsg(null), 5000);
   };
 
-  // Convert image upload to base64 helper
+  // Convert image upload to base64 helper (used for instant local preview)
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -163,6 +163,22 @@ export default function DriverWorkspace({
         setter(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Upload a base64 photo to Supabase Storage, returning a lightweight URL
+  const uploadPhoto = async (base64: string, folder: string): Promise<string> => {
+    if (!base64 || !base64.startsWith("data:")) return base64;
+    try {
+      const res = await fetch("/api/upload-photo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64, folder })
+      });
+      const data = await res.json();
+      return data.success ? data.url : base64;
+    } catch {
+      return base64;
     }
   };
 
@@ -197,6 +213,10 @@ export default function DriverWorkspace({
 
     setLoading(true);
     try {
+      const [panelPhotoUrl, frontPhotoUrl] = await Promise.all([
+        uploadPhoto(startPanelPhoto, "trip-start"),
+        uploadPhoto(startFrontPhoto, "trip-start")
+      ]);
       const res = await fetch("/api/driver_start_trip", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -208,8 +228,8 @@ export default function DriverWorkspace({
           startKm: Number(startKm),
           date: startDate,
           time: startTime,
-          panelPhoto: startPanelPhoto,
-          frontPhoto: startFrontPhoto,
+          panelPhoto: panelPhotoUrl,
+          frontPhoto: frontPhotoUrl,
           observations: startNotes
         })
       });
@@ -249,6 +269,7 @@ export default function DriverWorkspace({
 
     setLoading(true);
     try {
+      const recordPhotoUrl = await uploadPhoto(recordPhoto, "trip-events");
       const res = await fetch("/api/trip_logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -261,7 +282,7 @@ export default function DriverWorkspace({
           date: recordDate,
           time: recordTime,
           location: recordLocation,
-          photos: recordPhoto ? [recordPhoto] : [],
+          photos: recordPhotoUrl ? [recordPhotoUrl] : [],
           notes: recordNotes
         })
       });
@@ -305,6 +326,10 @@ export default function DriverWorkspace({
 
     setLoading(true);
     try {
+      const [endPanelPhotoUrl, endVehiclePhotoUrl] = await Promise.all([
+        uploadPhoto(endPanelPhoto, "trip-end"),
+        uploadPhoto(endVehiclePhoto, "trip-end")
+      ]);
       const res = await fetch(`/api/driver_end_trip/${activeFreight?.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -312,8 +337,8 @@ export default function DriverWorkspace({
           endKm: Number(endKm),
           date: endDate,
           time: endTime,
-          panelPhoto: endPanelPhoto,
-          vehiclePhoto: endVehiclePhoto,
+          panelPhoto: endPanelPhotoUrl,
+          vehiclePhoto: endVehiclePhotoUrl,
           observations: endNotes
         })
       });

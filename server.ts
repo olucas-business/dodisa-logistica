@@ -1184,6 +1184,30 @@ app.post("/api/auth/signup", async (req, res) => {
   res.json({ success: true, message: "Cadastro realizado com sucesso." });
 });
 
+// Photo upload -> Supabase Storage, returns a public URL
+app.post("/api/upload-photo", async (req, res) => {
+  const { image, folder } = req.body;
+  if (!image || typeof image !== "string") {
+    return res.status(400).json({ success: false, message: "A imagem em base64 é obrigatória." });
+  }
+  const match = image.match(/^data:(image\/\w+);base64,(.+)$/);
+  const mimeType = match ? match[1] : "image/jpeg";
+  const base64Data = match ? match[2] : image;
+  const ext = mimeType.split("/")[1] || "jpg";
+  const path = `${folder || "misc"}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from("photos")
+    .upload(path, Buffer.from(base64Data, "base64"), { contentType: mimeType });
+
+  if (error) {
+    return res.status(500).json({ success: false, message: "Falha ao enviar imagem: " + error.message });
+  }
+
+  const { data: publicUrlData } = supabase.storage.from("photos").getPublicUrl(path);
+  res.json({ success: true, url: publicUrlData.publicUrl });
+});
+
 // Drivers CRUD
 app.get("/api/drivers", async (req, res) => {
   res.json((await loadDB()).drivers);
@@ -3924,10 +3948,22 @@ Retorne a resposta estritamente em formato JSON que segue o schema de resposta e
     (parsedResult.tables?.length || 0) +
     (parsedResult.charts?.length || 0);
 
+  // Persist the analyzed image in Storage instead of embedding the base64 blob
+  let storedImageUrl = image;
+  const ext = cleanMimeType.split("/")[1] || "png";
+  const storagePath = `image-analyses/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error: uploadError } = await supabase.storage
+    .from("photos")
+    .upload(storagePath, Buffer.from(base64Data, "base64"), { contentType: cleanMimeType });
+  if (!uploadError) {
+    const { data: publicUrlData } = supabase.storage.from("photos").getPublicUrl(storagePath);
+    storedImageUrl = publicUrlData.publicUrl;
+  }
+
   const newRecord = {
     id: "img_" + Date.now(),
     imageName: imageName || "imagem_analisada.png",
-    imageData: image, // Store the uploaded image itself to render visual outlines on click
+    imageData: storedImageUrl, // Store the uploaded image itself to render visual outlines on click
     mimeType: cleanMimeType,
     date: new Date().toISOString(),
     infoCount: infoCount,
