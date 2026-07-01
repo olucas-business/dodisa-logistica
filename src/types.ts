@@ -28,6 +28,7 @@ export interface Driver {
   vehicleId?: string;
   status?: string; // Ativo, Em Viagem, Inativo, etc.
   temporaryPassword?: string;
+  authUserId?: string;
 }
 
 export interface MaintenanceRecord {

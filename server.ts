@@ -9,9 +9,15 @@ dotenv.config();
 
 const app = express();
 const PORT = 3000;
+// Admin client (service role) for user management and data access, bypassing RLS
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+// Public client (anon key) for password verification via Supabase Auth
+const supabaseAuth = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
 );
 
 app.use(express.json({ limit: "50mb" }));
@@ -1106,45 +1112,39 @@ async function saveDB(db: Database): Promise<void> {
 // Auth APIs
 app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
-  const db = (await loadDB());
-  const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
-  if (user) {
-    // Generate a simple token
-    const token = `token_${user.id}_${Date.now()}`;
-    user.token = token;
-    await saveDB(db);
-    res.json({ success: true, user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role, token } });
-  } else {
-    res.status(401).json({ success: false, message: "E-mail ou senha incorretos." });
+  const { data, error } = await supabaseAuth.auth.signInWithPassword({ email, password });
+  if (error || !data.user) {
+    return res.status(401).json({ success: false, message: "E-mail ou senha incorretos." });
   }
+  const meta = data.user.user_metadata || {};
+  res.json({
+    success: true,
+    user: {
+      id: data.user.id,
+      name: meta.name,
+      email: data.user.email,
+      phone: meta.phone,
+      role: meta.role,
+      driverId: meta.driverId,
+      token: data.session?.access_token
+    }
+  });
 });
 
 app.post("/api/auth/signup", async (req, res) => {
   const { name, email, password, phone, role } = req.body;
   const db = (await loadDB());
-  const exists = db.users.some(u => u.email.toLowerCase() === email.toLowerCase());
-  if (exists) {
-    return res.status(400).json({ success: false, message: "Este e-mail já está cadastrado." });
-  }
-  const newUser: any = {
-    id: `usr_${Date.now()}`,
-    name,
-    email: email.toLowerCase(),
-    password,
-    phone,
-    role: role || "Operador",
-    token: ""
-  };
+  const finalRole = role || "Operador";
+  let driverId: string | undefined;
 
-  if (newUser.role === "Motorista") {
+  if (finalRole === "Motorista") {
     const driver = db.drivers.find(d => d.email && d.email.toLowerCase() === email.toLowerCase());
     if (driver) {
-      newUser.driverId = driver.id;
+      driverId = driver.id;
     } else {
-      const drvId = `drv_${Date.now()}`;
-      newUser.driverId = drvId;
+      driverId = `drv_${Date.now()}`;
       db.drivers.push({
-        id: drvId,
+        id: driverId,
         fullName: name,
         email: email.toLowerCase(),
         cpf: "Não cadastrado",
@@ -1163,7 +1163,23 @@ app.post("/api/auth/signup", async (req, res) => {
     }
   }
 
-  db.users.push(newUser);
+  const { data, error } = await supabase.auth.admin.createUser({
+    email: email.toLowerCase(),
+    password,
+    email_confirm: true,
+    user_metadata: { name, phone, role: finalRole, driverId }
+  });
+
+  if (error || !data.user) {
+    const isDuplicate = /already|exists/i.test(error?.message || "");
+    return res.status(400).json({ success: false, message: isDuplicate ? "Este e-mail já está cadastrado." : (error?.message || "Falha ao registrar usuário.") });
+  }
+
+  if (finalRole === "Motorista") {
+    const drv = db.drivers.find(d => d.id === driverId);
+    if (drv) drv.authUserId = data.user.id;
+  }
+
   await saveDB(db);
   res.json({ success: true, message: "Cadastro realizado com sucesso." });
 });
@@ -1176,36 +1192,31 @@ app.get("/api/drivers", async (req, res) => {
 app.post("/api/drivers", async (req, res) => {
   const db = (await loadDB());
   const id = `drv_${Date.now()}`;
-  
+
   // Generate temporary password
   const tempPassword = `moto_${Math.floor(1000 + Math.random() * 9000)}`;
-  
-  const newDriver = {
+
+  const newDriver: any = {
     id,
     status: req.body.status || "Ativo",
     temporaryPassword: tempPassword,
     ...req.body
   };
-  
-  db.drivers.push(newDriver);
 
-  // Automatically create a user login if email is provided
+  // Automatically create a Supabase Auth login if email is provided
   if (newDriver.email) {
-    // Check if user already exists
-    const userExists = db.users.some(u => u.email.toLowerCase() === newDriver.email.toLowerCase());
-    if (!userExists) {
-      db.users.push({
-        id: `usr_drv_${id}`,
-        name: newDriver.fullName,
-        email: newDriver.email.toLowerCase(),
-        password: tempPassword,
-        phone: newDriver.phone || "",
-        role: "Motorista",
-        driverId: id
-      });
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: newDriver.email.toLowerCase(),
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { name: newDriver.fullName, phone: newDriver.phone || "", role: "Motorista", driverId: id }
+    });
+    if (!error && data.user) {
+      newDriver.authUserId = data.user.id;
     }
   }
 
+  db.drivers.push(newDriver);
   await saveDB(db);
   res.json({ success: true, driver: newDriver });
 });
@@ -1219,34 +1230,36 @@ app.put("/api/drivers/:id", async (req, res) => {
     const updatedDriver = { ...oldDriver, ...req.body };
     db.drivers[idx] = updatedDriver;
 
-    // Check if we need to sync user login
+    // Check if we need to sync the Supabase Auth login
     if (updatedDriver.email) {
-      const userIdx = db.users.findIndex(u => u.id === `usr_drv_${id}` || u.driverId === id);
-      if (userIdx !== -1) {
-        db.users[userIdx].name = updatedDriver.fullName;
-        db.users[userIdx].email = updatedDriver.email.toLowerCase();
-        db.users[userIdx].phone = updatedDriver.phone || "";
-        // Keep the temporary password or preserve their password if edited
-        if (updatedDriver.temporaryPassword) {
-          db.users[userIdx].password = updatedDriver.temporaryPassword;
-        }
+      if (updatedDriver.authUserId) {
+        await supabase.auth.admin.updateUserById(updatedDriver.authUserId, {
+          email: updatedDriver.email.toLowerCase(),
+          ...(updatedDriver.temporaryPassword && updatedDriver.temporaryPassword !== oldDriver.temporaryPassword
+            ? { password: updatedDriver.temporaryPassword }
+            : {}),
+          user_metadata: { name: updatedDriver.fullName, phone: updatedDriver.phone || "", role: "Motorista", driverId: id }
+        });
       } else {
-        // Create user login if it didn't exist before
+        // Create login if it didn't exist before
         const tempPassword = updatedDriver.temporaryPassword || `moto_${Math.floor(1000 + Math.random() * 9000)}`;
         updatedDriver.temporaryPassword = tempPassword;
-        db.users.push({
-          id: `usr_drv_${id}`,
-          name: updatedDriver.fullName,
+        const { data, error } = await supabase.auth.admin.createUser({
           email: updatedDriver.email.toLowerCase(),
           password: tempPassword,
-          phone: updatedDriver.phone || "",
-          role: "Motorista",
-          driverId: id
+          email_confirm: true,
+          user_metadata: { name: updatedDriver.fullName, phone: updatedDriver.phone || "", role: "Motorista", driverId: id }
         });
+        if (!error && data.user) {
+          updatedDriver.authUserId = data.user.id;
+        }
       }
-    } else {
-      // If email was removed, remove user login
-      db.users = db.users.filter(u => u.id !== `usr_drv_${id}` && u.driverId !== id);
+      db.drivers[idx] = updatedDriver;
+    } else if (oldDriver.authUserId) {
+      // If email was removed, remove the login
+      await supabase.auth.admin.deleteUser(oldDriver.authUserId);
+      delete updatedDriver.authUserId;
+      db.drivers[idx] = updatedDriver;
     }
 
     await saveDB(db);
@@ -1259,8 +1272,11 @@ app.put("/api/drivers/:id", async (req, res) => {
 app.delete("/api/drivers/:id", async (req, res) => {
   const { id } = req.params;
   const db = (await loadDB());
+  const driver = db.drivers.find(d => d.id === id);
+  if (driver?.authUserId) {
+    await supabase.auth.admin.deleteUser(driver.authUserId);
+  }
   db.drivers = db.drivers.filter(d => d.id !== id);
-  db.users = db.users.filter(u => u.id !== `usr_drv_${id}` && u.driverId !== id);
   await saveDB(db);
   res.json({ success: true });
 });
