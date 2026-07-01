@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { User, Driver, Vehicle, Freight, Refuel, Expense, Tire, Debt, TruckCashTransaction, CaixaCaminhao, CaixaMovimentacao } from "./types";
 import LoginForm from "./components/LoginForm";
+import BrandMark from "./components/BrandMark";
 import DriverWorkspace from "./components/DriverWorkspace";
 import DashboardOverview from "./components/DashboardOverview";
 import DriversManager from "./components/DriversManager";
@@ -691,19 +692,14 @@ export default function App() {
           {/* Brand header */}
           <div className="p-4 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="relative p-2 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-xl shadow-lg shadow-blue-500/25 border border-blue-400/20 flex-shrink-0 flex items-center justify-center overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
-                <Truck className="w-5 h-5 transform group-hover:scale-110 transition-transform duration-300 relative z-10" />
-                <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping m-0.5" />
-                <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-emerald-400 rounded-full m-0.5" />
-              </div>
+              <BrandMark size="md" />
               {sidebarOpen && (
                 <div className="truncate">
-                  <h1 className="text-sm font-black tracking-wider uppercase flex items-center gap-1">
-                    <span className="text-blue-600 dark:text-blue-400">DODISA</span>
-                    <span className="font-light text-muted-foreground">LOGÍSTICA</span>
+                  <h1 className="text-sm font-black tracking-tight uppercase flex items-center gap-1.5">
+                    <span className="bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-400 dark:to-indigo-300 bg-clip-text text-transparent">DODISA</span>
+                    <span className="font-light text-muted-foreground tracking-wide">LOGÍSTICA</span>
                   </h1>
-                  <span className="text-[10px] text-muted-foreground font-mono">Carrier Manager</span>
+                  <span className="text-[10px] text-muted-foreground font-mono tracking-wider">Carrier Manager</span>
                 </div>
               )}
             </div>

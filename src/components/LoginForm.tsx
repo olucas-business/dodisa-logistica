@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { User } from "../types";
-import { 
-  Truck, 
-  ShieldCheck, 
+import BrandMark from "./BrandMark";
+import {
+  ShieldCheck,
   Mail, 
   Lock, 
   User as UserIcon, 
@@ -245,12 +245,11 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
           {/* Top Brand Logo */}
           <div className="relative z-10 flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600/10 border border-blue-500/20 dark:border-blue-500/30 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/5">
-              <Truck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
+            <BrandMark size="lg" />
             <div>
-              <h1 className="text-lg font-black tracking-tight text-foreground dark:text-white flex items-center gap-1">
-                DODISA <span className="font-light text-muted-foreground dark:text-slate-400 text-xs tracking-widest uppercase">LOGÍSTICA</span>
+              <h1 className="text-lg font-black tracking-tight flex items-center gap-1.5">
+                <span className="bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-400 dark:to-indigo-300 bg-clip-text text-transparent">DODISA</span>
+                <span className="font-light text-muted-foreground dark:text-slate-400 text-xs tracking-widest uppercase">LOGÍSTICA</span>
               </h1>
               <p className="text-[9px] text-blue-600 dark:text-blue-400/80 font-mono tracking-wider font-extrabold uppercase">NEXT-GEN INTELLIGENCE</p>
             </div>
@@ -332,9 +331,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
           {/* Mobile Brand Header */}
           <div className="flex md:hidden items-center justify-between mb-8 pb-4 border-b border-border dark:border-[#1F2E4D]">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-blue-600/10 border border-blue-500/20 rounded-lg flex items-center justify-center">
-                <Truck className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
-              </div>
+              <BrandMark size="sm" />
               <div>
                 <h1 className="text-sm font-black text-foreground dark:text-white tracking-wider uppercase">DODISA LOGÍSTICA</h1>
                 <p className="text-[8px] text-blue-600 dark:text-blue-400/80 font-mono tracking-widest font-extrabold">SYSTEM ACCESS</p>
