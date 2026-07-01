@@ -1,6 +1,33 @@
 import { Freight, Driver, Vehicle, Expense, Refuel } from "../types";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, BarChart, Bar, Legend } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, BarChart, Bar, Legend, RadialBarChart, RadialBar, PolarAngleAxis } from "recharts";
 import { TrendingUp, Coins, DollarSign, Activity, Users, Truck } from "lucide-react";
+
+function RadialGauge({ label, value, color }: { label: string; value: number; color: string }) {
+  const data = [{ value: Math.min(100, Math.max(0, value)) }];
+  return (
+    <div className="bg-card border border-border rounded-xl p-4 flex flex-col items-center gap-2 shadow-sm">
+      <div className="relative w-24 h-24">
+        <ResponsiveContainer width="100%" height="100%">
+          <RadialBarChart
+            data={data}
+            innerRadius="72%"
+            outerRadius="100%"
+            startAngle={90}
+            endAngle={-270}
+            barSize={8}
+          >
+            <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+            <RadialBar dataKey="value" cornerRadius={8} fill={color} background={{ fill: "var(--muted)" }} />
+          </RadialBarChart>
+        </ResponsiveContainer>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-lg font-black font-mono" style={{ color }}>{value.toFixed(0)}%</span>
+        </div>
+      </div>
+      <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground text-center leading-tight">{label}</span>
+    </div>
+  );
+}
 
 interface AnalyticsBIProps {
   freights: Freight[];
@@ -153,9 +180,20 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
 
   const totalDespesas = totalDirectExpenses + totalRefuelsCost + totalFreightExpenses;
 
-  const averageMargin = totalFaturamento > 0 
+  const averageMargin = totalFaturamento > 0
     ? ((totalFaturamento - totalDespesas) / totalFaturamento * 100).toFixed(1)
     : "0.0";
+
+  // Gauge metrics
+  const pctFretesFinalizados = freights.length > 0
+    ? (freights.filter(f => f.status === "Finalizado").length / freights.length) * 100
+    : 0;
+  const pctFrotaAtiva = vehicles.length > 0
+    ? (vehicles.filter(v => v.status === "Ativo" || v.status === "Em Viagem").length / vehicles.length) * 100
+    : 0;
+  const pctMotoristasAtivos = drivers.length > 0
+    ? (drivers.filter(d => d.status === "Ativo" || d.status === "Em Viagem").length / drivers.length) * 100
+    : 0;
 
   return (
     <div id="modulo-analytics-container" className="space-y-6">
@@ -195,9 +233,17 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
         </div>
       </div>
 
+      {/* Radial Gauges Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <RadialGauge label="Margem Operacional" value={Number(averageMargin)} color="#10b981" />
+        <RadialGauge label="Fretes Finalizados" value={pctFretesFinalizados} color="#3b82f6" />
+        <RadialGauge label="Frota Ativa" value={pctFrotaAtiva} color="#06b6d4" />
+        <RadialGauge label="Motoristas Ativos" value={pctMotoristasAtivos} color="#22c55e" />
+      </div>
+
       {/* MoM Performance Chart Card */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-        <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-1.5">
+      <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
+        <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-1.5">
           <Activity className="w-4 h-4 text-blue-500" />
           Desempenho Financeiro da Transportadora (MoM)
         </h3>
@@ -206,21 +252,21 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
             <AreaChart data={monthsList} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorBilling" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.25}/>
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.45}/>
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                 </linearGradient>
                 <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.25}/>
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.45}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-              <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} tickLine={false} />
-              <YAxis stroke="#9ca3af" fontSize={11} tickFormatter={(val) => `R$ ${val/1000}k`} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+              <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} />
+              <YAxis stroke="var(--muted-foreground)" fontSize={11} tickFormatter={(val) => `R$ ${val/1000}k`} tickLine={false} />
               <Tooltip formatter={(value) => [`R$ ${value.toLocaleString()}`, ""]} />
               <Legend />
               <Area type="monotone" name="Faturamento" dataKey="billing" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorBilling)" />
-              <Area type="monotone" name="Custos Operacionais" dataKey="expenses" stroke="#ef4444" strokeWidth={2.5} fillOpacity={1} fill="url(#colorExpenses)" />
+              <Area type="monotone" name="Custos Operacionais" dataKey="expenses" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorExpenses)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -229,8 +275,8 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
       {/* Cost category & rankings Split Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Category breakdown (Pie) */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2.5 mb-4">
+        <div className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col justify-between">
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-wider border-b border-border pb-2.5 mb-4">
             Distribuição de Custos
           </h3>
           <div className="h-[180px] w-full relative flex items-center justify-center font-mono">
@@ -275,41 +321,53 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
         </div>
 
         {/* Top drivers ranking */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2.5 mb-4 flex items-center gap-1.5">
+        <div className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col justify-between">
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-wider border-b border-border pb-2.5 mb-4 flex items-center gap-1.5">
             <Users className="w-4 h-4 text-blue-500" />
             Ranking Motoristas (Faturamento)
           </h3>
           <div className="h-[220px] w-full font-sans text-xs">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={driverRankingData} layout="vertical" margin={{ left: 10, right: 10, top: 0, bottom: 0 }}>
-                <XAxis type="number" stroke="#9ca3af" fontSize={10} tickLine={false} />
-                <YAxis dataKey="name" type="category" stroke="#374151" fontSize={10} tickLine={false} width={80} />
+                <defs>
+                  <linearGradient id="colorDriverBar" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#3b82f6" />
+                    <stop offset="100%" stopColor="#06b6d4" />
+                  </linearGradient>
+                </defs>
+                <XAxis type="number" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} />
+                <YAxis dataKey="name" type="category" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} width={80} />
                 <Tooltip formatter={(val) => `R$ ${Number(val).toLocaleString()}`} />
-                <Bar dataKey="value" name="Faturamento" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="value" name="Faturamento" fill="url(#colorDriverBar)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-[10px] text-gray-500 italic mt-2 text-center">Motoristas que mais geraram receita líquida este ano.</p>
+          <p className="text-[10px] text-muted-foreground italic mt-2 text-center">Motoristas que mais geraram receita líquida este ano.</p>
         </div>
 
         {/* Top vehicles ranking */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col justify-between">
-          <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider border-b border-gray-100 pb-2.5 mb-4 flex items-center gap-1.5">
+        <div className="bg-card border border-border rounded-xl p-5 shadow-sm flex flex-col justify-between">
+          <h3 className="text-xs font-bold text-foreground uppercase tracking-wider border-b border-border pb-2.5 mb-4 flex items-center gap-1.5">
             <Truck className="w-4 h-4 text-emerald-500" />
             Quilometragem por Veículo (Uso)
           </h3>
           <div className="h-[220px] w-full font-sans text-xs">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={vehicleMileageData} layout="vertical" margin={{ left: 10, right: 10, top: 0, bottom: 0 }}>
-                <XAxis type="number" stroke="#9ca3af" fontSize={10} tickLine={false} />
-                <YAxis dataKey="name" type="category" stroke="#374151" fontSize={10} tickLine={false} width={80} />
+                <defs>
+                  <linearGradient id="colorVehicleBar" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#10b981" />
+                    <stop offset="100%" stopColor="#22c55e" />
+                  </linearGradient>
+                </defs>
+                <XAxis type="number" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} />
+                <YAxis dataKey="name" type="category" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} width={80} />
                 <Tooltip formatter={(val) => `${Number(val).toLocaleString()} KM`} />
-                <Bar dataKey="value" name="Uso (KM)" fill="#10b981" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="value" name="Uso (KM)" fill="url(#colorVehicleBar)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-[10px] text-gray-500 italic mt-2 text-center">Desgaste e rodagem total calculados da frota.</p>
+          <p className="text-[10px] text-muted-foreground italic mt-2 text-center">Desgaste e rodagem total calculados da frota.</p>
         </div>
       </div>
     </div>
