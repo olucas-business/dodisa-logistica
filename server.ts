@@ -3,17 +3,16 @@ import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
+import { neon } from "@neondatabase/serverless";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
+const sql = neon(process.env.DATABASE_URL!);
 
 app.use(express.json({ limit: "50mb" }));
-
-// DB File Path
-const DB_PATH = path.join(process.cwd(), "db.json");
 
 // Define basic Database interface
 interface Database {
@@ -1037,14 +1036,23 @@ export const DEPRECATED_DEFAULT_DB: any = {
 };
 
 // Ensure database file exists
-function loadDB(): Database {
-  if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify(DEFAULT_DB, null, 2), "utf8");
-    return DEFAULT_DB;
+let dbTableReady: Promise<void> | null = null;
+function ensureTable(): Promise<void> {
+  if (!dbTableReady) {
+    dbTableReady = sql`CREATE TABLE IF NOT EXISTS app_state (id INT PRIMARY KEY, data JSONB NOT NULL)`.then(() => undefined);
   }
+  return dbTableReady;
+}
+
+async function loadDB(): Promise<Database> {
+  await ensureTable();
   try {
-    const data = fs.readFileSync(DB_PATH, "utf8");
-    const db = JSON.parse(data);
+    const rows = await sql`SELECT data FROM app_state WHERE id = 1`;
+    if (rows.length === 0) {
+      await sql`INSERT INTO app_state (id, data) VALUES (1, ${JSON.stringify(DEFAULT_DB)}::jsonb)`;
+      return DEFAULT_DB;
+    }
+    const db = rows[0].data as Database;
     let modified = false;
     if (!db.tires) {
       db.tires = DEFAULT_DB.tires || [];
@@ -1079,7 +1087,7 @@ function loadDB(): Database {
       modified = true;
     }
     if (modified) {
-      fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), "utf8");
+      await saveDB(db);
     }
     return db;
   } catch (error) {
@@ -1088,9 +1096,9 @@ function loadDB(): Database {
   }
 }
 
-function saveDB(db: Database) {
+async function saveDB(db: Database): Promise<void> {
   try {
-    fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), "utf8");
+    await sql`UPDATE app_state SET data = ${JSON.stringify(db)}::jsonb WHERE id = 1`;
   } catch (error) {
     console.error("Erro ao salvar DB:", error);
   }
@@ -1098,24 +1106,24 @@ function saveDB(db: Database) {
 
 // REST endpoints
 // Auth APIs
-app.post("/api/auth/login", (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
-  const db = loadDB();
+  const db = (await loadDB());
   const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
   if (user) {
     // Generate a simple token
     const token = `token_${user.id}_${Date.now()}`;
     user.token = token;
-    saveDB(db);
+    await saveDB(db);
     res.json({ success: true, user: { id: user.id, name: user.name, email: user.email, phone: user.phone, role: user.role, token } });
   } else {
     res.status(401).json({ success: false, message: "E-mail ou senha incorretos." });
   }
 });
 
-app.post("/api/auth/signup", (req, res) => {
+app.post("/api/auth/signup", async (req, res) => {
   const { name, email, password, phone, role } = req.body;
-  const db = loadDB();
+  const db = (await loadDB());
   const exists = db.users.some(u => u.email.toLowerCase() === email.toLowerCase());
   if (exists) {
     return res.status(400).json({ success: false, message: "Este e-mail já está cadastrado." });
@@ -1158,17 +1166,17 @@ app.post("/api/auth/signup", (req, res) => {
   }
 
   db.users.push(newUser);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, message: "Cadastro realizado com sucesso." });
 });
 
 // Drivers CRUD
-app.get("/api/drivers", (req, res) => {
-  res.json(loadDB().drivers);
+app.get("/api/drivers", async (req, res) => {
+  res.json((await loadDB()).drivers);
 });
 
-app.post("/api/drivers", (req, res) => {
-  const db = loadDB();
+app.post("/api/drivers", async (req, res) => {
+  const db = (await loadDB());
   const id = `drv_${Date.now()}`;
   
   // Generate temporary password
@@ -1200,13 +1208,13 @@ app.post("/api/drivers", (req, res) => {
     }
   }
 
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, driver: newDriver });
 });
 
-app.put("/api/drivers/:id", (req, res) => {
+app.put("/api/drivers/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   const idx = db.drivers.findIndex(d => d.id === id);
   if (idx !== -1) {
     const oldDriver = db.drivers[idx];
@@ -1243,29 +1251,29 @@ app.put("/api/drivers/:id", (req, res) => {
       db.users = db.users.filter(u => u.id !== `usr_drv_${id}` && u.driverId !== id);
     }
 
-    saveDB(db);
+    await saveDB(db);
     res.json({ success: true, driver: updatedDriver });
   } else {
     res.status(404).json({ success: false, message: "Motorista não encontrado." });
   }
 });
 
-app.delete("/api/drivers/:id", (req, res) => {
+app.delete("/api/drivers/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.drivers = db.drivers.filter(d => d.id !== id);
   db.users = db.users.filter(u => u.id !== `usr_drv_${id}` && u.driverId !== id);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true });
 });
 
 // Vehicles CRUD
-app.get("/api/vehicles", (req, res) => {
-  res.json(loadDB().vehicles);
+app.get("/api/vehicles", async (req, res) => {
+  res.json((await loadDB()).vehicles);
 });
 
-app.post("/api/vehicles", (req, res) => {
-  const db = loadDB();
+app.post("/api/vehicles", async (req, res) => {
+  const db = (await loadDB());
   const newVehicle = {
     id: `vhc_${Date.now()}`,
     currentMileage: Number(req.body.currentMileage) || 0,
@@ -1274,38 +1282,38 @@ app.post("/api/vehicles", (req, res) => {
     ...req.body
   };
   db.vehicles.push(newVehicle);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, vehicle: newVehicle });
 });
 
-app.put("/api/vehicles/:id", (req, res) => {
+app.put("/api/vehicles/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   const idx = db.vehicles.findIndex(v => v.id === id);
   if (idx !== -1) {
     db.vehicles[idx] = { ...db.vehicles[idx], ...req.body };
-    saveDB(db);
+    await saveDB(db);
     res.json({ success: true, vehicle: db.vehicles[idx] });
   } else {
     res.status(404).json({ success: false, message: "Veículo não encontrado." });
   }
 });
 
-app.delete("/api/vehicles/:id", (req, res) => {
+app.delete("/api/vehicles/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.vehicles = db.vehicles.filter(v => v.id !== id);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true });
 });
 
 // Freights CRUD
-app.get("/api/freights", (req, res) => {
-  res.json(loadDB().freights);
+app.get("/api/freights", async (req, res) => {
+  res.json((await loadDB()).freights);
 });
 
-app.post("/api/freights", (req, res) => {
-  const db = loadDB();
+app.post("/api/freights", async (req, res) => {
+  const db = (await loadDB());
   const count = db.freights.length + 1001;
   const newFreight = {
     id: `frt_${Date.now()}`,
@@ -1332,13 +1340,13 @@ app.post("/api/freights", (req, res) => {
   }
 
   db.freights.push(newFreight);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, freight: newFreight });
 });
 
-app.put("/api/freights/:id", (req, res) => {
+app.put("/api/freights/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   const idx = db.freights.findIndex(f => f.id === id);
   if (idx !== -1) {
     const oldFreight = db.freights[idx];
@@ -1366,18 +1374,18 @@ app.put("/api/freights/:id", (req, res) => {
       }
     }
 
-    saveDB(db);
+    await saveDB(db);
     res.json({ success: true, freight: updated });
   } else {
     res.status(404).json({ success: false, message: "Frete não encontrado." });
   }
 });
 
-app.delete("/api/freights/:id", (req, res) => {
+app.delete("/api/freights/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.freights = db.freights.filter(f => f.id !== id);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true });
 });
 
@@ -1386,12 +1394,12 @@ app.delete("/api/freights/:id", (req, res) => {
 // ==========================================
 
 // Trip logs
-app.get("/api/trip_logs", (req, res) => {
-  res.json(loadDB().trip_logs || []);
+app.get("/api/trip_logs", async (req, res) => {
+  res.json((await loadDB()).trip_logs || []);
 });
 
-app.post("/api/trip_logs", (req, res) => {
-  const db = loadDB();
+app.post("/api/trip_logs", async (req, res) => {
+  const db = (await loadDB());
   const { freightId, driverId, category, description, value, date, time, location, photos, notes } = req.body;
   
   const newLog = {
@@ -1443,32 +1451,32 @@ app.post("/api/trip_logs", (req, res) => {
     freightId
   });
   
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, log: newLog });
 });
 
 // Trip photos
-app.get("/api/trip_photos", (req, res) => {
-  res.json(loadDB().trip_photos || []);
+app.get("/api/trip_photos", async (req, res) => {
+  res.json((await loadDB()).trip_photos || []);
 });
 
 // Notifications
-app.get("/api/notifications", (req, res) => {
-  res.json(loadDB().notifications || []);
+app.get("/api/notifications", async (req, res) => {
+  res.json((await loadDB()).notifications || []);
 });
 
-app.post("/api/notifications/read", (req, res) => {
-  const db = loadDB();
+app.post("/api/notifications/read", async (req, res) => {
+  const db = (await loadDB());
   if (db.notifications) {
     db.notifications.forEach(n => { n.read = true; });
   }
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true });
 });
 
 // Driver Start Trip
-app.post("/api/driver_start_trip", (req, res) => {
-  const db = loadDB();
+app.post("/api/driver_start_trip", async (req, res) => {
+  const db = (await loadDB());
   const { driverId, vehicleId, origin, destination, startKm, date, time, panelPhoto, frontPhoto, observations } = req.body;
   
   const driver = db.drivers.find(d => d.id === driverId);
@@ -1599,14 +1607,14 @@ app.post("/api/driver_start_trip", (req, res) => {
     freightId
   });
   
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, freight: newFreight });
 });
 
 // Driver End Trip
-app.post("/api/driver_end_trip/:freightId", (req, res) => {
+app.post("/api/driver_end_trip/:freightId", async (req, res) => {
   const { freightId } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   const { endKm, date, time, panelPhoto, vehiclePhoto, observations } = req.body;
   
   const freight = db.freights.find(f => f.id === freightId);
@@ -1716,17 +1724,17 @@ app.post("/api/driver_end_trip/:freightId", (req, res) => {
     freightId
   });
   
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, freight });
 });
 
 // Refuels CRUD
-app.get("/api/refuels", (req, res) => {
-  res.json(loadDB().refuels);
+app.get("/api/refuels", async (req, res) => {
+  res.json((await loadDB()).refuels);
 });
 
-app.post("/api/refuels", (req, res) => {
-  const db = loadDB();
+app.post("/api/refuels", async (req, res) => {
+  const db = (await loadDB());
   const newRefuel = {
     id: `ref_${Date.now()}`,
     ...req.body
@@ -1744,64 +1752,64 @@ app.post("/api/refuels", (req, res) => {
   };
   db.expenses.push(newExpense);
 
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, refuel: newRefuel });
 });
 
-app.delete("/api/refuels/:id", (req, res) => {
+app.delete("/api/refuels/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.refuels = db.refuels.filter(r => r.id !== id);
   // Also delete corresponding expense
   db.expenses = db.expenses.filter(e => e.id !== `exp_ref_${id}`);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true });
 });
 
 // Expenses CRUD
-app.get("/api/expenses", (req, res) => {
-  res.json(loadDB().expenses);
+app.get("/api/expenses", async (req, res) => {
+  res.json((await loadDB()).expenses);
 });
 
-app.post("/api/expenses", (req, res) => {
-  const db = loadDB();
+app.post("/api/expenses", async (req, res) => {
+  const db = (await loadDB());
   const newExpense = {
     id: `exp_${Date.now()}`,
     ...req.body
   };
   db.expenses.push(newExpense);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, expense: newExpense });
 });
 
-app.put("/api/expenses/:id", (req, res) => {
+app.put("/api/expenses/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   const idx = db.expenses.findIndex(e => e.id === id);
   if (idx !== -1) {
     db.expenses[idx] = { ...db.expenses[idx], ...req.body };
-    saveDB(db);
+    await saveDB(db);
     res.json({ success: true, expense: db.expenses[idx] });
   } else {
     res.status(404).json({ success: false, message: "Despesa não encontrada." });
   }
 });
 
-app.delete("/api/expenses/:id", (req, res) => {
+app.delete("/api/expenses/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.expenses = db.expenses.filter(e => e.id !== id);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true });
 });
 
 // Tires CRUD
-app.get("/api/tires", (req, res) => {
-  res.json({ success: true, tires: loadDB().tires || [] });
+app.get("/api/tires", async (req, res) => {
+  res.json({ success: true, tires: (await loadDB()).tires || [] });
 });
 
-app.post("/api/tires", (req, res) => {
-  const db = loadDB();
+app.post("/api/tires", async (req, res) => {
+  const db = (await loadDB());
   const newTire = {
     id: `tir_${Date.now()}`,
     serialNumber: req.body.serialNumber || "",
@@ -1832,38 +1840,38 @@ app.post("/api/tires", (req, res) => {
 
   db.tires = db.tires || [];
   db.tires.push(newTire);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, tire: newTire });
 });
 
-app.put("/api/tires/:id", (req, res) => {
+app.put("/api/tires/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.tires = db.tires || [];
   const idx = db.tires.findIndex(t => t.id === id);
   if (idx !== -1) {
     db.tires[idx] = { ...db.tires[idx], ...req.body };
-    saveDB(db);
+    await saveDB(db);
     res.json({ success: true, tire: db.tires[idx] });
   } else {
     res.status(404).json({ success: false, message: "Pneu não encontrado." });
   }
 });
 
-app.delete("/api/tires/:id", (req, res) => {
+app.delete("/api/tires/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.tires = db.tires || [];
   db.tires = db.tires.filter(t => t.id !== id);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true });
 });
 
 // Record Tire Change (Installation / Removal / Repair / Retread / Discard)
-app.post("/api/tires/:id/changes", (req, res) => {
+app.post("/api/tires/:id/changes", async (req, res) => {
   const { id } = req.params;
   const { date, type, km, vehicleId, position, description, cost } = req.body;
-  const db = loadDB();
+  const db = (await loadDB());
   db.tires = db.tires || [];
   const tire = db.tires.find(t => t.id === id);
 
@@ -1916,15 +1924,15 @@ app.post("/api/tires/:id/changes", (req, res) => {
     db.expenses.push(expense);
   }
 
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, tire });
 });
 
 // Record Tire Rotation
-app.post("/api/tires/:id/rotations", (req, res) => {
+app.post("/api/tires/:id/rotations", async (req, res) => {
   const { id } = req.params;
   const { date, km, fromPosition, toPosition, description } = req.body;
-  const db = loadDB();
+  const db = (await loadDB());
   db.tires = db.tires || [];
   const tire = db.tires.find(t => t.id === id);
 
@@ -1945,17 +1953,17 @@ app.post("/api/tires/:id/rotations", (req, res) => {
   tire.rotationsHistory.push(rotation);
   tire.position = toPosition;
 
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, tire });
 });
 
 // Debts CRUD
-app.get("/api/debts", (req, res) => {
-  res.json({ success: true, debts: loadDB().debts || [] });
+app.get("/api/debts", async (req, res) => {
+  res.json({ success: true, debts: (await loadDB()).debts || [] });
 });
 
-app.post("/api/debts", (req, res) => {
-  const db = loadDB();
+app.post("/api/debts", async (req, res) => {
+  const db = (await loadDB());
   const newDebt = {
     id: `debt_${Date.now()}`,
     description: req.body.description || "",
@@ -1968,13 +1976,13 @@ app.post("/api/debts", (req, res) => {
   };
   db.debts = db.debts || [];
   db.debts.push(newDebt);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, debt: newDebt });
 });
 
-app.put("/api/debts/:id", (req, res) => {
+app.put("/api/debts/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.debts = db.debts || [];
   const idx = db.debts.findIndex(d => d.id === id);
   if (idx !== -1) {
@@ -1987,25 +1995,25 @@ app.put("/api/debts/:id", (req, res) => {
       status: req.body.status !== undefined ? req.body.status : db.debts[idx].status,
       notes: req.body.notes !== undefined ? req.body.notes : db.debts[idx].notes
     };
-    saveDB(db);
+    await saveDB(db);
     res.json({ success: true, debt: db.debts[idx] });
   } else {
     res.status(404).json({ success: false, message: "Dívida não encontrada." });
   }
 });
 
-app.delete("/api/debts/:id", (req, res) => {
+app.delete("/api/debts/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.debts = db.debts || [];
   db.debts = db.debts.filter(d => d.id !== id);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true });
 });
 
 // Truck Cash (Caixa do Caminhão) CRUD
-app.get("/api/caixa-caminhao", (req, res) => {
-  const db = loadDB();
+app.get("/api/caixa-caminhao", async (req, res) => {
+  const db = (await loadDB());
   res.json({
     success: true,
     caixas: db.caixa_caminhao || [],
@@ -2013,8 +2021,8 @@ app.get("/api/caixa-caminhao", (req, res) => {
   });
 });
 
-app.post("/api/caixa-caminhao/saldo", (req, res) => {
-  const db = loadDB();
+app.post("/api/caixa-caminhao/saldo", async (req, res) => {
+  const db = (await loadDB());
   const { veiculo_id, saldo_inicial, observacao } = req.body;
   
   if (!veiculo_id) {
@@ -2050,12 +2058,12 @@ app.post("/api/caixa-caminhao/saldo", (req, res) => {
   const totalGasto = gastos.reduce((sum, item) => sum + Number(item.valor), 0);
   caixa.saldo_atual = caixa.saldo_inicial - totalGasto;
   
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, caixa });
 });
 
-app.post("/api/caixa-caminhao/gasto", (req, res) => {
-  const db = loadDB();
+app.post("/api/caixa-caminhao/gasto", async (req, res) => {
+  const db = (await loadDB());
   const { caixa_id, categoria, valor, descricao, data, anexo } = req.body;
   
   if (!caixa_id || !categoria || !valor) {
@@ -2091,13 +2099,13 @@ app.post("/api/caixa-caminhao/gasto", (req, res) => {
   caixa.saldo_atual = caixa.saldo_inicial - totalGasto;
   caixa.updated_at = now.split("T")[0];
   
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, movimentacao: newMov, caixa });
 });
 
-app.put("/api/caixa-caminhao/gasto/:id", (req, res) => {
+app.put("/api/caixa-caminhao/gasto/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.caixa_movimentacoes = db.caixa_movimentacoes || [];
   db.caixa_caminhao = db.caixa_caminhao || [];
   
@@ -2125,13 +2133,13 @@ app.put("/api/caixa-caminhao/gasto/:id", (req, res) => {
     caixa.updated_at = now.split("T")[0];
   }
   
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, movimentacao: mov, caixa });
 });
 
-app.delete("/api/caixa-caminhao/gasto/:id", (req, res) => {
+app.delete("/api/caixa-caminhao/gasto/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.caixa_movimentacoes = db.caixa_movimentacoes || [];
   db.caixa_caminhao = db.caixa_caminhao || [];
   
@@ -2153,14 +2161,14 @@ app.delete("/api/caixa-caminhao/gasto/:id", (req, res) => {
     caixa.updated_at = now;
   }
   
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, caixa });
 });
 
 // Reset Specific Module or Database Endpoint
-app.post("/api/reset/:module", (req, res) => {
+app.post("/api/reset/:module", async (req, res) => {
   const { module } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   
   if (module === "drivers") {
     db.drivers = [];
@@ -2194,13 +2202,13 @@ app.post("/api/reset/:module", (req, res) => {
     return res.status(400).json({ success: false, message: `Módulo inválido: ${module}` });
   }
   
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, message: `Módulo ${module} zerado com sucesso.` });
 });
 
 // Reset Database Endpoint (Clear all operational data)
-app.post("/api/reset", (req, res) => {
-  const db = loadDB();
+app.post("/api/reset", async (req, res) => {
+  const db = (await loadDB());
   db.drivers = [];
   db.vehicles = [];
   db.freights = [];
@@ -2210,7 +2218,7 @@ app.post("/api/reset", (req, res) => {
   db.debts = [];
   db.caixa_caminhao = [];
   db.image_analyses = [];
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true, message: "Todos os dados operacionais foram resetados com sucesso." });
 });
 
@@ -2223,7 +2231,7 @@ app.post("/api/ai/ask", async (req, res) => {
   }
 
   try {
-    const db = loadDB();
+    const db = (await loadDB());
     
     // Create condensed representation of current database entities
     const stateSummary = {
@@ -2418,14 +2426,14 @@ O SEU RETORNO DEVE SER ESTRITAMENTE UM OBJETO JSON VÁLIDO COM ESTA ESTRUTURA:
 });
 
 // Endpoint to Execute/Save the Confirmed Command
-app.post("/api/ai/execute-command", (req, res) => {
+app.post("/api/ai/execute-command", async (req, res) => {
   const { commandType, extractedData, image, user } = req.body;
   if (!commandType || !extractedData) {
     return res.status(400).json({ success: false, message: "Parâmetros incompletos para gravação." });
   }
 
   try {
-    const db = loadDB();
+    const db = (await loadDB());
     const cleanDate = extractedData.date || new Date().toISOString().split("T")[0];
     const cleanTime = extractedData.time || new Date().toTimeString().split(" ")[0].substring(0, 5);
     const valueNum = Number(extractedData.value) || 0;
@@ -2816,7 +2824,7 @@ app.post("/api/ai/execute-command", (req, res) => {
         return res.status(400).json({ success: false, message: "Tipo de comando desconhecido." });
     }
 
-    saveDB(db);
+    await saveDB(db);
     res.json({ success: true, message: responseMessage });
 
   } catch (error: any) {
@@ -2874,7 +2882,7 @@ app.post("/api/ai/import-spreadsheet", async (req, res) => {
   }
 
   try {
-    const db = loadDB();
+    const db = (await loadDB());
 
     // Prompt instructions for structuring spreadsheet content
     const systemPrompt = `Você é um Analista de Dados e Engenheiro de Dados IA para Transportadoras.
@@ -3330,14 +3338,14 @@ O formato de retorno do JSON deve ser:
 });
 
 // Endpoint to confirm and persist mapped data to db.json
-app.post("/api/ai/save-imported-data", (req, res) => {
+app.post("/api/ai/save-imported-data", async (req, res) => {
   const { parsedResult } = req.body;
   if (!parsedResult) {
     return res.status(400).json({ success: false, message: "Resultado para salvamento é obrigatório." });
   }
 
   try {
-    const db = loadDB();
+    const db = (await loadDB());
 
     // 1. Process new drivers
     parsedResult.newDrivers?.forEach((d: any) => {
@@ -3468,7 +3476,7 @@ app.post("/api/ai/save-imported-data", (req, res) => {
       });
     });
 
-    saveDB(db);
+    await saveDB(db);
     res.json({ success: true, message: "Dados importados e salvos com sucesso na DODISA LOGÍSTICA!" });
   } catch (error: any) {
     console.error("Erro ao salvar dados importados:", error);
@@ -3480,14 +3488,14 @@ app.post("/api/ai/save-imported-data", (req, res) => {
 // LEITURA INTELIGENTE DE IMAGENS - ENDPOINTS
 // =========================================================
 
-app.get("/api/image-analyses", (req, res) => {
-  const db = loadDB();
+app.get("/api/image-analyses", async (req, res) => {
+  const db = (await loadDB());
   res.json({ success: true, analyses: db.image_analyses || [] });
 });
 
-app.put("/api/image-analyses/:id", (req, res) => {
+app.put("/api/image-analyses/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.image_analyses = db.image_analyses || [];
   const idx = db.image_analyses.findIndex(a => a.id === id);
   if (idx !== -1) {
@@ -3498,19 +3506,19 @@ app.put("/api/image-analyses/:id", (req, res) => {
       (req.body.result.dates?.length || 0) +
       (req.body.result.tables?.length || 0) +
       (req.body.result.charts?.length || 0);
-    saveDB(db);
+    await saveDB(db);
     res.json({ success: true, analysis: db.image_analyses[idx] });
   } else {
     res.status(404).json({ success: false, message: "Análise não encontrada." });
   }
 });
 
-app.delete("/api/image-analyses/:id", (req, res) => {
+app.delete("/api/image-analyses/:id", async (req, res) => {
   const { id } = req.params;
-  const db = loadDB();
+  const db = (await loadDB());
   db.image_analyses = db.image_analyses || [];
   db.image_analyses = db.image_analyses.filter(a => a.id !== id);
-  saveDB(db);
+  await saveDB(db);
   res.json({ success: true });
 });
 
@@ -3892,7 +3900,7 @@ Retorne a resposta estritamente em formato JSON que segue o schema de resposta e
   }
 
   // Create record
-  const db = loadDB();
+  const db = (await loadDB());
   db.image_analyses = db.image_analyses || [];
 
   const infoCount = 
@@ -3914,7 +3922,7 @@ Retorne a resposta estritamente em formato JSON que segue o schema de resposta e
   };
 
   db.image_analyses.unshift(newRecord);
-  saveDB(db);
+  await saveDB(db);
 
   res.json({ success: true, record: newRecord });
 });
@@ -3931,7 +3939,7 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.get("*", async (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
@@ -3941,4 +3949,8 @@ async function startServer() {
   });
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;
