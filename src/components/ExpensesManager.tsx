@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Expense } from "../types";
-import { Plus, Search, Calendar, DollarSign, Trash2, CheckCircle, ArrowDown } from "lucide-react";
+import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { Plus, Search, Calendar, DollarSign, Trash2, CheckCircle, ArrowDown, PieChart as PieChartIcon } from "lucide-react";
+
+const EXPENSE_CHART_COLORS = ["#ef4444", "#f97316", "#f59e0b", "#8b5cf6", "#06b6d4", "#10b981", "#ec4899", "#6b7280"];
 
 interface ExpensesManagerProps {
   expenses: Expense[];
@@ -76,8 +79,81 @@ export default function ExpensesManager({
     return matchesSearch && matchesCategory;
   });
 
+  // Category totals for charts
+  const categoryTotals = Object.values(
+    expenses.reduce((acc: Record<string, { category: string; value: number }>, e) => {
+      acc[e.category] = acc[e.category] || { category: e.category, value: 0 };
+      acc[e.category].value += e.value || 0;
+      return acc;
+    }, {})
+  ).sort((a, b) => b.value - a.value);
+
+  // Monthly totals for the bar chart (last 6 months of data present)
+  const monthlyTotals = Object.values(
+    expenses.reduce((acc: Record<string, { month: string; value: number }>, e) => {
+      const month = (e.date || "").slice(0, 7);
+      if (!month) return acc;
+      acc[month] = acc[month] || { month, value: 0 };
+      acc[month].value += e.value || 0;
+      return acc;
+    }, {})
+  ).sort((a, b) => a.month.localeCompare(b.month));
+
   return (
     <div id="modulo-despesas-container" className="space-y-6">
+      {/* Charts */}
+      {expenses.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+            <h4 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1.5">
+              <PieChartIcon className="w-4 h-4 text-red-500" />
+              Distribuição por Categoria
+            </h4>
+            <div className="h-[220px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={categoryTotals} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
+                    {categoryTotals.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={EXPENSE_CHART_COLORS[index % EXPENSE_CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 justify-center text-[10px] font-semibold text-gray-500 dark:text-gray-400">
+              {categoryTotals.map((item, index) => (
+                <div key={item.category} className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: EXPENSE_CHART_COLORS[index % EXPENSE_CHART_COLORS.length] }} />
+                  <span>{item.category}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+            <h4 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">
+              Despesas por Mês
+            </h4>
+            <div className="h-[220px] w-full">
+              {monthlyTotals.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-gray-400">Sem dados temporais disponíveis.</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyTotals}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                    <XAxis dataKey="month" stroke="currentColor" className="text-gray-400" fontSize={10} tickLine={false} />
+                    <YAxis stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} />
+                    <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    <Bar dataKey="value" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Search and Action Bar */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white dark:bg-slate-900 p-4 border border-gray-200 dark:border-slate-800 rounded-xl shadow-sm">
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-1">

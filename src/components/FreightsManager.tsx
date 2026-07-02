@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Freight, Driver, Vehicle } from "../types";
-import { Truck, Plus, Search, Calendar, MapPin, Navigation, Coins, Trash2, Edit2, CheckCircle, Clock } from "lucide-react";
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
+import { Truck, Plus, Search, Calendar, MapPin, Navigation, Coins, Trash2, Edit2, CheckCircle, Clock, PieChart as PieChartIcon } from "lucide-react";
+
+const FREIGHT_COST_COLORS = ["#f97316", "#8b5cf6", "#06b6d4", "#10b981", "#ef4444"];
 
 interface FreightsManagerProps {
   freights: Freight[];
@@ -248,8 +251,50 @@ export default function FreightsManager({
     return matchesSearch && matchesStatus;
   });
 
+  // Cost breakdown across all freights (toll, food, lodging, commission, other)
+  const activeFreightsForCost = freights.filter(f => f.status !== "Cancelado");
+  const costBreakdown = [
+    { name: "Pedágio", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.toll || 0), 0) },
+    { name: "Alimentação", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.food || 0), 0) },
+    { name: "Hospedagem", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.lodging || 0), 0) },
+    { name: "Comissão", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.commission || 0), 0) },
+    { name: "Outros", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.otherExpenses || 0), 0) }
+  ].filter(c => c.value > 0);
+
   return (
     <div id="modulo-fretes-container" className="space-y-6">
+      {/* Cost Breakdown Chart */}
+      {costBreakdown.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+          <h4 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1.5">
+            <PieChartIcon className="w-4 h-4 text-orange-500" />
+            Custos Operacionais dos Fretes
+          </h4>
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="h-[180px] w-full sm:w-[220px] flex-shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={costBreakdown} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={3} dataKey="value">
+                    {costBreakdown.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={FREIGHT_COST_COLORS[index % FREIGHT_COST_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap gap-3 text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+              {costBreakdown.map((item, index) => (
+                <div key={item.name} className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: FREIGHT_COST_COLORS[index % FREIGHT_COST_COLORS.length] }} />
+                  <span>{item.name}: R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Search and Action Bar */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-1">

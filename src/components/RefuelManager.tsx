@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Refuel, Driver, Vehicle } from "../types";
-import { Plus, Search, Calendar, MapPin, Trash2, Edit2, CheckCircle } from "lucide-react";
+import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { Plus, Search, Calendar, MapPin, Trash2, Edit2, CheckCircle, Fuel } from "lucide-react";
+
+const REFUEL_CHART_COLORS = ["#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#ef4444", "#6b7280"];
 
 interface RefuelManagerProps {
   refuels: Refuel[];
@@ -111,8 +114,81 @@ export default function RefuelManager({
       r.gasStation.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
+  // Chart data: spend by vehicle plate, and spend by month
+  const vehicleTotals = Object.values(
+    refuels.reduce((acc: Record<string, { plate: string; value: number }>, r) => {
+      const plate = vehicles.find(v => v.id === r.vehicleId)?.plate || "N/A";
+      acc[plate] = acc[plate] || { plate, value: 0 };
+      acc[plate].value += r.totalValue || 0;
+      return acc;
+    }, {})
+  ).sort((a: any, b: any) => b.value - a.value).slice(0, 8);
+
+  const monthlyFuelTotals = Object.values(
+    refuels.reduce((acc: Record<string, { month: string; value: number }>, r) => {
+      const month = (r.date || "").slice(0, 7);
+      if (!month) return acc;
+      acc[month] = acc[month] || { month, value: 0 };
+      acc[month].value += r.totalValue || 0;
+      return acc;
+    }, {})
+  ).sort((a: any, b: any) => a.month.localeCompare(b.month));
+
   return (
     <div id="modulo-abastecimento-container" className="space-y-6">
+      {/* Charts */}
+      {refuels.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+            <h4 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1.5">
+              <Fuel className="w-4 h-4 text-blue-500" />
+              Gasto por Veículo
+            </h4>
+            <div className="h-[220px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={vehicleTotals} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
+                    {vehicleTotals.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={REFUEL_CHART_COLORS[index % REFUEL_CHART_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 justify-center text-[10px] font-semibold text-gray-500 dark:text-gray-400">
+              {vehicleTotals.map((item: any, index) => (
+                <div key={item.plate} className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: REFUEL_CHART_COLORS[index % REFUEL_CHART_COLORS.length] }} />
+                  <span>{item.plate}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+            <h4 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">
+              Combustível por Mês
+            </h4>
+            <div className="h-[220px] w-full">
+              {monthlyFuelTotals.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-gray-400">Sem dados temporais disponíveis.</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyFuelTotals}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                    <XAxis dataKey="month" stroke="currentColor" className="text-gray-400" fontSize={10} tickLine={false} />
+                    <YAxis stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} />
+                    <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Search and Action Bar */}
       <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-white dark:bg-slate-900 p-4 border border-gray-200 dark:border-slate-800 rounded-xl shadow-sm">
         <div className="relative w-full sm:w-80">
