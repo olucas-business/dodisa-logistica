@@ -4,6 +4,7 @@ import { User, Driver, Vehicle, Freight, Refuel, Expense, Tire, Debt, TruckCashT
 import LoginForm from "./components/LoginForm";
 import BrandMark from "./components/BrandMark";
 import VehicleTracking from "./components/VehicleTracking";
+import CompanyProfile from "./components/CompanyProfile";
 import DriverWorkspace from "./components/DriverWorkspace";
 import DashboardOverview from "./components/DashboardOverview";
 import DriversManager from "./components/DriversManager";
@@ -45,7 +46,8 @@ import {
   FileSpreadsheet,
   Image,
   MessageSquare,
-  Satellite
+  Satellite,
+  Building2
 } from "lucide-react";
 
 export default function App() {
@@ -672,7 +674,8 @@ export default function App() {
     { id: "truck_cash", label: "Caixa do Caminhão", icon: Wallet },
     { id: "analytics", label: "BI Analítico", icon: TrendingUp },
     { id: "ai_hub", label: "Central Inteligência IA", icon: Sparkles },
-    { id: "reports", label: "Relatórios & Auditoria", icon: FileText }
+    { id: "reports", label: "Relatórios & Auditoria", icon: FileText },
+    { id: "company", label: "Perfil da Empresa", icon: Building2 }
   ];
 
   return (
@@ -964,6 +967,8 @@ export default function App() {
               )}
 
               {tab === "tracking" && <VehicleTracking />}
+
+              {tab === "company" && <CompanyProfile />}
 
               {tab === "analytics" && (
                 <AnalyticsBI

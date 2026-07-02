@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Driver, Freight, Refuel } from "../types";
-import { Users, UserPlus, Phone, Calendar, Search, Award, TrendingUp, AlertTriangle, Trash2, Edit2, CheckCircle, FileText, Share2, Copy, ExternalLink, MessageSquare, Check, Lock } from "lucide-react";
+import { Users, UserPlus, Phone, Calendar, Search, Award, TrendingUp, AlertTriangle, Trash2, Edit2, CheckCircle, FileText, Share2, Copy, ExternalLink, MessageSquare, Check, Lock, Upload, Download } from "lucide-react";
 
 interface DriversManagerProps {
   drivers: Driver[];
@@ -103,6 +103,13 @@ export default function DriversManager({
   const [cnhExpiration, setCnhExpiration] = useState("");
   const [admissionDate, setAdmissionDate] = useState("");
   const [observations, setObservations] = useState("");
+  const [photo, setPhoto] = useState("");
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [bio, setBio] = useState("");
+  const [bloodType, setBloodType] = useState("");
+  const [emergencyContactName, setEmergencyContactName] = useState("");
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
+  const [docUploading, setDocUploading] = useState(false);
 
   const resetForm = () => {
     setFullName("");
@@ -119,6 +126,11 @@ export default function DriversManager({
     setCnhExpiration("");
     setAdmissionDate("");
     setObservations("");
+    setPhoto("");
+    setBio("");
+    setBloodType("");
+    setEmergencyContactName("");
+    setEmergencyContactPhone("");
     setIsEditMode(false);
   };
 
@@ -142,8 +154,66 @@ export default function DriversManager({
     setCnhExpiration(d.cnhExpiration);
     setAdmissionDate(d.admissionDate);
     setObservations(d.observations || "");
+    setPhoto(d.photo || "");
+    setBio(d.bio || "");
+    setBloodType(d.bloodType || "");
+    setEmergencyContactName(d.emergencyContactName || "");
+    setEmergencyContactPhone(d.emergencyContactPhone || "");
     setIsEditMode(true);
     setIsFormOpen(true);
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const res = await fetch("/api/upload-photo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: reader.result, folder: "driver-photos" })
+        });
+        const data = await res.json();
+        if (data.success) setPhoto(data.url);
+      } finally {
+        setPhotoUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDocUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedDriver) return;
+    setDocUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const res = await fetch("/api/upload-document", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ file: reader.result, fileName: file.name, folder: "driver-documents" })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const newDoc = { id: `doc_${Date.now()}`, name: file.name, url: data.url, uploadedAt: new Date().toISOString().split("T")[0] };
+          const updatedDocs = [...(selectedDriver.documents || []), newDoc];
+          await onUpdateDriver(selectedDriver.id, { documents: updatedDocs });
+        }
+      } finally {
+        setDocUploading(false);
+        e.target.value = "";
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDocDelete = async (docId: string) => {
+    if (!selectedDriver) return;
+    const updatedDocs = (selectedDriver.documents || []).filter(d => d.id !== docId);
+    await onUpdateDriver(selectedDriver.id, { documents: updatedDocs });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -166,9 +236,13 @@ export default function DriversManager({
       cnh,
       cnhCategory,
       cnhExpiration,
-      admissionDate: admissionDate || "2026-06-23",
+      admissionDate: admissionDate || new Date().toISOString().split("T")[0],
       observations,
-      photo: ""
+      photo,
+      bio,
+      bloodType,
+      emergencyContactName,
+      emergencyContactPhone
     };
 
     if (isEditMode && selectedDriver) {
@@ -493,6 +567,42 @@ export default function DriversManager({
                   </table>
                 </div>
               </div>
+
+              {/* Driver Documents */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Documentos do Motorista</h4>
+                  <label className="px-2.5 py-1 bg-gray-900 hover:bg-gray-850 text-white font-mono text-[10px] rounded transition-all flex items-center gap-1 cursor-pointer">
+                    <Upload className="w-3.5 h-3.5" /> {docUploading ? "Enviando..." : "Enviar Documento"}
+                    <input type="file" accept="application/pdf,image/*" className="hidden" onChange={handleDocUpload} disabled={docUploading} />
+                  </label>
+                </div>
+                <div className="space-y-1.5">
+                  {(selectedDriver.documents || []).length === 0 ? (
+                    <p className="text-center py-4 text-xs text-gray-400 italic border border-dashed border-gray-200 dark:border-slate-800 rounded-xl">
+                      Nenhum documento anexado (CNH digitalizada, comprovante de residência, etc).
+                    </p>
+                  ) : (
+                    selectedDriver.documents!.map(doc => (
+                      <div key={doc.id} className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-slate-900/50 border border-gray-150 dark:border-slate-800 rounded-lg">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                          <span className="text-xs font-semibold truncate">{doc.name}</span>
+                          <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">{doc.uploadedAt}</span>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <a href={doc.url} target="_blank" rel="noreferrer" className="p-1.5 hover:bg-blue-500/10 text-blue-500 rounded-lg transition-colors">
+                            <Download className="w-3.5 h-3.5" />
+                          </a>
+                          <button onClick={() => handleDocDelete(doc.id)} className="p-1.5 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors cursor-pointer">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="bg-white border border-gray-200 rounded-xl p-16 text-center text-gray-400">
@@ -513,6 +623,21 @@ export default function DriversManager({
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto pr-1 flex-1 min-h-0 scrollbar-thin">
+              {/* Profile Photo */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-800 overflow-hidden flex items-center justify-center flex-shrink-0">
+                  {photo ? (
+                    <img src={photo} alt="Foto de perfil" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-lg font-black text-gray-400">{fullName ? fullName.split(" ").map(n => n[0]).slice(0, 2).join("") : "?"}</span>
+                  )}
+                </div>
+                <label className="px-3 py-2 bg-gray-900 hover:bg-gray-850 text-white font-mono text-[10px] rounded-lg transition-all cursor-pointer">
+                  {photoUploading ? "Enviando..." : "Alterar Foto de Perfil"}
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={photoUploading} />
+                </label>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans">Nome Completo *</label>
@@ -665,6 +790,51 @@ export default function DriversManager({
                       className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 rounded-lg p-2 text-xs outline-none transition-all font-mono"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Tipo Sanguíneo</label>
+                  <input
+                    type="text"
+                    value={bloodType}
+                    onChange={(e) => setBloodType(e.target.value)}
+                    placeholder="Ex: O+"
+                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 rounded-lg p-2 text-xs outline-none transition-all"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Contato de Emergência</label>
+                    <input
+                      type="text"
+                      value={emergencyContactName}
+                      onChange={(e) => setEmergencyContactName(e.target.value)}
+                      placeholder="Nome do contato"
+                      className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 rounded-lg p-2 text-xs outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Telefone de Emergência</label>
+                    <input
+                      type="text"
+                      value={emergencyContactPhone}
+                      onChange={(e) => setEmergencyContactPhone(e.target.value)}
+                      placeholder="(00) 00000-0000"
+                      className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 rounded-lg p-2 text-xs outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="col-span-1 md:col-span-2 space-y-1">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Bio / Sobre o Motorista</label>
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Breve apresentação, experiência e especialidades do motorista..."
+                    rows={2}
+                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 rounded-lg p-2.5 text-xs outline-none transition-all font-sans resize-none"
+                  />
                 </div>
 
                 <div className="col-span-1 md:col-span-2 space-y-1">

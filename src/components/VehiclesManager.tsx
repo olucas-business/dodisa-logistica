@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Vehicle, MaintenanceRecord } from "../types";
-import { Truck, Plus, Eye, Calendar, Search, AlertTriangle, Trash2, Edit2, CheckCircle, FileText, Settings, Hammer } from "lucide-react";
+import { Vehicle, MaintenanceRecord, VehicleDocument } from "../types";
+import { Truck, Plus, Eye, Calendar, Search, AlertTriangle, Trash2, Edit2, CheckCircle, FileText, Settings, Hammer, Upload, Download } from "lucide-react";
 
 interface VehiclesManagerProps {
   vehicles: Vehicle[];
@@ -20,6 +20,7 @@ export default function VehiclesManager({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [docUploading, setDocUploading] = useState(false);
 
   // Maintenance log form state
   const [isMaintFormOpen, setIsMaintFormOpen] = useState(false);
@@ -135,6 +136,45 @@ export default function VehiclesManager({
       setSelectedVehicle(vehicles[0] || null);
     }
     setConfirmDeleteId(null);
+  };
+
+  const handleDocUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedVehicle) return;
+    setDocUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const res = await fetch("/api/upload-document", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ file: reader.result, fileName: file.name, folder: "vehicle-documents" })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const newDoc: VehicleDocument = {
+            id: `doc_${Date.now()}`,
+            name: file.name,
+            url: data.url,
+            uploadedAt: new Date().toISOString().split("T")[0]
+          };
+          const updatedDocs = [...(selectedVehicle.documents || []), newDoc];
+          const ok = await onUpdateVehicle(selectedVehicle.id, { documents: updatedDocs });
+          if (ok) setSelectedVehicle({ ...selectedVehicle, documents: updatedDocs });
+        }
+      } finally {
+        setDocUploading(false);
+        e.target.value = "";
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDocDelete = async (docId: string) => {
+    if (!selectedVehicle) return;
+    const updatedDocs = (selectedVehicle.documents || []).filter(d => d.id !== docId);
+    const ok = await onUpdateVehicle(selectedVehicle.id, { documents: updatedDocs });
+    if (ok) setSelectedVehicle({ ...selectedVehicle, documents: updatedDocs });
   };
 
   // Record a new maintenance log in history
@@ -473,6 +513,42 @@ export default function VehiclesManager({
                       )}
                     </tbody>
                   </table>
+                </div>
+              </div>
+
+              {/* Vehicle Documents */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Documentos do Caminhão</h4>
+                  <label className="px-2.5 py-1 bg-gray-900 hover:bg-gray-850 text-white font-mono text-[10px] rounded transition-all flex items-center gap-1 cursor-pointer">
+                    <Upload className="w-3.5 h-3.5" /> {docUploading ? "Enviando..." : "Enviar Documento"}
+                    <input type="file" accept="application/pdf,image/*" className="hidden" onChange={handleDocUpload} disabled={docUploading} />
+                  </label>
+                </div>
+                <div className="space-y-1.5">
+                  {(selectedVehicle.documents || []).length === 0 ? (
+                    <p className="text-center py-4 text-xs text-gray-400 italic border border-dashed border-gray-200 dark:border-slate-800 rounded-xl">
+                      Nenhum documento anexado (CRLV, licenciamento, apólice de seguro, etc).
+                    </p>
+                  ) : (
+                    selectedVehicle.documents!.map(doc => (
+                      <div key={doc.id} className="flex items-center justify-between p-2.5 bg-gray-50 dark:bg-slate-900/50 border border-gray-150 dark:border-slate-800 rounded-lg">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                          <span className="text-xs font-semibold truncate">{doc.name}</span>
+                          <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">{doc.uploadedAt}</span>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <a href={doc.url} target="_blank" rel="noreferrer" className="p-1.5 hover:bg-blue-500/10 text-blue-500 rounded-lg transition-colors">
+                            <Download className="w-3.5 h-3.5" />
+                          </a>
+                          <button onClick={() => handleDocDelete(doc.id)} className="p-1.5 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors cursor-pointer">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

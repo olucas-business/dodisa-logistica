@@ -8,6 +8,13 @@ export interface User {
   driverId?: string; // Linked driver id
 }
 
+export interface DriverDocument {
+  id: string;
+  name: string;
+  url: string;
+  uploadedAt: string;
+}
+
 export interface Driver {
   id: string;
   fullName: string;
@@ -29,6 +36,11 @@ export interface Driver {
   status?: string; // Ativo, Em Viagem, Inativo, etc.
   temporaryPassword?: string;
   authUserId?: string;
+  bio?: string;
+  bloodType?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  documents?: DriverDocument[];
 }
 
 export interface MaintenanceRecord {
@@ -37,6 +49,13 @@ export interface MaintenanceRecord {
   type: string;
   description: string;
   value: number;
+}
+
+export interface VehicleDocument {
+  id: string;
+  name: string;
+  url: string;
+  uploadedAt: string;
 }
 
 export interface Vehicle {
@@ -57,6 +76,21 @@ export interface Vehicle {
   currentMileage: number;
   nextMaintenance: number;
   maintenanceHistory: MaintenanceRecord[];
+  documents?: VehicleDocument[];
+}
+
+export interface CompanyProfile {
+  name: string;
+  cnpj: string;
+  stateRegistration: string;
+  address: string;
+  city: string;
+  state: string;
+  phone: string;
+  email: string;
+  contratoSocialUrl: string;
+  contratoSocialName: string;
+  logoUrl: string;
 }
 
 export interface RouteStop {

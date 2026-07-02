@@ -38,6 +38,7 @@ app.use(express.json({ limit: "50mb" }));
 // Define basic Database interface
 interface Database {
   users: any[];
+  company: any;
   drivers: any[];
   vehicles: any[];
   freights: any[];
@@ -66,6 +67,19 @@ const DEFAULT_DB: Database = {
       role: "Gerente"
     }
   ],
+  company: {
+    name: "",
+    cnpj: "",
+    stateRegistration: "",
+    address: "",
+    city: "",
+    state: "",
+    phone: "",
+    email: "",
+    contratoSocialUrl: "",
+    contratoSocialName: "",
+    logoUrl: ""
+  },
   drivers: [],
   vehicles: [],
   freights: [],
@@ -1070,6 +1084,10 @@ async function loadDB(): Promise<Database> {
     }
     const db = row.data as Database;
     let modified = false;
+    if (!db.company) {
+      db.company = DEFAULT_DB.company;
+      modified = true;
+    }
     if (!db.tires) {
       db.tires = DEFAULT_DB.tires || [];
       modified = true;
@@ -1219,6 +1237,43 @@ app.post("/api/upload-photo", async (req, res) => {
 
   const { data: publicUrlData } = supabase.storage.from("photos").getPublicUrl(path);
   res.json({ success: true, url: publicUrlData.publicUrl });
+});
+
+// Generic document upload (PDFs, images) -> Supabase Storage, returns a public URL
+app.post("/api/upload-document", async (req, res) => {
+  const { file, fileName, folder } = req.body;
+  if (!file || typeof file !== "string") {
+    return res.status(400).json({ success: false, message: "O arquivo em base64 é obrigatório." });
+  }
+  const match = file.match(/^data:([\w/.+-]+);base64,(.+)$/);
+  const mimeType = match ? match[1] : "application/octet-stream";
+  const base64Data = match ? match[2] : file;
+  const ext = (fileName && fileName.includes(".")) ? fileName.split(".").pop() : (mimeType.split("/")[1] || "bin");
+  const path = `${folder || "documents"}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from("photos")
+    .upload(path, Buffer.from(base64Data, "base64"), { contentType: mimeType });
+
+  if (error) {
+    return res.status(500).json({ success: false, message: "Falha ao enviar documento: " + error.message });
+  }
+
+  const { data: publicUrlData } = supabase.storage.from("photos").getPublicUrl(path);
+  res.json({ success: true, url: publicUrlData.publicUrl, name: fileName || path });
+});
+
+// Company profile
+app.get("/api/company", async (req, res) => {
+  const db = await loadDB();
+  res.json({ success: true, company: db.company || {} });
+});
+
+app.put("/api/company", async (req, res) => {
+  const db = await loadDB();
+  db.company = { ...db.company, ...req.body };
+  await saveDB(db);
+  res.json({ success: true, company: db.company });
 });
 
 // Vehicle GPS tracking (Fulltrack2 integration)
