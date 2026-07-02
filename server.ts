@@ -1208,6 +1208,75 @@ app.post("/api/upload-photo", async (req, res) => {
   res.json({ success: true, url: publicUrlData.publicUrl });
 });
 
+// Vehicle GPS tracking (Fulltrack2 integration)
+const FULLTRACK_BASE_URL = "https://ws.fulltrack2.com";
+function fulltrackHeaders() {
+  return {
+    apikey: process.env.FULLTRACK_API_KEY || "",
+    secretkey: process.env.FULLTRACK_SECRET_KEY || ""
+  };
+}
+
+// Live position + speed for every tracked vehicle
+app.get("/api/tracking/live", async (req, res) => {
+  try {
+    const response = await fetch(`${FULLTRACK_BASE_URL}/events/all`, { headers: fulltrackHeaders() });
+    const data = await response.json();
+    if (!data.status) {
+      return res.status(502).json({ success: false, message: data.message || "Falha ao consultar rastreador." });
+    }
+    const vehicles = (data.data || []).map((v: any) => ({
+      vehicleId: v.ras_vei_id,
+      plate: v.ras_vei_placa,
+      model: v.ras_vei_veiculo,
+      lat: Number(v.ras_eve_latitude),
+      lng: Number(v.ras_eve_longitude),
+      speed: Number(v.ras_eve_velocidade) || 0,
+      ignition: v.ras_eve_ignicao === "1",
+      heading: Number(v.ras_eve_direcao) || 0,
+      satellites: Number(v.ras_eve_satelites) || 0,
+      gpsTime: v.ras_eve_data_gps
+    }));
+    res.json({ success: true, vehicles });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: "Erro ao conectar com o rastreador: " + error.message });
+  }
+});
+
+// Speed history (min/avg/max) for a single vehicle over the last N hours
+app.get("/api/tracking/history/:vehicleId", async (req, res) => {
+  try {
+    const { vehicleId } = req.params;
+    const hours = Number(req.query.hours) || 24;
+    const end = Math.floor(Date.now() / 1000);
+    const begin = end - hours * 3600;
+    const response = await fetch(
+      `${FULLTRACK_BASE_URL}/events/interval/id/${vehicleId}/begin/${begin}/end/${end}`,
+      { headers: fulltrackHeaders() }
+    );
+    const data = await response.json();
+    if (!data.status) {
+      return res.status(502).json({ success: false, message: data.message || "Falha ao consultar histórico." });
+    }
+    const points = (Array.isArray(data.data) ? data.data : []).map((p: any) => ({
+      lat: Number(p.ras_eve_latitude),
+      lng: Number(p.ras_eve_longitude),
+      speed: Number(p.ras_eve_velocidade) || 0,
+      time: p.ras_eve_data_gps
+    }));
+    const speeds = points.map((p: any) => p.speed).filter((s: number) => s >= 0);
+    const stats = {
+      current: points.length > 0 ? points[points.length - 1].speed : 0,
+      min: speeds.length > 0 ? Math.min(...speeds) : 0,
+      max: speeds.length > 0 ? Math.max(...speeds) : 0,
+      avg: speeds.length > 0 ? Math.round((speeds.reduce((a: number, b: number) => a + b, 0) / speeds.length) * 10) / 10 : 0
+    };
+    res.json({ success: true, points, stats });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: "Erro ao conectar com o rastreador: " + error.message });
+  }
+});
+
 // Drivers CRUD
 app.get("/api/drivers", async (req, res) => {
   res.json((await loadDB()).drivers);

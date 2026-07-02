@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { User, Driver, Vehicle, Freight, Refuel, Expense, Tire, Debt, TruckCashTransaction, CaixaCaminhao, CaixaMovimentacao } from "./types";
 import LoginForm from "./components/LoginForm";
 import BrandMark from "./components/BrandMark";
+import VehicleTracking from "./components/VehicleTracking";
 import DriverWorkspace from "./components/DriverWorkspace";
 import DashboardOverview from "./components/DashboardOverview";
 import DriversManager from "./components/DriversManager";
@@ -43,7 +44,8 @@ import {
   Moon,
   FileSpreadsheet,
   Image,
-  MessageSquare
+  MessageSquare,
+  Satellite
 } from "lucide-react";
 
 export default function App() {
@@ -661,6 +663,7 @@ export default function App() {
     { id: "dashboard", label: "Dashboard", icon: Truck },
     { id: "drivers", label: "Motoristas", icon: Users },
     { id: "vehicles", label: "Frota de Veículos", icon: Truck },
+    { id: "tracking", label: "Rastreamento", icon: Satellite },
     { id: "tires", label: "Controle de Pneus", icon: RotateCw },
     { id: "freights", label: "Manifesto de Fretes", icon: Compass },
     { id: "refuels", label: "Combustível", icon: Fuel },
@@ -958,6 +961,8 @@ export default function App() {
                   onDeleteGasto={handleDeleteGasto}
                 />
               )}
+
+              {tab === "tracking" && <VehicleTracking />}
 
               {tab === "analytics" && (
                 <AnalyticsBI
