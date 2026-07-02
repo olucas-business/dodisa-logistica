@@ -351,7 +351,7 @@ export default function DriversManager({
               const isSelected = selectedDriver?.id === d.id;
               // Check if CNH is near expiration
               const expDate = new Date(d.cnhExpiration);
-              const curDate = new Date("2026-06-23");
+              const curDate = new Date();
               const isNearExp = expDate.getTime() - curDate.getTime() < 30 * 24 * 60 * 60 * 1000;
 
               return (

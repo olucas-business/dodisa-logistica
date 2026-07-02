@@ -14,7 +14,7 @@ export default function ReportsPanel({ freights, drivers, vehicles, expenses, re
   const [reportType, setReportType] = useState<"freights" | "expenses" | "refuels" | "drivers">("freights");
   const [exportFormat, setExportFormat] = useState<"CSV" | "PDF" | "XLSX">("CSV");
   const [startDate, setStartDate] = useState("2026-06-01");
-  const [endDate, setEndDate] = useState("2026-06-23");
+  const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
   const [isExporting, setIsExporting] = useState(false);
   const [exportedFile, setExportedFile] = useState<string | null>(null);
 

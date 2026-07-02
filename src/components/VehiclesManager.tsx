@@ -28,7 +28,7 @@ export default function VehiclesManager({
   const [maintKm, setMaintKm] = useState("");
   const [maintValue, setMaintValue] = useState("");
   const [maintDesc, setMaintDesc] = useState("");
-  const [maintDate, setMaintDate] = useState("2026-06-23");
+  const [maintDate, setMaintDate] = useState(new Date().toISOString().split("T")[0]);
 
   // Vehicle form states
   const [plate, setPlate] = useState("");
@@ -246,7 +246,7 @@ export default function VehiclesManager({
   const isMaintenanceDue = selectedVehicle && selectedVehicle.nextMaintenance - selectedVehicle.currentMileage <= 1000;
   const isLicensingDue = selectedVehicle && (() => {
     const exp = new Date(selectedVehicle.licensingExpiration);
-    const cur = new Date("2026-06-23");
+    const cur = new Date();
     return exp.getTime() - cur.getTime() < 15 * 24 * 60 * 60 * 1000;
   })();
 

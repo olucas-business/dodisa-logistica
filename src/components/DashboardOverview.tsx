@@ -85,9 +85,10 @@ export default function DashboardOverview({
   onNavigateTo
 }: DashboardOverviewProps) {
   // Constants
-  const CURRENT_DATE_STR = "2026-06-23";
-  const currentYear: number = 2026;
-  const currentMonth: number = 6;
+  const today = new Date();
+  const CURRENT_DATE_STR = today.toISOString().split("T")[0];
+  const currentYear: number = today.getFullYear();
+  const currentMonth: number = today.getMonth() + 1;
 
   // Active tab toggle for bottom right charts: expenses vs cargo breakdown
   const [bottomActiveTab, setBottomActiveTab] = useState<"expenses" | "cargo">("expenses");
@@ -234,7 +235,7 @@ export default function DashboardOverview({
 
   // KM history for sparkline
   const dynamicMonthlyKm = useMemo(() => {
-    const targetYear = "2026";
+    const targetYear = String(currentYear);
     return Array.from({ length: 12 }, (_, i) => {
       const monthIndex = i + 1;
       const monthStr = monthIndex < 10 ? `0${monthIndex}` : `${monthIndex}`;
@@ -247,7 +248,7 @@ export default function DashboardOverview({
   // Dynamic Month-over-Month dataset for the chart
   const dynamicMonthlyData = useMemo(() => {
     const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-    const targetYear = "2026";
+    const targetYear = String(currentYear);
     
     const data = Array.from({ length: 12 }, (_, i) => {
       const monthIndex = i + 1;

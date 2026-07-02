@@ -25,7 +25,7 @@ export default function RefuelManager({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Form states
-  const [date, setDate] = useState("2026-06-23");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [vehicleId, setVehicleId] = useState(vehicles[0]?.id || "");
   const [driverId, setDriverId] = useState(drivers[0]?.id || "");
   const [liters, setLiters] = useState("");
@@ -33,7 +33,7 @@ export default function RefuelManager({
   const [gasStation, setGasStation] = useState("Posto Petrobras");
 
   const resetForm = () => {
-    setDate("2026-06-23");
+    setDate(new Date().toISOString().split("T")[0]);
     setVehicleId(vehicles[0]?.id || "");
     setDriverId(drivers[0]?.id || "");
     setLiters("");

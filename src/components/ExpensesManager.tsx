@@ -22,13 +22,13 @@ export default function ExpensesManager({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Form states
-  const [date, setDate] = useState("2026-06-23");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [category, setCategory] = useState("Oficina");
   const [value, setValue] = useState("");
   const [description, setDescription] = useState("");
 
   const resetForm = () => {
-    setDate("2026-06-23");
+    setDate(new Date().toISOString().split("T")[0]);
     setCategory("Oficina");
     setValue("");
     setDescription("");

@@ -40,7 +40,7 @@ interface AnalyticsBIProps {
 export default function AnalyticsBI({ freights, drivers, vehicles, expenses, refuels }: AnalyticsBIProps) {
   // 1. Prepare Month-over-Month dataset (Faturamento vs Despesas) dynamically
   const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  const targetYear = "2026";
+  const targetYear = String(new Date().getFullYear());
 
   const dynamicMonthlyData = Array.from({ length: 12 }, (_, i) => {
     const monthIndex = i + 1;

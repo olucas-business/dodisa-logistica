@@ -30,7 +30,7 @@ export default function FreightsManager({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Form states
-  const [date, setDate] = useState("2026-06-23");
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [departureTime, setDepartureTime] = useState("08:00");
   const [arrivalTime, setArrivalTime] = useState("18:00");
   const [status, setStatus] = useState<"Pendente" | "Em andamento" | "Finalizado" | "Cancelado">("Pendente");
@@ -70,7 +70,7 @@ export default function FreightsManager({
   const [endKm, setEndKm] = useState("");
 
   const resetForm = () => {
-    setDate("2026-06-23");
+    setDate(new Date().toISOString().split("T")[0]);
     setDepartureTime("08:00");
     setArrivalTime("18:00");
     setStatus("Pendente");

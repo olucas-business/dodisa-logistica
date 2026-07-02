@@ -100,7 +100,7 @@ export default function TiresManager({
 
   // Tire Change Form state
   const [changeType, setChangeType] = useState<"Instalação" | "Remoção" | "Reparo" | "Recapagem" | "Descarte">("Instalação");
-  const [changeDate, setChangeDate] = useState("2026-06-23");
+  const [changeDate, setChangeDate] = useState(new Date().toISOString().split("T")[0]);
   const [changeKm, setChangeKm] = useState("");
   const [changeVehicleId, setChangeVehicleId] = useState("");
   const [changePosition, setChangePosition] = useState("Dianteiro Esquerdo");
@@ -108,7 +108,7 @@ export default function TiresManager({
   const [changeCost, setChangeCost] = useState("");
 
   // Tire Rotation Form state
-  const [rotDate, setRotDate] = useState("2026-06-23");
+  const [rotDate, setRotDate] = useState(new Date().toISOString().split("T")[0]);
   const [rotKm, setRotKm] = useState("");
   const [rotToPosition, setRotToPosition] = useState("Dianteiro Direito");
   const [rotDescription, setRotDescription] = useState("");
@@ -183,7 +183,7 @@ export default function TiresManager({
   const handleOpenChangeModal = (tire: Tire) => {
     setSelectedTire(tire);
     setChangeType(tire.status === "Em uso" ? "Remoção" : "Instalação");
-    setChangeDate("2026-06-23");
+    setChangeDate(new Date().toISOString().split("T")[0]);
     setChangeKm(tire.currentMileage.toString());
     setChangeVehicleId(vehicles[0]?.id || "");
     setChangePosition("Dianteiro Esquerdo");
@@ -222,7 +222,7 @@ export default function TiresManager({
 
   const handleOpenRotationModal = (tire: Tire) => {
     setSelectedTire(tire);
-    setRotDate("2026-06-23");
+    setRotDate(new Date().toISOString().split("T")[0]);
     setRotKm(tire.currentMileage.toString());
     setRotToPosition("Dianteiro Direito");
     setRotDescription("");
