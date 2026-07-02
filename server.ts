@@ -33,6 +33,26 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
+// The AI occasionally writes the literal words "null"/"undefined"/"n/a" instead
+// of an empty string for missing fields. Normalize those to "" recursively.
+const PLACEHOLDER_VALUES = new Set(["null", "undefined", "n/a", "none", "não informado", "nao informado"]);
+function sanitizePlaceholders(value: any): any {
+  if (typeof value === "string") {
+    return PLACEHOLDER_VALUES.has(value.trim().toLowerCase()) ? "" : value;
+  }
+  if (Array.isArray(value)) {
+    return value.map(sanitizePlaceholders);
+  }
+  if (value && typeof value === "object") {
+    const result: any = {};
+    for (const key of Object.keys(value)) {
+      result[key] = sanitizePlaceholders(value[key]);
+    }
+    return result;
+  }
+  return value;
+}
+
 app.use(express.json({ limit: "50mb" }));
 
 // Define basic Database interface
@@ -3090,6 +3110,7 @@ Instruções críticas:
 - Se encontrar uma linha como "João Silva | Recife | Maceió | 550 KM | R$ 7.500 | 100L", você deve inteligir e deduzir as relações correspondentes.
 - Extraia apenas os dados que estão realmente presentes na planilha. NUNCA invente, deduza ou gere valores fictícios para campos que não estejam explicitamente na planilha (CPF, CNH, placa, RG, etc.) — isso pode gerar cadastros com documentos incorretos numa transportadora real.
 - Se um campo obrigatório (ex: CPF, CNH) não estiver presente na planilha, retorne esse campo como string vazia ("") em vez de inventar um valor. É preferível um campo vazio a um dado incorreto.
+- O "Nome do arquivo" enviado junto ao conteúdo é apenas metadado de contexto, NUNCA um dado da planilha. Nunca use o nome do arquivo (ou qualquer parte dele) como valor de placa, motorista, categoria ou qualquer outro campo extraído.
 - Corrija apenas inconsistências óbvias de formatação (espaços, capitalização), sem alterar o conteúdo real dos dados. Elimine registros duplicados.
 - Se houver motoristas ou veículos novos descritos na planilha, adicione-os na lista de drivers/vehicles criados.
 - Se a planilha estiver com cabeçalhos ou campos em português, faça a tradução e mapeamento cognitivo correto (ex: 'Motorista' -> driverName ou fullName; 'Placa' -> vehiclePlate; 'Destino' -> destination.city; 'Custo', 'Valor' ou 'Preço' -> value; 'Combustível' ou 'Abastecimento' -> Refuels).
@@ -3134,7 +3155,7 @@ O formato de retorno do JSON deve ser:
 
         const response = await withTimeout(ai.models.generateContent({
           model: "gemini-3.5-flash",
-          contents: `Conteúdo da planilha:\n${content}\nNome do arquivo: ${filename || "import.csv"}${customMapping ? `\nMapeamento Manual fornecido pelo usuário:\n${JSON.stringify(customMapping, null, 2)}` : ""}`,
+          contents: `Conteúdo da planilha (extraia dados SOMENTE deste conteúdo, ignore tudo abaixo desta linha ao extrair valores):\n${content}\n\n--- FIM DO CONTEÚDO DA PLANILHA ---\n\nEstas informações abaixo são apenas metadados de contexto e NUNCA devem ser usadas como valores extraídos (ex: o nome do arquivo não é uma placa, motorista ou qualquer outro dado):\nNome do arquivo: ${filename || "import.csv"}${customMapping ? `\nMapeamento Manual fornecido pelo usuário:\n${JSON.stringify(customMapping, null, 2)}` : ""}`,
           config: {
             systemInstruction: systemPrompt,
             responseMimeType: "application/json",
@@ -3279,7 +3300,7 @@ O formato de retorno do JSON deve ser:
         }), 25000);
 
         if (response.text) {
-          const aiResult = JSON.parse(response.text);
+          const aiResult = sanitizePlaceholders(JSON.parse(response.text));
           parsedResult = {
             summary: "",
             newDrivers: aiResult.newDrivers || [],
@@ -3892,7 +3913,7 @@ Retorne a resposta estritamente em formato JSON que segue o schema de resposta e
       }), 25000);
 
       if (response.text) {
-        parsedResult = JSON.parse(response.text);
+        parsedResult = sanitizePlaceholders(JSON.parse(response.text));
       }
     } catch (geminiError: any) {
       console.warn("Erro ao processar imagem no Gemini (ativando simulador offline):", geminiError);
