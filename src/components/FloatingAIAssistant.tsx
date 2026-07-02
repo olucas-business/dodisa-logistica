@@ -496,7 +496,7 @@ Aqui está o resumo operacional de hoje:
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 font-sans text-left">
+    <div className="fixed bottom-6 right-6 z-[9999] font-sans text-left">
       {/* 1. FLOATING ACTION TRIGGER TRIGGER */}
       {!isOpen && (
         <button
@@ -583,21 +583,19 @@ Aqui está o resumo operacional de hoje:
           {/* Presets and Input */}
           <div className="p-4 border-t border-slate-850 bg-slate-900/20 space-y-3">
             {history.length <= 1 && (
-              <div className="space-y-1">
-                <span className="text-[8px] font-mono text-slate-500 uppercase tracking-widest block">Comandos de Exemplo:</span>
-                <div className="flex flex-col gap-1">
-                  {PRESETS.map((p, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleAsk(p)}
-                      disabled={loading}
-                      className="text-left w-full px-2.5 py-1 bg-slate-900 hover:bg-slate-850 border border-slate-850 hover:border-slate-700 text-[10px] text-slate-300 rounded-lg transition-all flex items-center justify-between cursor-pointer truncate"
-                    >
-                      <span className="truncate">{p}</span>
-                      <ArrowUpRight className="w-3 h-3 text-slate-500 flex-shrink-0 ml-1" />
-                    </button>
-                  ))}
-                </div>
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-0.5 -mx-0.5 px-0.5">
+                {PRESETS.map((p, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleAsk(p)}
+                    disabled={loading}
+                    title={p}
+                    className="flex-shrink-0 max-w-[180px] px-2.5 py-1.5 bg-slate-900 hover:bg-slate-850 border border-slate-850 hover:border-slate-700 text-[10px] text-slate-300 rounded-full transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                  >
+                    <span className="truncate">{p}</span>
+                    <ArrowUpRight className="w-3 h-3 text-slate-500 flex-shrink-0" />
+                  </button>
+                ))}
               </div>
             )}
 

@@ -697,12 +697,13 @@ export default function App() {
             <div className="flex items-center gap-2.5 overflow-hidden">
               <BrandMark size="md" />
               {sidebarOpen && (
-                <div className="truncate">
-                  <h1 className="text-sm font-black tracking-tight uppercase flex items-center gap-1.5">
-                    <span className="bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-400 dark:to-indigo-300 bg-clip-text text-transparent">DODISA</span>
-                    <span className="font-light text-muted-foreground tracking-wide">LOGÍSTICA</span>
+                <div className="truncate leading-tight">
+                  <h1 className="text-sm font-black tracking-tight uppercase bg-gradient-to-r from-blue-600 to-sky-400 dark:from-blue-400 dark:to-sky-300 bg-clip-text text-transparent">
+                    DODISA
                   </h1>
-                  <span className="text-[10px] text-muted-foreground font-mono tracking-wider">Carrier Manager</span>
+                  <span className="block text-[10px] text-muted-foreground font-mono tracking-wider truncate">
+                    Logística · Carrier Manager
+                  </span>
                 </div>
               )}
             </div>
