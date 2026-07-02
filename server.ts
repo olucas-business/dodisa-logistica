@@ -3004,11 +3004,11 @@ O banco de dados aceita as seguintes entidades e formatos:
 
 Instruções críticas:
 - Se encontrar uma linha como "João Silva | Recife | Maceió | 550 KM | R$ 7.500 | 100L", você deve inteligir e deduzir as relações correspondentes.
-- Deduza e gere as entidades apropriadas preenchendo o maior número de campos possíveis de forma plausível (ex: CPFs fictícios consistentes, placas válidas, etc.) para que os registros fiquem completos.
-- Corrija inconsistências, limpe espaços, elimine registros duplicados.
+- Extraia apenas os dados que estão realmente presentes na planilha. NUNCA invente, deduza ou gere valores fictícios para campos que não estejam explicitamente na planilha (CPF, CNH, placa, RG, etc.) — isso pode gerar cadastros com documentos incorretos numa transportadora real.
+- Se um campo obrigatório (ex: CPF, CNH) não estiver presente na planilha, retorne esse campo como string vazia ("") em vez de inventar um valor. É preferível um campo vazio a um dado incorreto.
+- Corrija apenas inconsistências óbvias de formatação (espaços, capitalização), sem alterar o conteúdo real dos dados. Elimine registros duplicados.
 - Se houver motoristas ou veículos novos descritos na planilha, adicione-os na lista de drivers/vehicles criados.
 - Se a planilha estiver com cabeçalhos ou campos em português, faça a tradução e mapeamento cognitivo correto (ex: 'Motorista' -> driverName ou fullName; 'Placa' -> vehiclePlate; 'Destino' -> destination.city; 'Custo', 'Valor' ou 'Preço' -> value; 'Combustível' ou 'Abastecimento' -> Refuels).
-- Se faltarem dados obrigatórios como CPF ou CNH para novos motoristas, preencha-os de forma plausível para que o cadastro fique completo.
 - Retorne a resposta ESTRITAMENTE em formato JSON que segue o schema de resposta especificado, sem blocos markdown extras (no \`\`\`json \`\`\` tags).
 
 O formato de retorno do JSON deve ser:

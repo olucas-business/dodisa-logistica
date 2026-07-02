@@ -41,6 +41,7 @@ Pedro Santos | GHI-9012 | Belo Horizonte, MG | Brasília, DF | 750 KM | R$ 9.800
 Ana Souza | JKL-3456 | Rio de Janeiro, RJ | Cabo Frio, RJ | 150 KM | R$ 2.400,00 | 2026-06-30`;
 
 interface ColumnValidation {
+  key: string;
   name: string;
   found: boolean;
   detectedHeader: string | null;
@@ -170,24 +171,19 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
   // Reactive effect to initialize column mapping options when a spreadsheet is validated
   useEffect(() => {
     if (validation && validation.headers.length > 0) {
-      const findHeader = (keys: string[]) => {
-        const foundCol = validation.columns.find(c => 
-          keys.some(k => c.name.toLowerCase().includes(k.toLowerCase()))
-        );
-        return foundCol?.detectedHeader || "";
-      };
+      const findHeader = (key: string) => validation.columns.find(c => c.key === key)?.detectedHeader || "";
 
       setCustomMapping({
-        driverCol: findHeader(["Motorista", "Nome"]),
-        vehicleCol: findHeader(["Veículo", "Placa"]),
-        originCol: findHeader(["Origem", "De"]),
-        destinationCol: findHeader(["Destino", "Para"]),
-        valueCol: findHeader(["Valor", "Frete", "Preço", "Custo"]),
-        mileageCol: findHeader(["Distância", "KM"]),
-        dateCol: findHeader(["Data", "Dia"]),
-        litersCol: findHeader(["Litros"]),
-        categoryCol: findHeader(["Categoria"]),
-        descCol: findHeader(["Descrição", "Obs", "Observação"])
+        driverCol: findHeader("driver"),
+        vehicleCol: findHeader("vehicle"),
+        originCol: findHeader("origin"),
+        destinationCol: findHeader("destination"),
+        valueCol: findHeader("value"),
+        mileageCol: findHeader("mileage"),
+        dateCol: findHeader("date"),
+        litersCol: findHeader("liters"),
+        categoryCol: findHeader("category"),
+        descCol: findHeader("description")
       });
     }
   }, [validation]);
@@ -249,7 +245,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
     const validationRules = [
       {
         key: "driver",
-        keys: ["motorista", "nome", "driver", "condutor", "funcionario", "colaborador", "nome do motorista", "piloto"],
+        keys: ["motorista", "driver", "condutor", "funcionario", "colaborador", "nome do motorista", "piloto"],
         importance: "required" as const,
         label: "Nome do Motorista",
         desc: "Essencial para vincular as rotas, cadastrar o condutor ou registrar custos."
@@ -263,7 +259,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
       },
       {
         key: "origin",
-        keys: ["origem", "de", "departure", "origin", "partida", "cidade de origem"],
+        keys: ["origem", "departure", "origin", "partida", "cidade de origem"],
         importance: "recommended" as const,
         label: "Cidade de Origem",
         desc: "Recomendado para rotas de escoamento e faturamento."
@@ -319,13 +315,30 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
       }
     ];
 
+    // A keyword matches a header only if it appears as a whole word/phrase,
+    // not as a loose substring (e.g. "nome" shouldn't match "Nome da Empresa",
+    // and "de" shouldn't match "Cidade").
+    const headerMatchesKeyword = (header: string, keyword: string) => {
+      if (header === keyword) return true;
+      const words = header.split(/[^a-z0-9çãáàâéêíóôõúü]+/i).filter(Boolean);
+      if (!keyword.includes(" ")) {
+        return words.includes(keyword);
+      }
+      // Multi-word keyword: match as a contiguous phrase within the header's words
+      const keywordWords = keyword.split(" ").filter(Boolean);
+      for (let i = 0; i <= words.length - keywordWords.length; i++) {
+        if (keywordWords.every((kw, j) => words[i + j] === kw)) return true;
+      }
+      return false;
+    };
+
     const columns: ColumnValidation[] = validationRules.map(rule => {
       let found = false;
       let detectedHeader: string | null = null;
 
       for (let i = 0; i < headers.length; i++) {
         const h = headers[i].toLowerCase().trim();
-        const match = rule.keys.some(k => h === k || h.includes(k));
+        const match = rule.keys.some(k => headerMatchesKeyword(h, k));
         if (match) {
           found = true;
           detectedHeader = headers[i];
@@ -334,6 +347,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
       }
 
       return {
+        key: rule.key,
         name: rule.label,
         found,
         detectedHeader,
