@@ -14,7 +14,7 @@ export default function BrandMark({ size = "md", className = "" }: BrandMarkProp
 
   return (
     <div
-      className={`relative ${badge} flex-shrink-0 flex items-center justify-center overflow-hidden bg-slate-900 shadow-lg shadow-sky-500/20 border border-white/10 group ${className}`}
+      className={`relative ${badge} flex-shrink-0 flex items-center justify-center overflow-hidden bg-slate-900 shadow-lg shadow-amber-500/20 border border-white/10 group ${className}`}
     >
       {/* Glass highlight */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent" />
@@ -26,9 +26,9 @@ export default function BrandMark({ size = "md", className = "" }: BrandMarkProp
         className={`${icon} relative z-10 transform group-hover:scale-110 transition-transform duration-300`}
       >
         {/* First "D" arrow */}
-        <path d="M2 3.5v17l6.5-1.4c3-2.6 3-11.6 0-14.2L2 3.5Z" fill="#7DD3FC" fillOpacity="0.9" />
+        <path d="M2 3.5v17l6.5-1.4c3-2.6 3-11.6 0-14.2L2 3.5Z" fill="#FBBF24" fillOpacity="0.9" />
         {/* Second "D" arrow, offset to the right */}
-        <path d="M10.5 3.5v17l6.5-1.4c3-2.6 3-11.6 0-14.2L10.5 3.5Z" fill="#38BDF8" />
+        <path d="M10.5 3.5v17l6.5-1.4c3-2.6 3-11.6 0-14.2L10.5 3.5Z" fill="#F59E0B" />
 
         {/* Truck silhouette on top */}
         <g transform="translate(1.5,7.5)">

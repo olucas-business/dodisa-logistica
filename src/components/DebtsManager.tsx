@@ -1,21 +1,25 @@
 import React, { useState } from "react";
 import { Debt } from "../types";
-import { 
-  Coins, 
-  Plus, 
-  Search, 
-  Filter, 
-  Trash2, 
-  Edit3, 
-  Calendar, 
-  DollarSign, 
-  AlertCircle, 
-  CheckCircle2, 
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
+import {
+  Coins,
+  Plus,
+  Search,
+  Filter,
+  Trash2,
+  Edit3,
+  Calendar,
+  DollarSign,
+  AlertCircle,
+  CheckCircle2,
   Clock,
   X,
   PlusCircle,
-  FileText
+  FileText,
+  BarChart3
 } from "lucide-react";
+
+const DEBT_CHART_COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#6b7280"];
 
 interface DebtsManagerProps {
   debts: Debt[];
@@ -145,6 +149,12 @@ export default function DebtsManager({
   const sumTotal = debts.reduce((acc, curr) => acc + curr.value, 0);
 
   // Filtered lists
+  // Category totals for the bar chart
+  const categoryTotals = DEBT_CATEGORIES.map(cat => ({
+    category: cat,
+    value: debts.filter(d => d.category === cat).reduce((sum, d) => sum + (d.value || 0), 0)
+  })).filter(c => c.value > 0);
+
   const filteredDebts = debts.filter((debt) => {
     const matchesSearch = debt.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
       (debt.notes && debt.notes.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -248,6 +258,31 @@ export default function DebtsManager({
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-red-500" />
         </div>
       </div>
+
+      {/* CATEGORY BAR CHART */}
+      {categoryTotals.length > 0 && (
+        <div className="bg-card border border-border p-5 rounded-2xl shadow-xs">
+          <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-1.5">
+            <BarChart3 className="w-4 h-4 text-blue-500" />
+            Dívidas por Categoria
+          </h4>
+          <div className="h-[220px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={categoryTotals}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                <XAxis dataKey="category" stroke="currentColor" className="text-muted-foreground" fontSize={10} tickLine={false} />
+                <YAxis stroke="currentColor" className="text-muted-foreground" fontSize={9} tickLine={false} />
+                <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {categoryTotals.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={DEBT_CHART_COLORS[index % DEBT_CHART_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* FILTER AND SEARCH BAR */}
       <div className="bg-card border border-border p-4 rounded-2xl flex flex-col md:flex-row gap-4 items-center justify-between">

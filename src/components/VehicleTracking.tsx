@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Gauge, Navigation, Satellite, Power, RefreshCw, Clock } from "lucide-react";
+import { Gauge, Navigation, Satellite, Power, RefreshCw, Clock, Route } from "lucide-react";
 
 interface LiveVehicle {
   vehicleId: string;
@@ -21,6 +21,7 @@ interface SpeedStats {
   min: number;
   max: number;
   avg: number;
+  distanceKm: number;
 }
 
 const truckIcon = L.divIcon({
@@ -41,7 +42,7 @@ export default function VehicleTracking() {
 
   const [vehicles, setVehicles] = useState<LiveVehicle[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [stats, setStats] = useState<SpeedStats>({ current: 0, min: 0, max: 0, avg: 0 });
+  const [stats, setStats] = useState<SpeedStats>({ current: 0, min: 0, max: 0, avg: 0, distanceKm: 0 });
   const [period, setPeriod] = useState<24 | 168>(24);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
@@ -215,11 +216,11 @@ export default function VehicleTracking() {
         </div>
         <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
           <div className="p-2.5 bg-amber-600/10 text-amber-600 dark:text-amber-400 rounded-lg">
-            <Gauge className="w-5 h-5" />
+            <Route className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">Média ({period === 24 ? "24h" : "7d"})</span>
-            <p className="text-lg font-black font-mono">{stats.avg} km/h</p>
+            <span className="text-[10px] uppercase font-mono tracking-wider text-muted-foreground">Km Percorrido ({period === 24 ? "24h" : "7d"})</span>
+            <p className="text-lg font-black font-mono">{stats.distanceKm} km</p>
           </div>
         </div>
         <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">

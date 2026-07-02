@@ -1278,11 +1278,27 @@ app.get("/api/tracking/history/:vehicleId", async (req, res) => {
       time: p.ras_eve_data_gps
     }));
     const speeds = points.map((p: any) => p.speed).filter((s: number) => s >= 0);
+
+    // Distance traveled: sum of the haversine distance between consecutive GPS points
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const haversineKm = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {
+      const R = 6371;
+      const dLat = toRad(b.lat - a.lat);
+      const dLng = toRad(b.lng - a.lng);
+      const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+    };
+    let distanceKm = 0;
+    for (let i = 1; i < points.length; i++) {
+      distanceKm += haversineKm(points[i - 1], points[i]);
+    }
+
     const stats = {
       current: points.length > 0 ? points[points.length - 1].speed : 0,
       min: speeds.length > 0 ? Math.min(...speeds) : 0,
       max: speeds.length > 0 ? Math.max(...speeds) : 0,
-      avg: speeds.length > 0 ? Math.round((speeds.reduce((a: number, b: number) => a + b, 0) / speeds.length) * 10) / 10 : 0
+      avg: speeds.length > 0 ? Math.round((speeds.reduce((a: number, b: number) => a + b, 0) / speeds.length) * 10) / 10 : 0,
+      distanceKm: Math.round(distanceKm * 10) / 10
     };
     res.json({ success: true, points, stats });
   } catch (error: any) {
