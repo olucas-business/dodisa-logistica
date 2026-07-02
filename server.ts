@@ -20,6 +20,19 @@ const supabaseAuth = createClient(
   process.env.SUPABASE_ANON_KEY!
 );
 
+// Gemini calls with a large response schema can take a very long time to
+// "think" through, risking serverless function timeouts. Cap them so we fall
+// back to the offline heuristic parser quickly and reliably instead of hanging.
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`Tempo limite de ${ms}ms excedido na chamada à IA.`)), ms);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); }
+    );
+  });
+}
+
 app.use(express.json({ limit: "50mb" }));
 
 // Define basic Database interface
@@ -2976,7 +2989,7 @@ app.post("/api/ai/import-spreadsheet", async (req, res) => {
     if (parts.length >= 2) {
       return { city: parts[0], state: parts[1].toUpperCase().substring(0, 2) };
     }
-    return { city: input, state: "PE" };
+    return { city: input, state: "" };
   }
 
   // Robust number parsing (removes R$, currency formatting, spaces, etc.)
@@ -3048,7 +3061,7 @@ O formato de retorno do JSON deve ser:
           }
         });
 
-        const response = await ai.models.generateContent({
+        const response = await withTimeout(ai.models.generateContent({
           model: "gemini-3.5-flash",
           contents: `Conteúdo da planilha:\n${content}\nNome do arquivo: ${filename || "import.csv"}${customMapping ? `\nMapeamento Manual fornecido pelo usuário:\n${JSON.stringify(customMapping, null, 2)}` : ""}`,
           config: {
@@ -3188,13 +3201,22 @@ O formato de retorno do JSON deve ser:
                     }
                   }
                 }
-              }
+              },
+              required: ["newDrivers", "newVehicles", "newFreights", "newExpenses", "newRefuels"]
             }
           }
-        });
+        }), 25000);
 
         if (response.text) {
-          parsedResult = JSON.parse(response.text);
+          const aiResult = JSON.parse(response.text);
+          parsedResult = {
+            summary: "",
+            newDrivers: aiResult.newDrivers || [],
+            newVehicles: aiResult.newVehicles || [],
+            newFreights: aiResult.newFreights || [],
+            newExpenses: aiResult.newExpenses || [],
+            newRefuels: aiResult.newRefuels || []
+          };
         }
       } catch (geminiError: any) {
         console.warn("Erro ao chamar o Gemini API (ativando fallback offline):", geminiError);
@@ -3226,17 +3248,31 @@ O formato de retorno do JSON deve ser:
         const headers = splitCSVLine(lines[0], delimiter).map(h => h.trim());
         const headersLower = headers.map(h => h.toLowerCase());
 
+        // Whole-word/phrase matching only — a loose substring match (e.g. "de" inside
+        // "Cidade", or positional guessing when a column isn't found) is what caused
+        // values from one column to leak into the wrong field.
+        const headerMatchesKeyword = (header: string, keyword: string) => {
+          if (header === keyword) return true;
+          const words = header.split(/[^a-z0-9çãáàâéêíóôõúü]+/i).filter(Boolean);
+          if (!keyword.includes(" ")) return words.includes(keyword);
+          const keywordWords = keyword.split(" ").filter(Boolean);
+          for (let i = 0; i <= words.length - keywordWords.length; i++) {
+            if (keywordWords.every((kw, j) => words[i + j] === kw)) return true;
+          }
+          return false;
+        };
+
         const getColIndex = (mappedName: string | undefined, keys: string[]): number => {
           if (mappedName) {
             const idx = headers.findIndex(h => h === mappedName);
             if (idx !== -1) return idx;
           }
-          return headersLower.findIndex(h => keys.some(k => h === k || h.includes(k)));
+          return headersLower.findIndex(h => keys.some(k => headerMatchesKeyword(h, k)));
         };
 
-        const driverIdx = getColIndex(customMapping?.driverCol, ["motorista", "nome", "driver", "condutor", "funcionario", "colaborador", "piloto"]);
+        const driverIdx = getColIndex(customMapping?.driverCol, ["motorista", "driver", "condutor", "funcionario", "colaborador", "piloto"]);
         const plateIdx = getColIndex(customMapping?.vehicleCol, ["placa", "veiculo", "veículo", "caminhao", "caminhão", "carro", "plate", "vehicle", "cavalo"]);
-        const originIdx = getColIndex(customMapping?.originCol, ["origem", "de", "departure", "origin", "partida"]);
+        const originIdx = getColIndex(customMapping?.originCol, ["origem", "departure", "origin", "partida"]);
         const destIdx = getColIndex(customMapping?.destinationCol, ["destino", "para", "arrival", "destination", "chegada"]);
         const valueIdx = getColIndex(customMapping?.valueCol, ["valor", "frete", "preço", "preco", "custo", "total", "value", "receita", "faturamento"]);
         const kmIdx = getColIndex(customMapping?.mileageCol, ["km", "distancia", "distância", "quilometragem", "mileage", "dist"]);
@@ -3258,11 +3294,13 @@ O formato de retorno do JSON deve ser:
           const cells = splitCSVLine(line, delimiter);
           if (cells.length < 2) continue; // Skip empty/unstructured lines
 
-          // Extract row values by matched index, or fall back to positional defaults
-          const name = (driverIdx !== -1 && driverIdx < cells.length) ? cells[driverIdx] : (driverIdx === -1 && cells.length > 0 ? cells[0] : "");
-          const plate = (plateIdx !== -1 && plateIdx < cells.length) ? cells[plateIdx] : (plateIdx === -1 && cells.length > 1 ? cells[1] : "");
-          const originStr = (originIdx !== -1 && originIdx < cells.length) ? cells[originIdx] : (originIdx === -1 && cells.length > 2 ? cells[2] : "");
-          const destStr = (destIdx !== -1 && destIdx < cells.length) ? cells[destIdx] : (destIdx === -1 && cells.length > 3 ? cells[3] : "");
+          // Extract row values strictly by matched column index. A column that wasn't
+          // detected is left empty rather than guessed by position — guessing caused
+          // values from unrelated columns (e.g. Origem) to leak into the wrong field.
+          const name = (driverIdx !== -1 && driverIdx < cells.length) ? cells[driverIdx] : "";
+          const plate = (plateIdx !== -1 && plateIdx < cells.length) ? cells[plateIdx] : "";
+          const originStr = (originIdx !== -1 && originIdx < cells.length) ? cells[originIdx] : "";
+          const destStr = (destIdx !== -1 && destIdx < cells.length) ? cells[destIdx] : "";
           const valStr = (valueIdx !== -1 && valueIdx < cells.length) ? cells[valueIdx] : "";
           const kmStr = (kmIdx !== -1 && kmIdx < cells.length) ? cells[kmIdx] : "";
           const dateStr = (dateIdx !== -1 && dateIdx < cells.length) ? cells[dateIdx] : "";
@@ -3285,23 +3323,22 @@ O formato de retorno do JSON deve ser:
             const driverExists = db.drivers.some(d => d.fullName.toLowerCase() === name.toLowerCase()) ||
                                  tempAddedDrivers.some(d => d.fullName.toLowerCase() === name.toLowerCase());
             if (!driverExists) {
-              const randomDigits = (len: number) => Array.from({length: len}, () => Math.floor(Math.random() * 10)).join("");
               const newDrv = {
                 id: `drv_${Date.now()}_local_${addedCount}`,
                 fullName: name,
-                cpf: `${randomDigits(3)}.${randomDigits(3)}.${randomDigits(3)}-${randomDigits(2)}`,
-                rg: `${randomDigits(2)}.${randomDigits(3)}.${randomDigits(3)}-${randomDigits(1)}`,
-                phone: "(81) 99999-9999",
-                whatsapp: "(81) 99999-9999",
-                address: "Endereço Importado",
-                city: originStr ? parseCityState(originStr).city : "Recife",
-                state: originStr ? parseCityState(originStr).state : "PE",
-                cnh: randomDigits(11),
-                cnhCategory: "D",
-                cnhExpiration: "2029-12-31",
+                cpf: "",
+                rg: "",
+                phone: "",
+                whatsapp: "",
+                address: "",
+                city: originStr ? parseCityState(originStr).city : "",
+                state: originStr ? parseCityState(originStr).state : "",
+                cnh: "",
+                cnhCategory: "",
+                cnhExpiration: "",
                 photo: "",
                 admissionDate: new Date().toISOString().split('T')[0],
-                observations: "Importado via planilha (Local Heuristic)."
+                observations: "Importado via planilha. Complete o cadastro."
               };
               tempAddedDrivers.push(newDrv);
               drvId = newDrv.id;
@@ -3320,22 +3357,21 @@ O formato de retorno do JSON deve ser:
             const vehicleExists = db.vehicles.some(v => v.plate.toUpperCase().replace(/[^A-Z0-9-]/g, "") === normPlate) ||
                                   tempAddedVehicles.some(v => v.plate.toUpperCase().replace(/[^A-Z0-9-]/g, "") === normPlate);
             if (!vehicleExists) {
-              const randomDigits = (len: number) => Array.from({length: len}, () => Math.floor(Math.random() * 10)).join("");
               const newVhc = {
                 id: `vhc_${Date.now()}_local_${addedCount}`,
                 plate: plate.toUpperCase(),
-                model: "FH 540",
-                brand: "Volvo",
-                year: "2022",
-                type: "Truck",
-                loadCapacity: "30 Toneladas",
-                tankCapacity: "400",
-                averageConsumption: "2.8",
-                renavam: randomDigits(11),
-                chassi: `9BW${randomDigits(14).toUpperCase()}`,
-                licensingExpiration: "2027-10-31",
-                currentMileage: 120000,
-                nextMaintenance: 130000,
+                model: "",
+                brand: "",
+                year: "",
+                type: "",
+                loadCapacity: "",
+                tankCapacity: "",
+                averageConsumption: "",
+                renavam: "",
+                chassi: "",
+                licensingExpiration: "",
+                currentMileage: 0,
+                nextMaintenance: 0,
                 maintenanceHistory: []
               };
               tempAddedVehicles.push(newVhc);
@@ -3348,34 +3384,34 @@ O formato de retorno do JSON deve ser:
             }
           }
 
-          const km = parseNumber(kmStr) || 150;
-          const val = parseNumber(valStr) || (km * 12);
+          const km = parseNumber(kmStr);
+          const val = parseNumber(valStr);
           const liters = parseNumber(litersStr);
           const formattedDate = dateStr || new Date().toISOString().split('T')[0];
 
           // Is it a refuel row?
           if (liters > 0 || categoryStr.toLowerCase().includes("combustivel") || descStr.toLowerCase().includes("abastec") || descStr.toLowerCase().includes("posto")) {
-            const price = valStr && liters > 0 ? (val / liters) : 5.89;
+            const price = liters > 0 && val > 0 ? Math.round((val / liters) * 100) / 100 : 0;
             parsedResult.newRefuels.push({
               date: formattedDate,
-              driverName: name || "Motorista Padrão",
+              driverName: name || "",
               driverId: drvId,
-              vehiclePlate: plate || "ABC-1234",
+              vehiclePlate: plate || "",
               vehicleId: vhcId,
-              gasStation: descStr || "Posto Importado",
-              city: originStr ? parseCityState(originStr).city : "Recife",
-              liters: liters || (val / price) || 100,
+              gasStation: descStr || "",
+              city: originStr ? parseCityState(originStr).city : "",
+              liters: liters,
               pricePerLiter: price,
-              totalValue: val || (liters * price) || 589
+              totalValue: val
             });
-          } 
+          }
           // Is it an expense row?
           else if (categoryStr || (val > 0 && !originStr && !destStr)) {
             parsedResult.newExpenses.push({
               date: formattedDate,
               category: (categoryStr || "Outros"),
               value: val,
-              description: descStr || "Despesa importada via planilha"
+              description: descStr || ""
             });
           }
           // Otherwise it's a freight/route
@@ -3386,30 +3422,30 @@ O formato de retorno do JSON deve ser:
               id: `frt_${Date.now()}_local_${addedCount}`,
               freightNumber: `FRT-${db.freights.length + 1001 + addedCount}`,
               date: formattedDate,
-              departureTime: "08:00",
-              arrivalTime: "18:00",
-              status: "Finalizado",
-              driverName: name || "Motorista Padrão",
+              departureTime: "",
+              arrivalTime: "",
+              status: "Pendente",
+              driverName: name || "",
               driverId: drvId,
-              vehiclePlate: plate || "ABC-1234",
+              vehiclePlate: plate || "",
               vehicleId: vhcId,
               origin: {
-                city: originInfo.city || "Origem Importada",
-                state: originInfo.state || "PE",
-                address: "Logística Central",
-                company: "Empresa Importada"
+                city: originInfo.city || "",
+                state: originInfo.state || "",
+                address: "",
+                company: ""
               },
               destination: {
-                city: destInfo.city || "Destino Importado",
-                state: destInfo.state || "AL",
-                address: "Logística Destino",
-                company: "Empresa Destinatária"
+                city: destInfo.city || "",
+                state: destInfo.state || "",
+                address: "",
+                company: ""
               },
               cargo: {
-                type: "Carga Geral",
-                description: descStr || "Importação inteligente de planilha",
-                qty: 1,
-                unit: "Paletes"
+                type: "",
+                description: descStr || "",
+                qty: 0,
+                unit: "Quilos"
               },
               financial: {
                 value: val,
@@ -3430,12 +3466,14 @@ O formato de retorno do JSON deve ser:
         }
       }
       
-      if (usedOfflineFallback) {
-        parsedResult.summary = offlineFallbackReason;
-      } else {
-        parsedResult.summary = `Mapeamento heurístico concluído. Encontramos ${parsedResult.newDrivers.length} motoristas, ${parsedResult.newVehicles.length} veículos, ${parsedResult.newFreights.length} fretes, ${parsedResult.newRefuels.length} abastecimentos e ${parsedResult.newExpenses.length} despesas.`;
-      }
     }
+
+    // Build the summary ourselves from the actual counts instead of trusting free-form
+    // AI-generated prose, which has produced malformed numbers in practice.
+    const countsSummary = `Encontramos ${parsedResult.newDrivers.length} motorista(s), ${parsedResult.newVehicles.length} veículo(s), ${parsedResult.newFreights.length} frete(s), ${parsedResult.newRefuels.length} abastecimento(s) e ${parsedResult.newExpenses.length} despesa(s).`;
+    parsedResult.summary = usedOfflineFallback
+      ? `${offlineFallbackReason} ${countsSummary}`
+      : countsSummary;
 
     res.json({ success: true, ...parsedResult, offlineFallback: usedOfflineFallback });
   } catch (error: any) {
@@ -3477,37 +3515,33 @@ app.post("/api/ai/save-imported-data", async (req, res) => {
       }
     });
 
-    // Helpers to link driver and vehicle securely, creating them dynamically if they don't exist yet
+    // Helpers to link driver and vehicle securely, creating them dynamically if they don't exist yet.
+    // Fields we don't actually know from the spreadsheet are left blank rather than
+    // fabricated (a random CPF/CNH/RENAVAM would be a real, incorrect document).
     const getOrCreateDriverByName = (name: string | undefined | null): string => {
       if (!name || typeof name !== 'string') return db.drivers[0]?.id || "";
       const normalized = name.trim().toLowerCase();
-      
+
       const matched = db.drivers.find((d: any) => d.fullName?.trim().toLowerCase() === normalized);
       if (matched) return matched.id;
 
-      const randomDigits = (len: number) => Array.from({length: len}, () => Math.floor(Math.random() * 10)).join("");
-      const cpf = `${randomDigits(3)}.${randomDigits(3)}.${randomDigits(3)}-${randomDigits(2)}`;
-      const rg = `${randomDigits(2)}.${randomDigits(3)}.${randomDigits(3)}-${randomDigits(1)}`;
-      const phone = `(81) 99${randomDigits(3)}-${randomDigits(4)}`;
-      const cnh = randomDigits(11);
-      
       const newDrv = {
         id: `drv_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
         fullName: name.trim(),
-        cpf,
-        rg,
-        phone,
-        whatsapp: phone,
-        address: "Endereço Importado",
-        city: "Recife",
-        state: "PE",
-        cnh,
-        cnhCategory: "D",
-        cnhExpiration: "2029-12-31",
+        cpf: "",
+        rg: "",
+        phone: "",
+        whatsapp: "",
+        address: "",
+        city: "",
+        state: "",
+        cnh: "",
+        cnhCategory: "",
+        cnhExpiration: "",
         admissionDate: new Date().toISOString().split('T')[0],
-        observations: "Criado automaticamente via correspondência de nome na planilha."
+        observations: "Criado automaticamente via correspondência de nome na planilha. Complete o cadastro."
       };
-      
+
       db.drivers.push(newDrv);
       return newDrv.id;
     };
@@ -3515,29 +3549,25 @@ app.post("/api/ai/save-imported-data", async (req, res) => {
     const getOrCreateVehicleByPlate = (plate: string | undefined | null): string => {
       if (!plate || typeof plate !== 'string') return db.vehicles[0]?.id || "";
       const normalized = plate.trim().toUpperCase().replace(/[^A-Z0-9-]/g, "");
-      
+
       const matched = db.vehicles.find((v: any) => v.plate?.trim().toUpperCase().replace(/[^A-Z0-9-]/g, "") === normalized);
       if (matched) return matched.id;
 
-      const randomDigits = (len: number) => Array.from({length: len}, () => Math.floor(Math.random() * 10)).join("");
-      const renavam = randomDigits(11);
-      const chassi = `9BW${randomDigits(14).toUpperCase()}`;
-      
       const newVhc = {
         id: `vhc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
         plate: plate.trim().toUpperCase(),
-        model: "FH 540",
-        brand: "Volvo",
-        year: "2022",
-        type: "Truck",
-        loadCapacity: "30 Toneladas",
-        tankCapacity: "400",
-        averageConsumption: "2.8",
-        renavam,
-        chassi,
-        licensingExpiration: "2027-10-31",
-        currentMileage: 120000,
-        nextMaintenance: 130000,
+        model: "",
+        brand: "",
+        year: "",
+        type: "",
+        loadCapacity: "",
+        tankCapacity: "",
+        averageConsumption: "",
+        renavam: "",
+        chassi: "",
+        licensingExpiration: "",
+        currentMileage: 0,
+        nextMaintenance: 0,
         maintenanceHistory: []
       };
 
@@ -3673,7 +3703,7 @@ Extraia:
 - Coordenadas de visualização (Interactive Highlights): para ajudar o usuário a localizar dados chaves, identifique onde na imagem essas informações aparecem através de uma bounding box com coordenadas normalizadas de 0 a 100 (x, y do canto superior esquerdo, largura (width) e altura (height) relativas ao tamanho total da imagem). Tente mapear de 3 a 8 itens chave.
 Retorne a resposta estritamente em formato JSON que segue o schema de resposta especificado. Se não houver alguma informação, retorne um array vazio ou campo correspondente coerente.`;
 
-      const response = await ai.models.generateContent({
+      const response = await withTimeout(ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: [
           imagePart,
@@ -3784,10 +3814,11 @@ Retorne a resposta estritamente em formato JSON que segue o schema de resposta e
                 }
               },
               observations: { type: Type.ARRAY, items: { type: Type.STRING } }
-            }
+            },
+            required: ["texts", "numbers", "values", "dates", "categories", "tables", "summary", "observations"]
           }
         }
-      });
+      }), 25000);
 
       if (response.text) {
         parsedResult = JSON.parse(response.text);
@@ -3802,208 +3833,14 @@ Retorne a resposta estritamente em formato JSON que segue o schema de resposta e
     offlineFallbackReason = "API Key do Gemini não configurada. Ativando o simulador heurístico cognitivo de alta fidelidade para fins de demonstração.";
   }
 
-  // Fallback simulator for demo or error scenarios
+  // If the AI couldn't analyze the image, be honest about it instead of returning
+  // fabricated data (a fake receipt/report) that has nothing to do with the
+  // actual uploaded document.
   if (!parsedResult || usedOfflineFallback) {
-    const today = new Date().toISOString().split("T")[0];
-    const lowerName = (imageName || "").toLowerCase();
-    
-    if (lowerName.includes("combustivel") || lowerName.includes("abastecimento") || lowerName.includes("posto")) {
-      parsedResult = {
-        texts: ["POSTO ROTA DO SOL LTDA", "CNPJ: 12.345.678/0001-99", "AV. DAS NACOES, 5000", "SABADO 14:32", "BOLETO RECARGA", "DIESEL S10", "QUANTIDADE: 150 L", "VALOR TOTAL: R$ 890,00"],
-        numbers: ["12.345.678/0001-99", "5000", "150", "890,00"],
-        values: [
-          { label: "Diesel S10", value: 890.00, original: "R$ 890,00", type: "despesa" }
-        ],
-        dates: [today],
-        times: ["14:32"],
-        codes: ["TX-99812-B"],
-        phones: ["(81) 99888-1111"],
-        documents: ["12.345.678/0001-99"],
-        addresses: ["Av. das Nações, 5000, Recife - PE"],
-        plates: ["MNO-9876"],
-        quantities: ["150 Litros"],
-        percentages: [],
-        categories: [
-          { name: "Combustível", value: 890.00, type: "Despesa", description: "Abastecimento de Diesel S10" }
-        ],
-        colors: [
-          { color: "Amarelo", meaning: "Destaque do tipo de combustível selecionado (Diesel S10).", confidence: "Certa" }
-        ],
-        tables: [
-          {
-            title: "Detalhamento do Abastecimento",
-            headers: ["Combustível", "Litros", "Preço/L", "Total"],
-            rows: [
-              ["Diesel S10", "150 L", "R$ 5,93", "R$ 890,00"]
-            ]
-          }
-        ],
-        charts: [],
-        summary: {
-          totalRecords: 1,
-          totalExpenses: 890.00,
-          totalRevenues: 0,
-          estimatedProfit: -890.00,
-          categoriesCount: 1,
-          alerts: ["Abastecimento de grande volume concluído com sucesso."]
-        },
-        interactiveHighlights: [
-          { id: "hl_1", fieldName: "Combustível", valueText: "Diesel S10", boundingPercent: { x: 15, y: 35, width: 35, height: 8 } },
-          { id: "hl_2", fieldName: "Litros", valueText: "150 L", boundingPercent: { x: 55, y: 35, width: 20, height: 8 } },
-          { id: "hl_3", fieldName: "Valor Total", valueText: "R$ 890,00", boundingPercent: { x: 15, y: 65, width: 70, height: 12 } }
-        ],
-        observations: ["Comprovante de abastecimento limpo e perfeitamente legível.", offlineFallbackReason]
-      };
-    } else if (lowerName.includes("relatorio") || lowerName.includes("planilha") || lowerName.includes("despesa")) {
-      parsedResult = {
-        texts: ["DODISA LOGISTICA S/A", "RELATORIO SEMANAL DE DESPESAS", "PERIODO: 20 A 26 DE JUNHO", "CATEGORIAS ANALISADAS", "PNEUS REFORCO: R$ 2.350,00", "PEDAGIO ROTA AZUL: R$ 120,00", "REFEICOES MOTORISTAS: R$ 340,00", "TOTAL DESPESAS: R$ 2.810,00"],
-        numbers: ["2.350,00", "120,00", "340,00", "2.810,00"],
-        values: [
-          { label: "Pneus Reforço", value: 2350.00, original: "R$ 2.350,00", type: "despesa" },
-          { label: "Pedágio Rota Azul", value: 120.00, original: "R$ 120,00", type: "despesa" },
-          { label: "Refeições Motoristas", value: 340.00, original: "R$ 340,00", type: "despesa" }
-        ],
-        dates: [today],
-        times: ["08:00"],
-        codes: ["REL-2026-W26"],
-        phones: [],
-        documents: [],
-        addresses: [],
-        plates: [],
-        quantities: ["3 lançamentos"],
-        percentages: [],
-        categories: [
-          { name: "Pneus", value: 2350.00, type: "Despesa", description: "Compra de pneus de reposição" },
-          { name: "Pedágio", value: 120.00, type: "Despesa", description: "Taxas de pedágio em rota" },
-          { name: "Alimentação", value: 340.00, type: "Despesa", description: "Alimentação de condutores" }
-        ],
-        colors: [
-          { color: "Amarelo", meaning: "Atenção necessária para custos elevados de pneus.", confidence: "Certa" },
-          { color: "Vermelho", meaning: "Identifica o valor total excedendo a meta orçamentária.", confidence: "Certa" }
-        ],
-        tables: [
-          {
-            title: "Lançamentos Detalhados",
-            headers: ["Categoria", "Descrição", "Valor"],
-            rows: [
-              ["Pneus", "Pneus Reforço", "R$ 2.350,00"],
-              ["Pedágio", "Pedágio Rota Azul", "R$ 120,00"],
-              ["Alimentação", "Refeições Motoristas", "R$ 340,00"]
-            ]
-          }
-        ],
-        charts: [],
-        summary: {
-          totalRecords: 3,
-          totalExpenses: 2810.00,
-          totalRevenues: 0,
-          estimatedProfit: -2810.00,
-          categoriesCount: 3,
-          alerts: ["Alerta: O gasto com pneus representa 83.6% das despesas deste lote."]
-        },
-        interactiveHighlights: [
-          { id: "hl_1", fieldName: "Gasto com Pneus", valueText: "R$ 2.350,00", boundingPercent: { x: 15, y: 30, width: 70, height: 8 } },
-          { id: "hl_2", fieldName: "Pedágio", valueText: "R$ 120,00", boundingPercent: { x: 15, y: 40, width: 70, height: 8 } },
-          { id: "hl_3", fieldName: "Refeições", valueText: "R$ 340,00", boundingPercent: { x: 15, y: 50, width: 70, height: 8 } },
-          { id: "hl_4", fieldName: "Valor Total", valueText: "R$ 2.810,00", boundingPercent: { x: 15, y: 70, width: 70, height: 10 } }
-        ],
-        observations: ["Relatório estruturado de despesas corporativas semanais.", offlineFallbackReason]
-      };
-    } else if (lowerName.includes("grafico") || lowerName.includes("painel") || lowerName.includes("chart") || lowerName.includes("indicador")) {
-      parsedResult = {
-        texts: ["INDICADORES FINANCEIROS Q2 2026", "LUCRO ESTIMADO DA TRANSPORTADORA", "ABRIL: R$ 45.000", "MAIO: R$ 60.000", "JUNHO: R$ 52.000", "CRESCIMENTO TRIMESTRAL: +15%"],
-        numbers: ["45.000", "60.000", "52.000", "15"],
-        values: [
-          { label: "Lucro Abril", value: 45000.00, original: "R$ 45.000", type: "receita" },
-          { label: "Lucro Maio", value: 60000.00, original: "R$ 60.000", type: "receita" },
-          { label: "Lucro Junho", value: 52000.00, original: "R$ 52.000", type: "receita" }
-        ],
-        dates: [today],
-        times: ["09:00"],
-        codes: ["KPI-Q2"],
-        phones: [],
-        documents: [],
-        addresses: [],
-        plates: [],
-        quantities: ["3 meses analisados"],
-        percentages: ["+15%"],
-        categories: [
-          { name: "Receitas", value: 157000.00, type: "Receita", description: "Volume acumulado do trimestre" }
-        ],
-        colors: [
-          { color: "Verde", meaning: "Indica lucros elevados em crescimento acelerado.", confidence: "Certa" }
-        ],
-        tables: [
-          {
-            title: "Desempenho Mensal Q2",
-            headers: ["Mês", "Lucro Estimado", "Crescimento"],
-            rows: [
-              ["Abril", "R$ 45.000,00", "Estável"],
-              ["Maio", "R$ 60.000,00", "+33%"],
-              ["Junho", "R$ 52.000,00", "-13%"]
-            ]
-          }
-        ],
-        charts: [
-          {
-            title: "Evolução do Lucro Trimestral",
-            explanation: "O gráfico de colunas demonstra que o mês de Maio registrou o maior pico do trimestre com R$ 60.000 em lucros reais devido ao aumento de fretes agroindustriais. Junho sofreu uma ligeira retração (-13%), mantendo no entanto uma sólida média trimestral de R$ 52.333 por mês."
-          }
-        ],
-        summary: {
-          totalRecords: 3,
-          totalExpenses: 0,
-          totalRevenues: 157000.00,
-          estimatedProfit: 157000.00,
-          categoriesCount: 1,
-          alerts: ["Desempenho financeiro consolidado excelente."]
-        },
-        interactiveHighlights: [
-          { id: "hl_1", fieldName: "Pico de Lucro (Maio)", valueText: "R$ 60.000", boundingPercent: { x: 35, y: 25, width: 30, height: 40 } },
-          { id: "hl_2", fieldName: "Média (Junho)", valueText: "R$ 52.000", boundingPercent: { x: 65, y: 35, width: 30, height: 35 } }
-        ],
-        observations: ["Gráfico de barras de excelente visualização comercial.", offlineFallbackReason]
-      };
-    } else {
-      // Default general document analysis
-      parsedResult = {
-        texts: ["DOCUMENTO LOGISTICO AVULSO", "DODISA TRANSPORTES", "CHAVE NOTA: 3125-9988-1122", "VALOR: R$ 1.250,00", "DATA OPERACAO: 2026-06-25"],
-        numbers: ["3125-9988-1122", "1.250,00"],
-        values: [
-          { label: "Documento Avulso", value: 1250.00, original: "R$ 1.250,00", type: "despesa" }
-        ],
-        dates: ["2026-06-25"],
-        times: ["11:00"],
-        codes: ["3125-9988-1122"],
-        phones: [],
-        documents: [],
-        addresses: [],
-        plates: [],
-        quantities: ["1 item"],
-        percentages: [],
-        categories: [
-          { name: "Outros", value: 1250.00, type: "Despesa", description: "Despesa logística genérica" }
-        ],
-        colors: [
-          { color: "Azul", meaning: "Indica dados neutros informativos.", confidence: "Incertas" }
-        ],
-        tables: [],
-        charts: [],
-        summary: {
-          totalRecords: 1,
-          totalExpenses: 1250.00,
-          totalRevenues: 0,
-          estimatedProfit: -1250.00,
-          categoriesCount: 1,
-          alerts: ["Informação extraída com sucesso."]
-        },
-        interactiveHighlights: [
-          { id: "hl_1", fieldName: "Código Chave", valueText: "3125-9988-1122", boundingPercent: { x: 10, y: 20, width: 80, height: 10 } },
-          { id: "hl_2", fieldName: "Valor Operação", valueText: "R$ 1.250,00", boundingPercent: { x: 10, y: 50, width: 80, height: 15 } }
-        ],
-        observations: ["Análise genérica de documento finalizada com sucesso.", offlineFallbackReason]
-      };
-    }
+    return res.status(503).json({
+      success: false,
+      message: offlineFallbackReason || "Não foi possível analisar a imagem no momento. Tente novamente em instantes."
+    });
   }
 
   // Create record
