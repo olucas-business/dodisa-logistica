@@ -89,6 +89,8 @@ export default function DashboardOverview({
   const CURRENT_DATE_STR = today.toISOString().split("T")[0];
   const currentYear: number = today.getFullYear();
   const currentMonth: number = today.getMonth() + 1;
+  const FULL_MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  const currentMonthName = FULL_MONTH_NAMES[currentMonth - 1];
 
   // Active tab toggle for bottom right charts: expenses vs cargo breakdown
   const [bottomActiveTab, setBottomActiveTab] = useState<"expenses" | "cargo">("expenses");
@@ -748,7 +750,7 @@ export default function DashboardOverview({
             </span>
           </div>
           <div className="mt-3">
-            <span className="text-[10.5px] text-muted-foreground block">Este Mês (Junho)</span>
+            <span className="text-[10.5px] text-muted-foreground block">Este Mês ({currentMonthName})</span>
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               R$ {billingMonth.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
             </p>
@@ -773,10 +775,10 @@ export default function DashboardOverview({
           </div>
         </div>
 
-        {/* KPI 3: Frete pago + Frete não pago */}
+        {/* KPI 3: Adiantamento vs Saldo */}
         <div className="bg-card border border-border p-5 rounded-2xl flex flex-col justify-between hover:border-amber-500/20 transition-all duration-300 group">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Fretes: Pago vs Não Pago</span>
+            <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Fretes: Adiantamento vs Saldo</span>
             <span className="p-1.5 bg-amber-500/10 text-amber-500 rounded-lg">
               <Percent className="w-3.5 h-3.5" />
             </span>
@@ -785,11 +787,11 @@ export default function DashboardOverview({
             <span className="text-[10.5px] text-muted-foreground block">Média de Recebimento</span>
             <div className="flex items-baseline gap-1.5">
               <p className="text-xl font-black font-mono text-foreground leading-tight">
-                {paymentStatusData[0] && paymentStatusData[1] && (paymentStatusData[0].value + paymentStatusData[1].value) > 0 
+                {paymentStatusData[0] && paymentStatusData[1] && (paymentStatusData[0].value + paymentStatusData[1].value) > 0
                   ? `${Math.round((paymentStatusData[0].value / (paymentStatusData[0].value + paymentStatusData[1].value)) * 100)}%`
                   : "0%"}
               </p>
-              <span className="text-[10px] font-bold text-emerald-500">Pago</span>
+              <span className="text-[10px] font-bold text-emerald-500">Adiantamento</span>
             </div>
             <span className="text-[9.5px] text-muted-foreground">Proporção financeira mensal</span>
           </div>
@@ -808,8 +810,8 @@ export default function DashboardOverview({
                     <div className="bg-amber-500 h-full" style={{ width: `${pctN}%` }} />
                   </div>
                   <div className="flex justify-between text-[9px] font-mono font-medium text-muted-foreground">
-                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />R$ {p.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
-                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />R$ {n.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Adiantamento: R$ {p.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Saldo: R$ {n.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
                   </div>
                 </>
               );
@@ -1112,131 +1114,67 @@ export default function DashboardOverview({
         </div>
       </div>
 
-      {/* 4. SEÇÃO DESTAQUE: FATURAMENTO DETALHADO POR FRETE (ADIANTAMENTO VS SALDO) */}
-      <div id="dashboard-freight-billing-split" className="w-full">
+      {/* 4. DÍVIDAS POR CATEGORIA */}
+      <div id="dashboard-debts-by-category" className="w-full">
         <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border pb-4 gap-2">
+          <div className="flex items-center justify-between border-b border-border pb-4 gap-2">
             <div className="flex items-center gap-2.5">
               <span className="p-2 bg-blue-500/10 text-blue-500 rounded-xl">
                 <Coins className="w-4 h-4" />
               </span>
               <div>
-                <h3 className="text-sm font-bold text-foreground font-sans">Balanço de Fretes: Adiantamento vs Saldo</h3>
-                <p className="text-[11px] text-muted-foreground">Monitoramento financeiro de adiantamentos pagos imediatamente vs saldos a receber com prazo longo.</p>
+                <h3 className="text-sm font-bold text-foreground font-sans">Dívidas por Categoria</h3>
+                <p className="text-[11px] text-muted-foreground">Distribuição das contas e obrigações da transportadora por tipo de despesa.</p>
               </div>
             </div>
-            {/* Quick Metrics */}
-            <div className="flex items-center gap-4 text-xs font-mono">
-              <div className="bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded-lg border border-emerald-500/20">
-                <span className="text-[10px] text-muted-foreground uppercase mr-1 block sm:inline">Pago (Adiantamentos):</span>
-                <strong>R$ {(() => {
-                  let paid = 0;
-                  freightsMonth.forEach(f => {
-                    if (f.status === "Cancelado") return;
-                    const val = f.financial?.value || 0;
-                    const adv = f.financial?.advance !== undefined ? f.financial.advance : Math.round(val * 0.7);
-                    const bal = f.financial?.balance !== undefined ? f.financial.balance : Math.round(val * 0.3);
-                    paid += adv;
-                    if (f.financial?.balanceStatus === "Pago") paid += bal;
-                  });
-                  return paid.toLocaleString("pt-BR");
-                })()}</strong>
-              </div>
-              <div className="bg-amber-500/10 text-amber-500 px-2 py-1 rounded-lg border border-amber-500/20">
-                <span className="text-[10px] text-muted-foreground uppercase mr-1 block sm:inline">Pendente (Saldo):</span>
-                <strong>R$ {(() => {
-                  let pending = 0;
-                  freightsMonth.forEach(f => {
-                    if (f.status === "Cancelado") return;
-                    const val = f.financial?.value || 0;
-                    const bal = f.financial?.balance !== undefined ? f.financial.balance : Math.round(val * 0.3);
-                    if (f.financial?.balanceStatus !== "Pago") pending += bal;
-                  });
-                  return pending.toLocaleString("pt-BR");
-                })()}</strong>
-              </div>
-            </div>
+            <button
+              onClick={() => onNavigateTo("debts")}
+              className="px-3 py-1.5 bg-card hover:bg-muted border border-border text-foreground font-semibold rounded-xl text-[11px] transition-all flex items-center gap-1.5"
+            >
+              <Compass className="w-3.5 h-3.5 text-muted-foreground" />
+              Ir para Gestão de Dívidas
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Large Composed Chart */}
-            <div className="lg:col-span-2 space-y-2">
-              <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-                <span>Evolução por Manifestos Ativos</span>
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded bg-emerald-500" /> Adiantamento (Pago)</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-1 rounded bg-amber-500" /> Saldo Pendente</span>
-                </div>
-              </div>
-              <div className="h-[250px] w-full">
-                {recentFreightsChartData.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full w-full py-8 text-center bg-card/50 rounded-xl border border-dashed border-border p-4">
-                    <FileSpreadsheet className="w-8 h-8 text-muted-foreground/40 mb-2 stroke-[1.5]" />
-                    <p className="text-xs text-muted-foreground font-medium">Nenhum dado de frete disponível para este período.</p>
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart
-                      data={recentFreightsChartData}
-                      margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" className="opacity-40" />
-                      <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={9} tickLine={false} />
-                      <YAxis stroke="var(--color-muted-foreground)" fontSize={9} tickLine={false} />
-                      <Tooltip 
-                        formatter={(value: any, name: string) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, name]}
-                        contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
-                      />
-                      <Bar dataKey="Pago (Adiantamento)" fill="#10b981" radius={[3, 3, 0, 0]} barSize={20} />
-                      <Line type="monotone" dataKey="Não Pago (Saldo)" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 3, fill: "#f59e0b" }} activeDot={{ r: 5 }} />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </div>
+          <div className="h-[260px] w-full">
+            {(() => {
+              const debtCategoryTotals = Object.values(
+                debts.reduce((acc: Record<string, { category: string; value: number }>, d) => {
+                  acc[d.category] = acc[d.category] || { category: d.category, value: 0 };
+                  acc[d.category].value += d.value || 0;
+                  return acc;
+                }, {})
+              ).sort((a: any, b: any) => b.value - a.value);
 
-            {/* Quick list of unpaid/pending saldos */}
-            <div className="bg-muted/30 border border-border/80 rounded-xl p-4 flex flex-col justify-between">
-              <div>
-                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider mb-3">Faturas com Saldo Pendente</h4>
-                <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
-                  {(() => {
-                    const pendings = freightsMonth.filter(f => f.status !== "Cancelado" && f.financial?.balanceStatus !== "Pago");
-                    if (pendings.length === 0) {
-                      return (
-                        <div className="text-xs text-muted-foreground text-center py-6">
-                          Nenhum saldo pendente para receber! 🎉
-                        </div>
-                      );
-                    }
-                    return pendings.map(f => {
-                      const bal = f.financial?.balance !== undefined ? f.financial.balance : Math.round((f.financial?.value || 0) * 0.3);
-                      return (
-                        <div key={f.id} className="p-2.5 bg-card border border-border rounded-xl flex items-center justify-between text-[11px] gap-2">
-                          <div>
-                            <span className="font-bold font-mono text-foreground block">{f.freightNumber}</span>
-                            <span className="text-muted-foreground text-[10px]">{f.origin.city} → {f.destination.city}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="font-bold text-amber-500 font-mono block">R$ {bal.toLocaleString("pt-BR")}</span>
-                            <span className="text-[9px] text-muted-foreground bg-amber-500/10 px-1 py-0.5 rounded uppercase font-semibold">A Receber</span>
-                          </div>
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
-              <div className="pt-3 border-t border-border mt-3">
-                <button
-                  onClick={() => onNavigateTo("freights")}
-                  className="px-4 py-2 bg-card hover:bg-muted border border-border text-foreground font-semibold rounded-xl text-xs transition-all w-full flex items-center justify-center gap-1.5"
-                >
-                  <Compass className="w-3.5 h-3.5 text-muted-foreground" />
-                  Ir para Manifesto de Fretes
-                </button>
-              </div>
-            </div>
+              if (debtCategoryTotals.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center h-full w-full py-8 text-center bg-card/50 rounded-xl border border-dashed border-border p-4">
+                    <Coins className="w-8 h-8 text-muted-foreground/40 mb-2 stroke-[1.5]" />
+                    <p className="text-xs text-muted-foreground font-medium">Nenhuma dívida cadastrada.</p>
+                  </div>
+                );
+              }
+
+              const debtColors = ["#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#6b7280"];
+              return (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={debtCategoryTotals}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" className="opacity-40" />
+                    <XAxis dataKey="category" stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} />
+                    <YAxis stroke="var(--color-muted-foreground)" fontSize={9} tickLine={false} />
+                    <Tooltip
+                      formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, "Total"]}
+                      contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
+                    />
+                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                      {debtCategoryTotals.map((_: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={debtColors[index % debtColors.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              );
+            })()}
           </div>
         </div>
       </div>
