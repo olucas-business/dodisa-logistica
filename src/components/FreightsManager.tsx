@@ -346,6 +346,7 @@ export default function FreightsManager({
                 <th className="p-3">Motorista / Veículo</th>
                 <th className="p-3">Origem → Destino</th>
                 <th className="p-3">Carga / Qtde</th>
+                <th className="p-3">Km Total</th>
                 <th className="p-3">Faturamento</th>
                 <th className="p-3">Status</th>
                 <th className="p-3 text-right pr-5">Ações</th>
@@ -377,6 +378,9 @@ export default function FreightsManager({
                     <td className="p-3">
                       <p className="font-medium text-gray-800">{f.cargo.type}</p>
                       <p className="text-[10px] text-gray-500">{f.cargo.qty} {f.cargo.unit}</p>
+                    </td>
+                    <td className="p-3">
+                      <p className="font-mono font-bold text-gray-800">{(f.mileage?.total || 0).toLocaleString("pt-BR")} KM</p>
                     </td>
                     <td className="p-3">
                       <p className="font-black text-emerald-700">R$ {f.financial.value.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}</p>
@@ -437,7 +441,7 @@ export default function FreightsManager({
               })}
               {filteredFreights.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="text-center py-20 text-gray-400">
+                  <td colSpan={9} className="text-center py-20 text-gray-400">
                     <Truck className="w-12 h-12 mx-auto mb-2 text-gray-300 animate-pulse" />
                     <p className="text-xs">Nenhum frete correspondente encontrado.</p>
                   </td>
@@ -763,45 +767,45 @@ export default function FreightsManager({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">Pedágios</label>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500 block truncate">Pedágios</label>
                       <input
                         type="number"
                         value={toll}
                         onChange={(e) => setToll(e.target.value)}
                         placeholder="150"
-                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded p-1 text-xs outline-none font-mono"
+                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">Alimentação</label>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500 block truncate">Alimentação</label>
                       <input
                         type="number"
                         value={food}
                         onChange={(e) => setFood(e.target.value)}
                         placeholder="120"
-                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded p-1 text-xs outline-none font-mono"
+                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">Hospedagem</label>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500 block truncate">Hospedagem</label>
                       <input
                         type="number"
                         value={lodging}
                         onChange={(e) => setLodging(e.target.value)}
                         placeholder="0"
-                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded p-1 text-xs outline-none font-mono"
+                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">Outros custos</label>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500 block truncate">Outros custos</label>
                       <input
                         type="number"
                         value={otherExpenses}
                         onChange={(e) => setOtherExpenses(e.target.value)}
                         placeholder="50"
-                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded p-1 text-xs outline-none font-mono"
+                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
                       />
                     </div>
                   </div>
