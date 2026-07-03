@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Debt } from "../types";
+import SessionAnnotations from "./SessionAnnotations";
 import {
   Coins,
   Plus,
@@ -459,6 +460,8 @@ export default function DebtsManager({
           })}
         </div>
       )}
+
+      <SessionAnnotations moduleKey="debts" title="Anotações & Prints de Gastos" />
 
       {/* CREATE NEW DEBT MODAL */}
       {isAddModalOpen && (

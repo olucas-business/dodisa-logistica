@@ -769,23 +769,32 @@ export default function DashboardOverview({
               <span className="flex items-center gap-0.5"><span className="w-1 h-1 rounded-full bg-amber-500" /> Saldo</span>
             </div>
           </div>
-          <div className="h-[55px] w-full mt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={recentFreightsChartData.slice(-6)} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                <defs>
-                  <linearGradient id="miniAdiantamentoGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Area type="monotone" dataKey="Pago (Adiantamento)" stroke="#10b981" strokeWidth={1.5} fill="url(#miniAdiantamentoGrad)" dot={{ r: 1.5 }} />
-                <Line type="monotone" dataKey="Não Pago (Saldo)" stroke="#f59e0b" strokeWidth={1.5} dot={{ r: 1.5 }} />
-                <Tooltip
-                  formatter={(value: any, name: string) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, name]}
-                  contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "8px" }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+          <div className="w-full mt-2">
+            {(() => {
+              const recent = recentFreightsChartData.slice(-6);
+              const totalAdiantamento = recent.reduce((sum: number, f: any) => sum + (f["Pago (Adiantamento)"] || 0), 0);
+              const totalSaldo = recent.reduce((sum: number, f: any) => sum + (f["Não Pago (Saldo)"] || 0), 0);
+              const total = totalAdiantamento + totalSaldo;
+              const pctAdiantamento = total > 0 ? (totalAdiantamento / total) * 100 : 0;
+              const pctSaldo = total > 0 ? 100 - pctAdiantamento : 0;
+
+              if (total === 0) {
+                return <div className="text-[10px] text-muted-foreground/60 h-[24px] flex items-center justify-center font-medium">Nenhum dado</div>;
+              }
+
+              return (
+                <div className="space-y-1.5">
+                  <div className="w-full h-2 rounded-full bg-muted flex overflow-hidden border border-border/40">
+                    <div className="bg-emerald-500 h-full" style={{ width: `${pctAdiantamento}%` }} />
+                    <div className="bg-amber-500 h-full" style={{ width: `${pctSaldo}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[8.5px] font-mono font-medium text-muted-foreground">
+                    <span>R$ {totalAdiantamento.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                    <span>R$ {totalSaldo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 

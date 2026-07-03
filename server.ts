@@ -67,6 +67,7 @@ interface Database {
   tires: any[];
   debts: any[];
   maintenance_logs: any[];
+  annotations: any[];
   caixa_caminhao: any[];
   caixa_movimentacoes: any[];
   image_analyses?: any[];
@@ -109,6 +110,7 @@ const DEFAULT_DB: Database = {
   tires: [],
   debts: [],
   maintenance_logs: [],
+  annotations: [],
   caixa_caminhao: [],
   caixa_movimentacoes: [],
   trip_logs: [],
@@ -1120,6 +1122,10 @@ async function loadDB(): Promise<Database> {
     }
     if (!db.maintenance_logs) {
       db.maintenance_logs = [];
+      modified = true;
+    }
+    if (!db.annotations) {
+      db.annotations = [];
       modified = true;
     }
     if (!db.caixa_caminhao) {
@@ -2258,6 +2264,44 @@ app.delete("/api/maintenance-logs/:id", async (req, res) => {
   const db = (await loadDB());
   db.maintenance_logs = db.maintenance_logs || [];
   db.maintenance_logs = db.maintenance_logs.filter(m => m.id !== id);
+  await saveDB(db);
+  res.json({ success: true });
+});
+
+// Session Annotations (upload de imagem + anotacao por modulo)
+app.get("/api/annotations", async (req, res) => {
+  const { module: moduleKey } = req.query;
+  const db = (await loadDB());
+  const all = db.annotations || [];
+  const filtered = moduleKey ? all.filter(a => a.module === moduleKey) : all;
+  res.json({ success: true, annotations: filtered });
+});
+
+app.post("/api/annotations", async (req, res) => {
+  const db = (await loadDB());
+  const { module: moduleKey, imageUrl, note } = req.body;
+  if (!moduleKey || !imageUrl) {
+    return res.status(400).json({ success: false, message: "Módulo e imagem são obrigatórios." });
+  }
+  const newAnnotation = {
+    id: `note_${Date.now()}`,
+    module: moduleKey,
+    imageUrl,
+    note: note || "",
+    date: new Date().toISOString().split("T")[0],
+    createdAt: new Date().toISOString()
+  };
+  db.annotations = db.annotations || [];
+  db.annotations.push(newAnnotation);
+  await saveDB(db);
+  res.json({ success: true, annotation: newAnnotation });
+});
+
+app.delete("/api/annotations/:id", async (req, res) => {
+  const { id } = req.params;
+  const db = (await loadDB());
+  db.annotations = db.annotations || [];
+  db.annotations = db.annotations.filter(a => a.id !== id);
   await saveDB(db);
   res.json({ success: true });
 });
