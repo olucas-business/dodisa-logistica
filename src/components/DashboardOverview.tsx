@@ -27,7 +27,8 @@ import {
   DollarSign,
   Fuel,
   Percent,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Route
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -1176,6 +1177,79 @@ export default function DashboardOverview({
               );
             })()}
           </div>
+        </div>
+      </div>
+
+      {/* 4b. CUSTOS OPERACIONAIS DOS FRETES */}
+      <div id="dashboard-freight-operational-costs" className="w-full">
+        <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-4 gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 bg-orange-500/10 text-orange-500 rounded-xl">
+                <Route className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-foreground font-sans">Custos Operacionais dos Fretes</h3>
+                <p className="text-[11px] text-muted-foreground">Pedágio, alimentação, hospedagem, comissão e outros custos lançados nos manifestos.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigateTo("freights")}
+              className="px-3 py-1.5 bg-card hover:bg-muted border border-border text-foreground font-semibold rounded-xl text-[11px] transition-all flex items-center gap-1.5"
+            >
+              <Compass className="w-3.5 h-3.5 text-muted-foreground" />
+              Ir para Manifesto de Fretes
+            </button>
+          </div>
+
+          {(() => {
+            const freightCostColors = ["#f97316", "#8b5cf6", "#06b6d4", "#10b981", "#ef4444"];
+            const activeFreightsForCost = freights.filter(f => f.status !== "Cancelado");
+            const freightCostBreakdown = [
+              { name: "Pedágio", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.toll || 0), 0) },
+              { name: "Alimentação", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.food || 0), 0) },
+              { name: "Hospedagem", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.lodging || 0), 0) },
+              { name: "Comissão", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.commission || 0), 0) },
+              { name: "Outros", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.otherExpenses || 0), 0) }
+            ].filter(c => c.value > 0);
+
+            if (freightCostBreakdown.length === 0) {
+              return (
+                <div className="flex flex-col items-center justify-center h-[180px] w-full py-8 text-center bg-card/50 rounded-xl border border-dashed border-border p-4">
+                  <Route className="w-8 h-8 text-muted-foreground/40 mb-2 stroke-[1.5]" />
+                  <p className="text-xs text-muted-foreground font-medium">Nenhum custo de frete cadastrado.</p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="h-[200px] w-full sm:w-[220px] flex-shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={freightCostBreakdown} cx="50%" cy="50%" innerRadius={50} outerRadius={72} paddingAngle={3} dataKey="value">
+                        {freightCostBreakdown.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={freightCostColors[index % freightCostColors.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Total"]}
+                        contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap gap-3 text-[11px] font-semibold text-muted-foreground">
+                  {freightCostBreakdown.map((item, index) => (
+                    <div key={item.name} className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: freightCostColors[index % freightCostColors.length] }} />
+                      <span>{item.name}: <strong className="text-foreground">R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong></span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
