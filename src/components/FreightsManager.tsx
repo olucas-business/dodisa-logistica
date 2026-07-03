@@ -309,7 +309,7 @@ export default function FreightsManager({
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {["TODOS", "Pendente", "Em andamento", "Finalizado", "Cancelado"].map((statusOption) => (
               <button
                 key={statusOption}
@@ -408,9 +408,9 @@ export default function FreightsManager({
                     </td>
                     <td className="p-3">
                       <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
-                        f.status === "Finalizado" ? "bg-blue-50 border-blue-200 text-blue-700" :
-                        f.status === "Em andamento" ? "bg-green-50 border-green-200 text-green-700" :
-                        f.status === "Pendente" ? "bg-amber-50 border-amber-200 text-amber-700" : "bg-red-50 border-red-200 text-red-700"
+                        f.status === "Finalizado" ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/40 text-blue-700 dark:text-blue-400" :
+                        f.status === "Em andamento" ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900/40 text-green-700 dark:text-green-400" :
+                        f.status === "Pendente" ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/40 text-amber-700 dark:text-amber-400" : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-400"
                       }`}>
                         {f.status}
                       </span>

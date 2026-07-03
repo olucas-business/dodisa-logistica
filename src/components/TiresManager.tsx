@@ -409,10 +409,10 @@ export default function TiresManager({
 
                     <span
                       className={`px-2 py-0.5 rounded text-[9px] font-black uppercase border font-mono ${
-                        t.status === "Em uso" ? "bg-blue-50 border-blue-200 text-blue-700" :
-                        t.status === "Estoque" ? "bg-emerald-50 border-emerald-200 text-emerald-700" :
-                        t.status === "Recapagem" ? "bg-purple-50 border-purple-200 text-purple-700" :
-                        "bg-red-50 border-red-200 text-red-700"
+                        t.status === "Em uso" ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/40 text-blue-700 dark:text-blue-400" :
+                        t.status === "Estoque" ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-400" :
+                        t.status === "Recapagem" ? "bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-900/40 text-purple-700 dark:text-purple-400" :
+                        "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-400"
                       }`}
                     >
                       {t.status}

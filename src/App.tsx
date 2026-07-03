@@ -55,7 +55,7 @@ import {
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [tab, setTab] = useState<string>("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
   const [aiSubTab, setAiSubTab] = useState<"image_reader" | "import" | "ai_assistant">("image_reader");
 
   // Theme management state & effect

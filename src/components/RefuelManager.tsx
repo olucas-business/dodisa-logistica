@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Refuel, Driver, Vehicle } from "../types";
-import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Line, ComposedChart } from "recharts";
+import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Line, ComposedChart, AreaChart, Area } from "recharts";
 import { Plus, Search, Calendar, MapPin, Trash2, Edit2, CheckCircle, Fuel, Gauge, Route, Wallet, Droplets } from "lucide-react";
 
 const REFUEL_CHART_COLORS = ["#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#ef4444", "#6b7280"];
@@ -261,13 +261,19 @@ export default function RefuelManager({
                 <div className="h-full flex items-center justify-center text-xs text-gray-400">Sem dados temporais disponíveis.</div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyFuelTotals}>
+                  <AreaChart data={monthlyFuelTotals} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="refuelMonthlyGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                    <XAxis dataKey="month" stroke="currentColor" className="text-gray-400" fontSize={10} tickLine={false} />
-                    <YAxis stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} />
+                    <XAxis dataKey="month" stroke="currentColor" className="text-gray-400" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
                     <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
-                    <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  </BarChart>
+                    <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2.5} fill="url(#refuelMonthlyGrad)" dot={{ r: 3 }} />
+                  </AreaChart>
                 </ResponsiveContainer>
               )}
             </div>

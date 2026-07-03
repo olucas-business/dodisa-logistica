@@ -26,9 +26,11 @@ import {
   Bar, 
   XAxis, 
   YAxis, 
-  CartesianGrid, 
+  CartesianGrid,
   Tooltip,
-  Legend
+  Legend,
+  AreaChart,
+  Area
 } from "recharts";
 
 interface TruckCashManagerProps {
@@ -807,13 +809,19 @@ export default function TruckCashManager({
                           </div>
                         ) : (
                           <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={monthlyData}>
+                            <AreaChart data={monthlyData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                              <defs>
+                                <linearGradient id="truckCashMonthlyGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
+                                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
                               <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                              <XAxis dataKey="month" stroke="currentColor" className="text-muted-foreground" fontSize={10} tickLine={false} />
-                              <YAxis stroke="currentColor" className="text-muted-foreground" fontSize={9} tickLine={false} />
+                              <XAxis dataKey="month" stroke="currentColor" className="text-muted-foreground" fontSize={10} tickLine={false} axisLine={false} />
+                              <YAxis stroke="currentColor" className="text-muted-foreground" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
                               <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
-                              <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                            </BarChart>
+                              <Area type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2.5} fill="url(#truckCashMonthlyGrad)" dot={{ r: 3 }} />
+                            </AreaChart>
                           </ResponsiveContainer>
                         )}
                       </div>
