@@ -3,7 +3,39 @@ import { Expense } from "../types";
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { Plus, Search, Calendar, DollarSign, Trash2, CheckCircle, ArrowDown, PieChart as PieChartIcon } from "lucide-react";
 
-const EXPENSE_CHART_COLORS = ["#ef4444", "#f97316", "#f59e0b", "#8b5cf6", "#06b6d4", "#10b981", "#ec4899", "#6b7280"];
+const EXPENSE_CHART_COLORS = ["#ef4444", "#f97316", "#f59e0b", "#8b5cf6", "#06b6d4", "#10b981", "#ec4899", "#6b7280", "#3b82f6", "#a855f7", "#f43f5e", "#14b8a6", "#84cc16"];
+
+const EXPENSE_CATEGORIES = [
+  "Combustível",
+  "Pedágio",
+  "Oficina",
+  "Manutenção",
+  "Borracheiro",
+  "Pneus",
+  "Chapa",
+  "Boletos",
+  "Multas",
+  "Cartão de Crédito",
+  "Impostos",
+  "Seguros",
+  "Outros"
+];
+
+const CATEGORY_BADGE_STYLES: Record<string, string> = {
+  "Combustível": "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-700 dark:text-amber-400",
+  "Pedágio": "bg-teal-50 dark:bg-teal-950/20 border-teal-200 dark:border-teal-900/40 text-teal-700 dark:text-teal-400",
+  "Oficina": "bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/40 text-orange-700 dark:text-orange-400",
+  "Manutenção": "bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/40 text-orange-700 dark:text-orange-400",
+  "Borracheiro": "bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/40 text-purple-700 dark:text-purple-400",
+  "Pneus": "bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/40 text-purple-700 dark:text-purple-400",
+  "Chapa": "bg-cyan-50 dark:bg-cyan-950/20 border-cyan-200 dark:border-cyan-900/40 text-cyan-700 dark:text-cyan-400",
+  "Boletos": "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/40 text-indigo-700 dark:text-indigo-400",
+  "Multas": "bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/40 text-rose-700 dark:text-rose-400",
+  "Cartão de Crédito": "bg-pink-50 dark:bg-pink-950/20 border-pink-200 dark:border-pink-900/40 text-pink-700 dark:text-pink-400",
+  "Impostos": "bg-slate-50 dark:bg-slate-950/20 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-400",
+  "Seguros": "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-400",
+  "Outros": "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-400"
+};
 
 interface ExpensesManagerProps {
   expenses: Expense[];
@@ -169,7 +201,7 @@ export default function ExpensesManager({
           </div>
 
           <div className="flex gap-1.5 flex-wrap">
-            {["TODOS", "Combustível", "Pedágio", "Oficina", "Pneus", "Impostos", "Seguros", "Outros"].map((cat) => (
+            {["TODOS", ...EXPENSE_CATEGORIES].map((cat) => (
               <button
                 key={cat}
                 onClick={() => setCategoryFilter(cat)}
@@ -212,12 +244,7 @@ export default function ExpensesManager({
                 <tr key={e.id} className="hover:bg-gray-50/70 dark:hover:bg-slate-800/40 text-gray-900 dark:text-gray-100 transition-all font-sans">
                   <td className="p-3 pl-5 font-mono text-gray-500 dark:text-gray-400">{e.date}</td>
                   <td className="p-3 font-semibold">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${
-                      e.category === "Combustível" ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-700 dark:text-amber-400" :
-                      e.category === "Oficina" ? "bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/40 text-orange-700 dark:text-orange-400" :
-                      e.category === "Pneus" ? "bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/40 text-purple-700 dark:text-purple-400" :
-                      e.category === "Pedágio" ? "bg-teal-50 dark:bg-teal-950/20 border-teal-200 dark:border-teal-900/40 text-teal-700 dark:text-teal-400" : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-405"
-                    }`}>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${CATEGORY_BADGE_STYLES[e.category] || CATEGORY_BADGE_STYLES["Outros"]}`}>
                       {e.category}
                     </span>
                   </td>
@@ -282,7 +309,13 @@ export default function ExpensesManager({
                     <option value="Combustível">Combustível</option>
                     <option value="Pedágio">Pedágio</option>
                     <option value="Oficina">Oficina (Manutenção)</option>
+                    <option value="Manutenção">Manutenção</option>
+                    <option value="Borracheiro">Borracheiro</option>
                     <option value="Pneus">Pneus (Borracharia)</option>
+                    <option value="Chapa">Chapa (Carga/Descarga)</option>
+                    <option value="Boletos">Boletos</option>
+                    <option value="Multas">Multas</option>
+                    <option value="Cartão de Crédito">Cartão de Crédito</option>
                     <option value="Impostos">Impostos (IPVA/Taxas)</option>
                     <option value="Seguros">Seguros de Carga/Frota</option>
                     <option value="Outros">Outros</option>

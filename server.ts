@@ -2275,20 +2275,20 @@ app.post("/api/caixa-caminhao/saldo", async (req, res) => {
 
 app.post("/api/caixa-caminhao/gasto", async (req, res) => {
   const db = (await loadDB());
-  const { caixa_id, categoria, valor, descricao, data, anexo } = req.body;
-  
+  const { caixa_id, categoria, valor, descricao, data, anexo, moeda, valorOriginal, cotacao } = req.body;
+
   if (!caixa_id || !categoria || !valor) {
     return res.status(400).json({ success: false, message: "Campos obrigatórios ausentes." });
   }
-  
+
   db.caixa_movimentacoes = db.caixa_movimentacoes || [];
   db.caixa_caminhao = db.caixa_caminhao || [];
-  
+
   const caixa = db.caixa_caminhao.find(c => c.id === caixa_id);
   if (!caixa) {
     return res.status(404).json({ success: false, message: "Caixa do caminhão não encontrado." });
   }
-  
+
   const now = new Date().toISOString();
   const newMov = {
     id: `mov_${Date.now()}`,
@@ -2298,6 +2298,9 @@ app.post("/api/caixa-caminhao/gasto", async (req, res) => {
     descricao: descricao || "",
     anexo: anexo || "",
     data: data || now.split("T")[0],
+    moeda: moeda || "BRL",
+    valorOriginal: valorOriginal !== undefined ? Number(valorOriginal) || 0 : Number(valor) || 0,
+    cotacao: cotacao !== undefined ? Number(cotacao) || 1 : 1,
     created_at: now,
     updated_at: now
   };
@@ -2325,14 +2328,17 @@ app.put("/api/caixa-caminhao/gasto/:id", async (req, res) => {
     return res.status(404).json({ success: false, message: "Lançamento não encontrado." });
   }
   
-  const { categoria, valor, descricao, data, anexo } = req.body;
+  const { categoria, valor, descricao, data, anexo, moeda, valorOriginal, cotacao } = req.body;
   const now = new Date().toISOString();
-  
+
   if (categoria !== undefined) mov.categoria = categoria;
   if (valor !== undefined) mov.valor = Number(valor) || 0;
   if (descricao !== undefined) mov.descricao = descricao;
   if (data !== undefined) mov.data = data;
   if (anexo !== undefined) mov.anexo = anexo;
+  if (moeda !== undefined) mov.moeda = moeda;
+  if (valorOriginal !== undefined) mov.valorOriginal = Number(valorOriginal) || 0;
+  if (cotacao !== undefined) mov.cotacao = Number(cotacao) || 1;
   mov.updated_at = now;
   
   // Recalculate saldo_atual for the related caixa

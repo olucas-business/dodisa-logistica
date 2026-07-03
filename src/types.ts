@@ -151,6 +151,7 @@ export interface Refuel {
   liters: number;
   pricePerLiter: number;
   totalValue: number;
+  odometer?: number;
   receipt?: string;
 }
 
@@ -250,6 +251,9 @@ export interface CaixaMovimentacao {
   descricao: string;
   anexo?: string;
   data: string;
+  moeda?: string;
+  valorOriginal?: number;
+  cotacao?: number;
   created_at: string;
   updated_at: string;
 }

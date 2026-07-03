@@ -536,7 +536,7 @@ export default function App() {
     }
   };
 
-  const handleAddGasto = async (payload: { caixa_id: string; categoria: string; valor: number; descricao: string; data: string; anexo?: string }) => {
+  const handleAddGasto = async (payload: { caixa_id: string; categoria: string; valor: number; descricao: string; data: string; anexo?: string; moeda?: string; valorOriginal?: number; cotacao?: number }) => {
     try {
       const res = await fetch("/api/caixa-caminhao/gasto", {
         method: "POST",
@@ -555,7 +555,7 @@ export default function App() {
     }
   };
 
-  const handleUpdateGasto = async (id: string, payload: { categoria: string; valor: number; descricao: string; data: string; anexo?: string }) => {
+  const handleUpdateGasto = async (id: string, payload: { categoria: string; valor: number; descricao: string; data: string; anexo?: string; moeda?: string; valorOriginal?: number; cotacao?: number }) => {
     try {
       const res = await fetch(`/api/caixa-caminhao/gasto/${id}`, {
         method: "PUT",

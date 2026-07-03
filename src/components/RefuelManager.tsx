@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Refuel, Driver, Vehicle } from "../types";
-import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-import { Plus, Search, Calendar, MapPin, Trash2, Edit2, CheckCircle, Fuel } from "lucide-react";
+import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Line, ComposedChart } from "recharts";
+import { Plus, Search, Calendar, MapPin, Trash2, Edit2, CheckCircle, Fuel, Gauge, Route, Wallet, Droplets } from "lucide-react";
 
 const REFUEL_CHART_COLORS = ["#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#ef4444", "#6b7280"];
 
@@ -31,6 +31,7 @@ export default function RefuelManager({
   const [liters, setLiters] = useState("");
   const [pricePerLiter, setPricePerLiter] = useState("");
   const [gasStation, setGasStation] = useState("Posto Petrobras");
+  const [odometer, setOdometer] = useState("");
 
   const resetForm = () => {
     setDate(new Date().toISOString().split("T")[0]);
@@ -39,6 +40,7 @@ export default function RefuelManager({
     setLiters("");
     setPricePerLiter("");
     setGasStation("Posto Petrobras");
+    setOdometer("");
   };
 
   const handleOpenAdd = () => {
@@ -65,6 +67,7 @@ export default function RefuelManager({
       pricePerLiter: priceNum,
       totalValue: total,
       gasStation,
+      odometer: odometer ? Number(odometer) : undefined,
       receipt: ""
     };
 
@@ -134,8 +137,91 @@ export default function RefuelManager({
     }, {})
   ).sort((a: any, b: any) => a.month.localeCompare(b.month));
 
+  // Spend/count by gas station ("onde abasteceu")
+  const stationTotals = Object.values(
+    refuels.reduce((acc: Record<string, { station: string; value: number; count: number }>, r) => {
+      const station = r.gasStation || "Não informado";
+      acc[station] = acc[station] || { station, value: 0, count: 0 };
+      acc[station].value += r.totalValue || 0;
+      acc[station].count += 1;
+      return acc;
+    }, {})
+  ).sort((a: any, b: any) => b.value - a.value).slice(0, 8);
+
+  // Fuel efficiency: compute Km rodado / Km-L between consecutive refuels of the same vehicle (requires odometer)
+  const refuelsWithEfficiency = (() => {
+    const byVehicle: Record<string, Refuel[]> = {};
+    refuels.forEach(r => {
+      byVehicle[r.vehicleId] = byVehicle[r.vehicleId] || [];
+      byVehicle[r.vehicleId].push(r);
+    });
+    const enriched: Record<string, { kmSinceLast: number | null; kmPerLiter: number | null }> = {};
+    Object.values(byVehicle).forEach(list => {
+      const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
+      for (let i = 0; i < sorted.length; i++) {
+        const curr = sorted[i];
+        const prev = sorted[i - 1];
+        if (prev && curr.odometer && prev.odometer && curr.odometer > prev.odometer) {
+          const kmSinceLast = curr.odometer - prev.odometer;
+          enriched[curr.id] = { kmSinceLast, kmPerLiter: curr.liters > 0 ? kmSinceLast / curr.liters : null };
+        } else {
+          enriched[curr.id] = { kmSinceLast: null, kmPerLiter: null };
+        }
+      }
+    });
+    return enriched;
+  })();
+
+  const efficiencyChartData = [...refuels]
+    .filter(r => refuelsWithEfficiency[r.id]?.kmPerLiter)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map(r => ({
+      date: r.date.slice(5),
+      kmPerLiter: Number((refuelsWithEfficiency[r.id]?.kmPerLiter || 0).toFixed(2)),
+      liters: r.liters
+    }));
+
+  // Summary KPIs
+  const totalLitersAll = refuels.reduce((sum, r) => sum + (r.liters || 0), 0);
+  const totalValueAll = refuels.reduce((sum, r) => sum + (r.totalValue || 0), 0);
+  const avgValuePerRefuel = refuels.length > 0 ? totalValueAll / refuels.length : 0;
+  const avgLitersPerRefuel = refuels.length > 0 ? totalLitersAll / refuels.length : 0;
+  const validEfficiencyEntries = Object.values(refuelsWithEfficiency).filter(e => e.kmPerLiter !== null) as { kmSinceLast: number; kmPerLiter: number }[];
+  const avgKmPerLiter = validEfficiencyEntries.length > 0
+    ? validEfficiencyEntries.reduce((sum, e) => sum + e.kmPerLiter, 0) / validEfficiencyEntries.length
+    : null;
+  const totalKmTracked = validEfficiencyEntries.reduce((sum, e) => sum + e.kmSinceLast, 0);
+
   return (
     <div id="modulo-abastecimento-container" className="space-y-6">
+      {/* KPI Summary Row - Diesel is the company's largest expense, deserves top-level visibility */}
+      {refuels.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+            <span className="text-[9.5px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1"><Wallet className="w-3 h-3" />Gasto Total</span>
+            <p className="text-lg font-black font-mono text-gray-900 dark:text-gray-100 mt-1">R$ {totalValueAll.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</p>
+          </div>
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+            <span className="text-[9.5px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1"><Droplets className="w-3 h-3" />Litros Totais</span>
+            <p className="text-lg font-black font-mono text-gray-900 dark:text-gray-100 mt-1">{totalLitersAll.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L</p>
+          </div>
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+            <span className="text-[9.5px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1"><Route className="w-3 h-3" />Média / Abastecimento</span>
+            <p className="text-lg font-black font-mono text-gray-900 dark:text-gray-100 mt-1">R$ {avgValuePerRefuel.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</p>
+            <span className="text-[9px] text-gray-400 dark:text-gray-500">{avgLitersPerRefuel.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L em média</span>
+          </div>
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+            <span className="text-[9.5px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1"><Gauge className="w-3 h-3" />Consumo Médio</span>
+            <p className="text-lg font-black font-mono text-gray-900 dark:text-gray-100 mt-1">{avgKmPerLiter !== null ? `${avgKmPerLiter.toFixed(2)} Km/L` : "—"}</p>
+            <span className="text-[9px] text-gray-400 dark:text-gray-500">{avgKmPerLiter === null ? "Informe o odômetro" : "Baseado no odômetro"}</span>
+          </div>
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+            <span className="text-[9.5px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1"><Route className="w-3 h-3" />Km Rastreado</span>
+            <p className="text-lg font-black font-mono text-gray-900 dark:text-gray-100 mt-1">{totalKmTracked.toLocaleString("pt-BR")} Km</p>
+          </div>
+        </div>
+      )}
+
       {/* Charts */}
       {refuels.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -186,6 +272,50 @@ export default function RefuelManager({
               )}
             </div>
           </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+            <h4 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-emerald-500" />
+              Onde Abasteceu (Por Posto)
+            </h4>
+            <div className="h-[220px] w-full">
+              {stationTotals.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-gray-400">Sem dados de postos disponíveis.</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stationTotals} layout="vertical" margin={{ left: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.15} />
+                    <XAxis type="number" stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} />
+                    <YAxis dataKey="station" type="category" stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} width={110} />
+                    <Tooltip formatter={(val: any, name: string) => name === "value" ? [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Total Gasto"] : [val, "Abastecimentos"]} />
+                    <Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
+            <h4 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1.5">
+              <Gauge className="w-4 h-4 text-purple-500" />
+              Consumo (Km/L) por Abastecimento
+            </h4>
+            <div className="h-[220px] w-full">
+              {efficiencyChartData.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-gray-400 text-center px-6">Preencha o odômetro nos abastecimentos para visualizar a evolução do consumo.</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={efficiencyChartData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                    <XAxis dataKey="date" stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} />
+                    <YAxis stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} />
+                    <Tooltip formatter={(val: any) => [`${val} Km/L`, "Consumo"]} />
+                    <Line type="monotone" dataKey="kmPerLiter" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -222,6 +352,7 @@ export default function RefuelManager({
                 <th className="p-3">Posto de Combustível</th>
                 <th className="p-3 text-right">Liters</th>
                 <th className="p-3 text-right">Preço por Litro</th>
+                <th className="p-3 text-right">Consumo (Km/L)</th>
                 <th className="p-3 text-right pr-5">Valor Total Pago</th>
                 <th className="p-3 text-center">Ação</th>
               </tr>
@@ -242,6 +373,9 @@ export default function RefuelManager({
                     </td>
                     <td className="p-3 text-right font-mono font-bold text-gray-800 dark:text-gray-200">{r.liters.toLocaleString("pt-BR")} L</td>
                     <td className="p-3 text-right font-mono text-gray-500 dark:text-gray-400">R$ {r.pricePerLiter.toFixed(3)}</td>
+                    <td className="p-3 text-right font-mono text-gray-500 dark:text-gray-400">
+                      {refuelsWithEfficiency[r.id]?.kmPerLiter ? `${refuelsWithEfficiency[r.id]?.kmPerLiter?.toFixed(2)} Km/L` : "—"}
+                    </td>
                     <td className="p-3 text-right font-mono font-black text-red-600 dark:text-red-400 pr-5">R$ {r.totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
                     <td className="p-3 text-center">
                       <button
@@ -262,7 +396,7 @@ export default function RefuelManager({
               })}
               {filteredRefuels.length === 0 && (
                 <tr className="font-sans">
-                  <td colSpan={8} className="text-center py-16 text-gray-400 dark:text-gray-550">Nenhum registro de abastecimento encontrado.</td>
+                  <td colSpan={9} className="text-center py-16 text-gray-400 dark:text-gray-550">Nenhum registro de abastecimento encontrado.</td>
                 </tr>
               )}
             </tbody>
@@ -354,6 +488,19 @@ export default function RefuelManager({
                     className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans">Odômetro Atual (KM) - opcional</label>
+                <input
+                  type="number"
+                  step="1"
+                  value={odometer}
+                  onChange={(e) => setOdometer(e.target.value)}
+                  placeholder="Ex: 128450"
+                  className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                />
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">Preenchendo o odômetro em cada abastecimento, calculamos o consumo (Km/L) automaticamente.</p>
               </div>
 
               {Number(liters) > 0 && Number(pricePerLiter) > 0 && (

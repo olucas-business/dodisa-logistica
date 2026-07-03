@@ -38,10 +38,18 @@ interface TruckCashManagerProps {
   movimentacoes: CaixaMovimentacao[];
   currentUserRole?: string;
   onDefinirSaldo: (payload: { veiculo_id: string; saldo_inicial: number; observacao?: string }) => Promise<boolean>;
-  onAddGasto: (payload: { caixa_id: string; categoria: string; valor: number; descricao: string; data: string; anexo?: string }) => Promise<boolean>;
-  onUpdateGasto: (id: string, payload: { categoria: string; valor: number; descricao: string; data: string; anexo?: string }) => Promise<boolean>;
+  onAddGasto: (payload: { caixa_id: string; categoria: string; valor: number; descricao: string; data: string; anexo?: string; moeda?: string; valorOriginal?: number; cotacao?: number }) => Promise<boolean>;
+  onUpdateGasto: (id: string, payload: { categoria: string; valor: number; descricao: string; data: string; anexo?: string; moeda?: string; valorOriginal?: number; cotacao?: number }) => Promise<boolean>;
   onDeleteGasto: (id: string) => Promise<boolean>;
 }
+
+// Currencies supported for cross-border trip expenses (Mercosul + USD)
+const CURRENCIES = [
+  { code: "BRL", label: "Real Brasileiro", flag: "🇧🇷" },
+  { code: "USD", label: "Dólar Americano", flag: "🇺🇸" },
+  { code: "ARS", label: "Peso Argentino", flag: "🇦🇷" },
+  { code: "CLP", label: "Peso Chileno", flag: "🇨🇱" }
+];
 
 // Exactly the requested categories and emojis
 const CATEGORIES = [
@@ -139,6 +147,8 @@ export default function TruckCashManager({
   const [formGastoDescricao, setFormGastoDescricao] = useState("");
   const [formGastoData, setFormGastoData] = useState(() => new Date().toISOString().split("T")[0]);
   const [formGastoAnexo, setFormGastoAnexo] = useState("");
+  const [formGastoMoeda, setFormGastoMoeda] = useState("BRL");
+  const [formGastoCotacao, setFormGastoCotacao] = useState("1");
 
   // Helper lookup for driver
   const getDriverForVehicle = (vehicleId: string) => {
@@ -258,11 +268,13 @@ export default function TruckCashManager({
   const handleOpenGastoModal = (gasto?: CaixaMovimentacao) => {
     if (gasto) {
       setEditingGasto(gasto);
-      setFormGastoValor(gasto.valor.toString());
+      setFormGastoValor((gasto.valorOriginal ?? gasto.valor).toString());
       setFormGastoCategoria(gasto.categoria);
       setFormGastoDescricao(gasto.descricao);
       setFormGastoData(gasto.data);
       setFormGastoAnexo(gasto.anexo || "");
+      setFormGastoMoeda(gasto.moeda || "BRL");
+      setFormGastoCotacao((gasto.cotacao ?? 1).toString());
     } else {
       setEditingGasto(null);
       setFormGastoValor("");
@@ -270,6 +282,8 @@ export default function TruckCashManager({
       setFormGastoDescricao("");
       setFormGastoData(new Date().toISOString().split("T")[0]);
       setFormGastoAnexo("");
+      setFormGastoMoeda("BRL");
+      setFormGastoCotacao("1");
     }
     setIsGastoModalOpen(true);
   };
@@ -301,8 +315,8 @@ export default function TruckCashManager({
     e.preventDefault();
     if (!selectedVehicleId || !activeCardInfo) return;
 
-    const val = parseFloat(formGastoValor);
-    if (isNaN(val) || val <= 0) {
+    const valorOriginal = parseFloat(formGastoValor);
+    if (isNaN(valorOriginal) || valorOriginal <= 0) {
       alert("Por favor, digite um valor de gasto válido superior a zero.");
       return;
     }
@@ -311,14 +325,24 @@ export default function TruckCashManager({
       return;
     }
 
+    const cotacao = formGastoMoeda === "BRL" ? 1 : parseFloat(formGastoCotacao);
+    if (formGastoMoeda !== "BRL" && (isNaN(cotacao) || cotacao <= 0)) {
+      alert("Por favor, digite uma cotação válida para conversão em Reais.");
+      return;
+    }
+    const valorBRL = Math.round(valorOriginal * cotacao * 100) / 100;
+
     let success = false;
     if (editingGasto) {
       success = await onUpdateGasto(editingGasto.id, {
         categoria: formGastoCategoria,
-        valor: val,
+        valor: valorBRL,
         descricao: formGastoDescricao,
         data: formGastoData,
-        anexo: formGastoAnexo
+        anexo: formGastoAnexo,
+        moeda: formGastoMoeda,
+        valorOriginal,
+        cotacao
       });
     } else {
       if (!activeCardInfo.caixa) {
@@ -328,10 +352,13 @@ export default function TruckCashManager({
       success = await onAddGasto({
         caixa_id: activeCardInfo.caixa.id,
         categoria: formGastoCategoria,
-        valor: val,
+        valor: valorBRL,
         descricao: formGastoDescricao,
         data: formGastoData,
-        anexo: formGastoAnexo
+        anexo: formGastoAnexo,
+        moeda: formGastoMoeda,
+        valorOriginal,
+        cotacao
       });
     }
 
@@ -693,10 +720,17 @@ export default function TruckCashManager({
                             </div>
 
                             <div className="flex items-center gap-3">
-                              <span className="text-sm font-black font-mono text-foreground">
-                                R$ {mov.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </span>
-                              
+                              <div className="text-right">
+                                {mov.moeda && mov.moeda !== "BRL" && (
+                                  <span className="text-[10px] font-bold font-mono text-muted-foreground block leading-none mb-0.5">
+                                    {CURRENCIES.find(c => c.code === mov.moeda)?.flag} {(mov.valorOriginal ?? mov.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {mov.moeda}
+                                  </span>
+                                )}
+                                <span className="text-sm font-black font-mono text-foreground">
+                                  R$ {mov.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                              </div>
+
                               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                   onClick={() => handleOpenGastoModal(mov)}
@@ -944,13 +978,42 @@ export default function TruckCashManager({
             
             <form onSubmit={handleSaveGasto} className="flex-1 flex flex-col overflow-hidden">
               <div className="p-5 space-y-4 overflow-y-auto flex-1">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black uppercase text-muted-foreground block">
+                    Moeda do Gasto
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {CURRENCIES.map(cur => (
+                      <button
+                        key={cur.code}
+                        type="button"
+                        onClick={() => {
+                          setFormGastoMoeda(cur.code);
+                          if (cur.code === "BRL") setFormGastoCotacao("1");
+                        }}
+                        className={`flex flex-col items-center justify-center gap-0.5 py-2 rounded-xl border text-[10px] font-bold transition-all cursor-pointer ${
+                          formGastoMoeda === cur.code
+                            ? "bg-blue-600/15 border-blue-500/60 text-blue-500"
+                            : "bg-muted border-border text-muted-foreground hover:bg-muted/70"
+                        }`}
+                        title={cur.label}
+                      >
+                        <span className="text-base leading-none">{cur.flag}</span>
+                        {cur.code}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[11px] font-black uppercase text-muted-foreground block">
-                      Valor (R$)
+                      Valor ({formGastoMoeda})
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-xs text-muted-foreground font-mono font-bold">R$</span>
+                      <span className="absolute left-3 top-2.5 text-xs text-muted-foreground font-mono font-bold">
+                        {CURRENCIES.find(c => c.code === formGastoMoeda)?.flag}
+                      </span>
                       <input
                         id="input-gasto-valor"
                         type="number"
@@ -978,6 +1041,29 @@ export default function TruckCashManager({
                     />
                   </div>
                 </div>
+
+                {formGastoMoeda !== "BRL" && (
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-black uppercase text-muted-foreground block">
+                      Cotação (1 {formGastoMoeda} = R$)
+                    </label>
+                    <input
+                      id="input-gasto-cotacao"
+                      type="number"
+                      step="0.0001"
+                      placeholder="Ex: 5.35"
+                      value={formGastoCotacao}
+                      onChange={(e) => setFormGastoCotacao(e.target.value)}
+                      required
+                      className="w-full bg-muted border border-border text-foreground text-xs rounded-xl px-3 py-2.5 outline-none font-mono font-bold"
+                    />
+                    {formGastoValor && formGastoCotacao && !isNaN(parseFloat(formGastoValor)) && !isNaN(parseFloat(formGastoCotacao)) && (
+                      <p className="text-[10.5px] text-muted-foreground font-mono pt-0.5">
+                        ≈ R$ {(parseFloat(formGastoValor) * parseFloat(formGastoCotacao)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} equivalentes
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-1">
                   <label className="text-[11px] font-black uppercase text-muted-foreground block">

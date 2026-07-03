@@ -391,14 +391,14 @@ export default function FreightsManager({
                         return (
                           <div className="text-[10px] space-y-0.5 mt-0.5 text-gray-500 font-sans">
                             <p className="flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              Adiantamento: <strong className="text-gray-750">R$ {adv.toLocaleString("pt-BR")}</strong>
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                              Adiantamento: <strong className="text-blue-700">R$ {adv.toLocaleString("pt-BR")}</strong>
                             </p>
                             <p className="flex items-center gap-1">
-                              <span className={`w-1.5 h-1.5 rounded-full ${balStatus === "Pago" ? "bg-emerald-500" : "bg-amber-500"}`} />
-                              Saldo: <strong className="text-gray-750">R$ {bal.toLocaleString("pt-BR")}</strong>
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                              Saldo: <strong className="text-red-700">R$ {bal.toLocaleString("pt-BR")}</strong>
                               <span className={`px-1 rounded-sm text-[8px] font-bold uppercase ${
-                                balStatus === "Pago" ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
+                                balStatus === "Pago" ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
                               }`}>{balStatus === "Pago" ? "Pago" : "Pendente"}</span>
                             </p>
                           </div>

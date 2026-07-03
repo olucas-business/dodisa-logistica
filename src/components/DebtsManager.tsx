@@ -29,6 +29,9 @@ interface DebtsManagerProps {
 }
 
 const DEBT_CATEGORIES = [
+  "Financiamento BNDES",
+  "Rotativo Sicredi",
+  "Empréstimos",
   "Oficina",
   "Pneus",
   "Combustível",
@@ -141,6 +144,33 @@ export default function DebtsManager({
     }
   };
 
+  const getStatusStyle = (status: Debt["status"]) => {
+    if (status === "Quitar Primeiro") {
+      return {
+        badge: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30",
+        dot: "bg-amber-500 animate-pulse",
+        label: "Quitar Primeiro"
+      };
+    }
+    if (status === "Pago") {
+      return {
+        badge: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30",
+        dot: "bg-emerald-500",
+        label: "Pago"
+      };
+    }
+    return {
+      badge: "bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/30",
+      dot: "bg-red-500",
+      label: "Falta Pagar"
+    };
+  };
+
+  const formatDebtDate = (dueDate: string) => {
+    const [year, month, day] = dueDate.split("-");
+    return year && month && day ? `${day}/${month}/${year}` : dueDate;
+  };
+
   // Metrics calculations
   const totalDebts = debts.length;
   const sumPriority = debts.filter(d => d.status === "Quitar Primeiro").reduce((acc, curr) => acc + curr.value, 0);
@@ -165,6 +195,18 @@ export default function DebtsManager({
 
     return matchesSearch && matchesStatus && matchesCategory;
   });
+
+  // Group into columns by category (Kanban-style board), preserving DEBT_CATEGORIES order
+  const debtColumns = DEBT_CATEGORIES.map(cat => ({
+    category: cat,
+    items: filteredDebts.filter(d => d.category === cat)
+  })).filter(col => col.items.length > 0);
+
+  // Any debts whose category isn't in the known list still need to be shown somewhere
+  const uncategorizedDebts = filteredDebts.filter(d => !DEBT_CATEGORIES.includes(d.category));
+  if (uncategorizedDebts.length > 0) {
+    debtColumns.push({ category: "Outras Categorias", items: uncategorizedDebts });
+  }
 
   return (
     <div className="space-y-6">
@@ -331,110 +373,83 @@ export default function DebtsManager({
         </div>
       </div>
 
-      {/* DEBTS GRID / TABLE */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-border bg-muted/50 text-[10px] font-mono uppercase font-black text-muted-foreground">
-                <th className="p-4">Dívida / Descrição</th>
-                <th className="p-4">Categoria</th>
-                <th className="p-4">Vencimento</th>
-                <th className="p-4">Valor (R$)</th>
-                <th className="p-4">Prioridade / Status</th>
-                <th className="p-4 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border text-xs">
-              {filteredDebts.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                    Nenhuma dívida ou conta a pagar encontrada com os filtros selecionados.
-                  </td>
-                </tr>
-              ) : (
-                filteredDebts.map((debt) => {
-                  // Style based on status
-                  let statusBadgeClass = "";
-                  let statusDotClass = "";
-                  let statusLabel = "";
-
-                  if (debt.status === "Quitar Primeiro") {
-                    statusBadgeClass = "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30";
-                    statusDotClass = "bg-amber-500 animate-pulse";
-                    statusLabel = "Quitar Primeiro";
-                  } else if (debt.status === "Pago") {
-                    statusBadgeClass = "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30";
-                    statusDotClass = "bg-emerald-500";
-                    statusLabel = "Pago";
-                  } else {
-                    statusBadgeClass = "bg-red-500/15 text-red-700 dark:text-red-400 border border-red-500/30";
-                    statusDotClass = "bg-red-500";
-                    statusLabel = "Falta Pagar";
-                  }
-
-                  const formattedValue = debt.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                  
-                  // Format Date to PT-BR
-                  const [year, month, day] = debt.dueDate.split("-");
-                  const formattedDate = year && month && day ? `${day}/${month}/${year}` : debt.dueDate;
-
-                  return (
-                    <tr key={debt.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="p-4">
-                        <div className="font-bold text-foreground">{debt.description}</div>
-                        {debt.notes && (
-                          <div className="text-[11px] text-muted-foreground mt-0.5 max-w-sm truncate" title={debt.notes}>
-                            {debt.notes}
-                          </div>
-                        )}
-                      </td>
-                      <td className="p-4 font-semibold text-muted-foreground">
-                        <span className="px-2 py-1 bg-muted rounded-md text-[10px] border border-border">
-                          {debt.category}
-                        </span>
-                      </td>
-                      <td className="p-4 font-mono font-medium text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-muted-foreground/80" />
-                          {formattedDate}
-                        </div>
-                      </td>
-                      <td className="p-4 font-mono font-extrabold text-foreground text-sm">
-                        R$ {formattedValue}
-                      </td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold ${statusBadgeClass}`}>
-                          <span className={`w-2 h-2 rounded-full ${statusDotClass}`} />
-                          {statusLabel}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => handleOpenEditModal(debt)}
-                            className="p-1.5 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-all cursor-pointer"
-                            title="Editar Dívida"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(debt.id)}
-                            className="p-1.5 hover:bg-red-500/10 rounded-lg text-muted-foreground hover:text-red-500 transition-all cursor-pointer"
-                            title="Excluir Dívida"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+      {/* DEBTS BOARD (COLUMNS BY CATEGORY) */}
+      {debtColumns.length === 0 ? (
+        <div className="bg-card border border-border rounded-2xl p-8 text-center text-muted-foreground text-xs shadow-xs">
+          Nenhuma dívida ou conta a pagar encontrada com os filtros selecionados.
         </div>
-      </div>
+      ) : (
+        <div className="flex gap-4 overflow-x-auto pb-2">
+          {debtColumns.map(col => {
+            const colTotal = col.items.reduce((sum, d) => sum + (d.value || 0), 0);
+            return (
+              <div key={col.category} className="w-[300px] flex-shrink-0 flex flex-col bg-card border border-border rounded-2xl shadow-xs overflow-hidden">
+                <div className="p-4 border-b border-border bg-muted/40 flex-shrink-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-xs font-black text-foreground truncate" title={col.category}>{col.category}</h4>
+                    <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                      {col.items.length}
+                    </span>
+                  </div>
+                  <p className="text-sm font-black font-mono text-foreground mt-1">
+                    R$ {colTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+
+                <div className="p-3 space-y-3 overflow-y-auto max-h-[560px] custom-scrollbar">
+                  {col.items.map(debt => {
+                    const st = getStatusStyle(debt.status);
+                    return (
+                      <div key={debt.id} className="group bg-muted/30 hover:bg-muted/60 border border-border/60 rounded-xl p-3 transition-colors">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-xs font-bold text-foreground leading-tight">{debt.description}</span>
+                          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            <button
+                              onClick={() => handleOpenEditModal(debt)}
+                              className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                              title="Editar Dívida"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(debt.id)}
+                              className="p-1 hover:bg-red-500/10 rounded text-muted-foreground hover:text-red-500 transition-all cursor-pointer"
+                              title="Excluir Dívida"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {debt.notes && (
+                          <p className="text-[10.5px] text-muted-foreground mt-1 line-clamp-2" title={debt.notes}>
+                            {debt.notes}
+                          </p>
+                        )}
+
+                        <div className="flex items-center gap-1.5 mt-2 text-[10.5px] font-mono font-medium text-muted-foreground">
+                          <Calendar className="w-3 h-3 text-muted-foreground/80" />
+                          {formatDebtDate(debt.dueDate)}
+                        </div>
+
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-sm font-mono font-extrabold text-foreground">
+                            R$ {debt.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-bold ${st.badge}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
+                            {st.label}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* CREATE NEW DEBT MODAL */}
       {isAddModalOpen && (
