@@ -1,5 +1,5 @@
 import { Freight, Driver, Vehicle, Expense, Refuel } from "../types";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, BarChart, Bar, Legend, RadialBarChart, RadialBar, PolarAngleAxis } from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend, RadialBarChart, RadialBar, PolarAngleAxis } from "recharts";
 import { TrendingUp, Coins, DollarSign, Activity, Users, Truck } from "lucide-react";
 
 function RadialGauge({ label, value, color }: { label: string; value: number; color: string }) {
@@ -326,21 +326,30 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
             <Users className="w-4 h-4 text-blue-500" />
             Ranking Motoristas (Faturamento)
           </h3>
-          <div className="h-[220px] w-full font-sans text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={driverRankingData} layout="vertical" margin={{ left: 10, right: 10, top: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorDriverBar" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#06b6d4" />
-                  </linearGradient>
-                </defs>
-                <XAxis type="number" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} />
-                <YAxis dataKey="name" type="category" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} width={80} />
-                <Tooltip formatter={(val) => `R$ ${Number(val).toLocaleString()}`} />
-                <Bar dataKey="value" name="Faturamento" fill="url(#colorDriverBar)" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-[220px] w-full font-sans text-xs overflow-y-auto pr-1">
+            {driverRankingData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado disponível.</div>
+            ) : (
+              <div className="space-y-3.5">
+                {(() => {
+                  const maxVal = Math.max(...driverRankingData.map((d: any) => d.value), 1);
+                  return driverRankingData.map((item: any) => {
+                    const pct = (item.value / maxVal) * 100;
+                    return (
+                      <div key={item.name} className="space-y-1">
+                        <div className="flex items-center justify-between font-semibold">
+                          <span className="text-foreground truncate">{item.name}</span>
+                          <span className="text-foreground font-mono shrink-0 ml-2">R$ {Number(item.value).toLocaleString("pt-BR")}</span>
+                        </div>
+                        <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-300 bg-gradient-to-r from-blue-500 to-cyan-500" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            )}
           </div>
           <p className="text-[10px] text-muted-foreground italic mt-2 text-center">Motoristas que mais geraram receita líquida este ano.</p>
         </div>
@@ -351,21 +360,30 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
             <Truck className="w-4 h-4 text-emerald-500" />
             Quilometragem por Veículo (Uso)
           </h3>
-          <div className="h-[220px] w-full font-sans text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={vehicleMileageData} layout="vertical" margin={{ left: 10, right: 10, top: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorVehicleBar" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#10b981" />
-                    <stop offset="100%" stopColor="#22c55e" />
-                  </linearGradient>
-                </defs>
-                <XAxis type="number" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} />
-                <YAxis dataKey="name" type="category" stroke="var(--muted-foreground)" fontSize={10} tickLine={false} width={80} />
-                <Tooltip formatter={(val) => `${Number(val).toLocaleString()} KM`} />
-                <Bar dataKey="value" name="Uso (KM)" fill="url(#colorVehicleBar)" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-[220px] w-full font-sans text-xs overflow-y-auto pr-1">
+            {vehicleMileageData.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-muted-foreground">Nenhum dado disponível.</div>
+            ) : (
+              <div className="space-y-3.5">
+                {(() => {
+                  const maxVal = Math.max(...vehicleMileageData.map((d: any) => d.value), 1);
+                  return vehicleMileageData.map((item: any) => {
+                    const pct = (item.value / maxVal) * 100;
+                    return (
+                      <div key={item.name} className="space-y-1">
+                        <div className="flex items-center justify-between font-semibold">
+                          <span className="text-foreground truncate">{item.name}</span>
+                          <span className="text-foreground font-mono shrink-0 ml-2">{Number(item.value).toLocaleString("pt-BR")} KM</span>
+                        </div>
+                        <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-300 bg-gradient-to-r from-emerald-500 to-green-500" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            )}
           </div>
           <p className="text-[10px] text-muted-foreground italic mt-2 text-center">Desgaste e rodagem total calculados da frota.</p>
         </div>

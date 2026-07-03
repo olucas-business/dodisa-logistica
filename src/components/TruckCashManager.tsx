@@ -819,7 +819,7 @@ export default function TruckCashManager({
                               <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
                               <XAxis dataKey="month" stroke="currentColor" className="text-muted-foreground" fontSize={10} tickLine={false} axisLine={false} />
                               <YAxis stroke="currentColor" className="text-muted-foreground" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-                              <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                              <Tooltip formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Gastos"]} />
                               <Area type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2.5} fill="url(#truckCashMonthlyGrad)" dot={{ r: 3 }} />
                             </AreaChart>
                           </ResponsiveContainer>

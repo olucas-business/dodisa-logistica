@@ -43,8 +43,6 @@ import {
   Pie,
   Cell,
   Legend,
-  BarChart,
-  Bar,
   ComposedChart,
   Line
 } from "recharts";
@@ -774,9 +772,15 @@ export default function DashboardOverview({
           <div className="h-[55px] w-full mt-2">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={recentFreightsChartData.slice(-6)} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                <Bar dataKey="Pago (Adiantamento)" fill="#10b981" radius={[1, 1, 0, 0]} barSize={8} />
-                <Line type="monotone" dataKey="Não Pago (Saldo)" stroke="#f59e0b" strokeWidth={1.5} dot={{ r: 1 }} />
-                <Tooltip 
+                <defs>
+                  <linearGradient id="miniAdiantamentoGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area type="monotone" dataKey="Pago (Adiantamento)" stroke="#10b981" strokeWidth={1.5} fill="url(#miniAdiantamentoGrad)" dot={{ r: 1.5 }} />
+                <Line type="monotone" dataKey="Não Pago (Saldo)" stroke="#f59e0b" strokeWidth={1.5} dot={{ r: 1.5 }} />
+                <Tooltip
                   formatter={(value: any, name: string) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, name]}
                   contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "8px" }}
                 />
@@ -1135,46 +1139,55 @@ export default function DashboardOverview({
             </div>
 
             {/* Interactive Graph Column (Right - 7 cols) */}
-            <div className="lg:col-span-7 h-[250px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={[
-                    {
-                      name: "Quitar Primeiro",
-                      "Total (R$)": debts.filter(d => d.status === "Quitar Primeiro").reduce((acc, curr) => acc + curr.value, 0),
-                    },
-                    {
-                      name: "Falta Pagar",
-                      "Total (R$)": debts.filter(d => d.status === "Falta Pagar").reduce((acc, curr) => acc + curr.value, 0),
-                    },
-                    {
-                      name: "Foi Pago",
-                      "Total (R$)": debts.filter(d => d.status === "Pago").reduce((acc, curr) => acc + curr.value, 0),
-                    }
-                  ]}
-                  margin={{ top: 10, right: 10, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" className="opacity-40" />
-                  <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} />
-                  <YAxis stroke="var(--color-muted-foreground)" fontSize={9} tickLine={false} />
-                  <Tooltip
-                    cursor={{ fill: "rgba(255,255,255,0.03)" }}
-                    formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Total"]}
-                    contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
-                  />
-                  <Bar dataKey="Total (R$)" radius={[8, 8, 0, 0]} maxBarSize={60}>
-                    {
-                      [
-                        { fill: "#f59e0b" }, // Quitar primeiro (Yellow)
-                        { fill: "#ef4444" }, // Falta pagar (Red)
-                        { fill: "#10b981" }  // Pago (Green)
-                      ].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))
-                    }
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="lg:col-span-7 h-[250px] w-full flex items-center justify-center">
+              {(() => {
+                const priorityTotal = debts.filter(d => d.status === "Quitar Primeiro").reduce((acc, curr) => acc + curr.value, 0);
+                const pendingTotal = debts.filter(d => d.status === "Falta Pagar").reduce((acc, curr) => acc + curr.value, 0);
+                const paidTotal = debts.filter(d => d.status === "Pago").reduce((acc, curr) => acc + curr.value, 0);
+                const donutData = [
+                  { name: "Quitar Primeiro", value: priorityTotal, color: "#f59e0b" },
+                  { name: "Falta Pagar", value: pendingTotal, color: "#ef4444" },
+                  { name: "Foi Pago", value: paidTotal, color: "#10b981" }
+                ].filter(d => d.value > 0);
+                const grandTotal = priorityTotal + pendingTotal + paidTotal;
+
+                if (donutData.length === 0) {
+                  return <div className="text-xs text-muted-foreground font-medium">Nenhuma dívida cadastrada.</div>;
+                }
+
+                return (
+                  <div className="flex items-center gap-8 w-full justify-center">
+                    <div className="h-[220px] w-[220px] relative shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={donutData} cx="50%" cy="50%" innerRadius={65} outerRadius={95} paddingAngle={3} dataKey="value">
+                            {donutData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Total"]}
+                            contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">Total</span>
+                        <span className="text-base font-black font-mono text-foreground">R$ {grandTotal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2.5">
+                      {donutData.map(d => (
+                        <div key={d.name} className="flex items-center gap-2 text-xs font-semibold">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                          <span className="text-muted-foreground">{d.name}:</span>
+                          <span className="text-foreground font-mono">{grandTotal > 0 ? ((d.value / grandTotal) * 100).toFixed(0) : 0}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -1222,23 +1235,30 @@ export default function DashboardOverview({
               }
 
               const debtColors = ["#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#6b7280"];
+              const maxVal = Math.max(...debtCategoryTotals.map((c: any) => c.value), 1);
               return (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={debtCategoryTotals}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" className="opacity-40" />
-                    <XAxis dataKey="category" stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} />
-                    <YAxis stroke="var(--color-muted-foreground)" fontSize={9} tickLine={false} />
-                    <Tooltip
-                      formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, "Total"]}
-                      contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
-                    />
-                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                      {debtCategoryTotals.map((_: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={debtColors[index % debtColors.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="space-y-3.5 overflow-y-auto h-full pr-1">
+                  {debtCategoryTotals.map((item: any, index: number) => {
+                    const color = debtColors[index % debtColors.length];
+                    const pct = (item.value / maxVal) * 100;
+                    return (
+                      <div key={item.category} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                          <span className="flex items-center gap-1.5 text-foreground">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                            {item.category}
+                          </span>
+                          <span className="text-foreground font-mono">
+                            R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-300" style={{ backgroundColor: color, width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               );
             })()}
           </div>
@@ -1539,18 +1559,16 @@ export default function DashboardOverview({
                   </div>
                 ) : (
                   <>
-                    <div className="h-[140px] w-full mt-2 mb-2">
+                    <div className="h-[140px] w-full mt-2 mb-2 relative">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={cargoRevenueData}
-                          layout="vertical"
-                          margin={{ top: 5, right: 15, left: -20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--color-border)" className="opacity-30" />
-                          <XAxis type="number" stroke="var(--color-muted-foreground)" fontSize={8} tickLine={false} />
-                          <YAxis dataKey="name" type="category" stroke="var(--color-muted-foreground)" fontSize={8} tickLine={false} width={70} />
+                        <PieChart>
+                          <Pie data={cargoRevenueData} cx="50%" cy="50%" innerRadius={38} outerRadius={58} paddingAngle={3} dataKey="value">
+                            {cargoRevenueData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
                           <Tooltip
-                            formatter={(value: any) => `R$ ${Number(value).toLocaleString("pt-BR")}`}
+                            formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, "Receita"]}
                             contentStyle={{
                               backgroundColor: "var(--color-card)",
                               border: "1px solid var(--color-border)",
@@ -1559,13 +1577,14 @@ export default function DashboardOverview({
                               fontSize: "10px",
                             }}
                           />
-                          <Bar dataKey="value" fill="var(--color-primary)" radius={[0, 4, 4, 0]}>
-                            {cargoRevenueData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Bar>
-                        </BarChart>
+                        </PieChart>
                       </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-[9px] uppercase font-bold text-muted-foreground">Faturamento</span>
+                        <span className="text-[13px] font-black font-mono text-emerald-500">
+                          R$ {billingMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="space-y-1 max-h-[110px] overflow-y-auto pr-1 text-[10.5px]">

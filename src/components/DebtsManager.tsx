@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Debt } from "../types";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
 import {
   Coins,
   Plus,
@@ -301,27 +300,37 @@ export default function DebtsManager({
         </div>
       </div>
 
-      {/* CATEGORY BAR CHART */}
+      {/* CATEGORY RANKING LIST */}
       {categoryTotals.length > 0 && (
         <div className="bg-card border border-border p-5 rounded-2xl shadow-xs">
           <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-1.5">
             <BarChart3 className="w-4 h-4 text-blue-500" />
             Dívidas por Categoria
           </h4>
-          <div className="h-[220px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categoryTotals}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                <XAxis dataKey="category" stroke="currentColor" className="text-muted-foreground" fontSize={10} tickLine={false} />
-                <YAxis stroke="currentColor" className="text-muted-foreground" fontSize={9} tickLine={false} />
-                <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                  {categoryTotals.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={DEBT_CHART_COLORS[index % DEBT_CHART_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="space-y-3.5">
+            {(() => {
+              const maxVal = Math.max(...categoryTotals.map((c: any) => c.value), 1);
+              return categoryTotals.map((item: any, index) => {
+                const color = DEBT_CHART_COLORS[index % DEBT_CHART_COLORS.length];
+                const pct = (item.value / maxVal) * 100;
+                return (
+                  <div key={item.category} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <span className="flex items-center gap-1.5 text-foreground">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                        {item.category}
+                      </span>
+                      <span className="text-foreground font-mono">
+                        R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-300" style={{ backgroundColor: color, width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              });
+            })()}
           </div>
         </div>
       )}

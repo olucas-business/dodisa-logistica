@@ -182,7 +182,7 @@ export default function ExpensesManager({
                     <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
                     <XAxis dataKey="month" stroke="currentColor" className="text-gray-400" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-                    <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    <Tooltip formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Despesas"]} />
                     <Area type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={2.5} fill="url(#expensesMonthlyGrad)" dot={{ r: 3 }} />
                   </AreaChart>
                 </ResponsiveContainer>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Refuel, Driver, Vehicle } from "../types";
-import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Line, ComposedChart, AreaChart, Area } from "recharts";
+import { ResponsiveContainer, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Line, ComposedChart, AreaChart, Area } from "recharts";
 import { Plus, Search, Calendar, MapPin, Trash2, Edit2, CheckCircle, Fuel, Gauge, Route, Wallet, Droplets } from "lucide-react";
 
 const REFUEL_CHART_COLORS = ["#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#ef4444", "#6b7280"];
@@ -271,7 +271,7 @@ export default function RefuelManager({
                     <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
                     <XAxis dataKey="month" stroke="currentColor" className="text-gray-400" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-                    <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    <Tooltip formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Combustível"]} />
                     <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2.5} fill="url(#refuelMonthlyGrad)" dot={{ r: 3 }} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -284,19 +284,35 @@ export default function RefuelManager({
               <MapPin className="w-4 h-4 text-emerald-500" />
               Onde Abasteceu (Por Posto)
             </h4>
-            <div className="h-[220px] w-full">
+            <div className="h-[220px] w-full overflow-y-auto pr-1">
               {stationTotals.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-xs text-gray-400">Sem dados de postos disponíveis.</div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stationTotals} layout="vertical" margin={{ left: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.15} />
-                    <XAxis type="number" stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} />
-                    <YAxis dataKey="station" type="category" stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} width={110} />
-                    <Tooltip formatter={(val: any, name: string) => name === "value" ? [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Total Gasto"] : [val, "Abastecimentos"]} />
-                    <Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="space-y-3.5">
+                  {(() => {
+                    const maxVal = Math.max(...stationTotals.map((s: any) => s.value), 1);
+                    return stationTotals.map((item: any, index: number) => {
+                      const color = REFUEL_CHART_COLORS[index % REFUEL_CHART_COLORS.length];
+                      const pct = (item.value / maxVal) * 100;
+                      return (
+                        <div key={item.station} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs font-semibold">
+                            <span className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300 truncate">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                              <span className="truncate">{item.station}</span>
+                            </span>
+                            <span className="text-gray-900 dark:text-gray-100 font-mono shrink-0 ml-2">
+                              R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-300" style={{ backgroundColor: color, width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
               )}
             </div>
           </div>
