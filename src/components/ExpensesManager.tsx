@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Expense } from "../types";
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area } from "recharts";
 import { Plus, Search, Calendar, DollarSign, Trash2, CheckCircle, ArrowDown, PieChart as PieChartIcon } from "lucide-react";
+import SessionAnnotations from "./SessionAnnotations";
 
 const EXPENSE_CHART_COLORS = ["#ef4444", "#f97316", "#f59e0b", "#8b5cf6", "#06b6d4", "#10b981", "#ec4899", "#6b7280", "#3b82f6", "#a855f7", "#f43f5e", "#14b8a6", "#84cc16"];
 
@@ -284,6 +285,8 @@ export default function ExpensesManager({
           </table>
         </div>
       </div>
+
+      <SessionAnnotations moduleKey="expenses" title="Anotações & Prints de Despesas" />
 
       {/* CREATE MODAL FORM */}
       {isFormOpen && (

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Driver, Vehicle, CaixaCaminhao, CaixaMovimentacao } from "../types";
+import SessionAnnotations from "./SessionAnnotations";
 import { 
   Wallet, 
   Plus, 
@@ -893,6 +894,11 @@ export default function TruckCashManager({
 
             </div>
           )}
+
+          <SessionAnnotations
+            moduleKey={`truck_cash_${selectedVehicleId}`}
+            title="Anotações & Prints do Caixa"
+          />
         </div>
       )}
 

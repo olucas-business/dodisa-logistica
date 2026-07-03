@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { MaintenanceLog, Vehicle } from "../types";
+import SessionAnnotations from "./SessionAnnotations";
 import {
   Wrench,
   Plus,
@@ -323,6 +324,8 @@ export default function MaintenanceManager({
           })
         )}
       </div>
+
+      <SessionAnnotations moduleKey="maintenance" title="Anotações & Prints de Manutenção" />
 
       {/* ADD MODAL */}
       {isAddModalOpen && (

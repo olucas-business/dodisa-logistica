@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Refuel, Driver, Vehicle } from "../types";
+import SessionAnnotations from "./SessionAnnotations";
 import { ResponsiveContainer, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Line, ComposedChart, AreaChart, Area } from "recharts";
 import { Plus, Search, Calendar, MapPin, Trash2, Edit2, CheckCircle, Fuel, Gauge, Route, Wallet, Droplets } from "lucide-react";
 
@@ -425,6 +426,8 @@ export default function RefuelManager({
           </table>
         </div>
       </div>
+
+      <SessionAnnotations moduleKey="refuels" title="Anotações & Prints de Combustível" />
 
       {/* CREATE MODAL FORM */}
       {isFormOpen && (

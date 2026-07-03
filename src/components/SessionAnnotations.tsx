@@ -178,8 +178,8 @@ export default function SessionAnnotations({ moduleKey, title = "Anotações & P
             </div>
 
             <div className="space-y-4 overflow-y-auto pr-1 flex-1 min-h-0">
-              <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 max-h-[300px] flex items-center justify-center">
-                <img src={pendingImage} alt="Preview" className="max-w-full max-h-[300px] object-contain" />
+              <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-950 h-[220px] flex items-center justify-center">
+                <img src={pendingImage} alt="Preview" className="max-w-full max-h-full object-contain" />
               </div>
 
               <div className="space-y-1">

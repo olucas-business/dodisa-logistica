@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Tire, Vehicle, TireChange, TireRotation } from "../types";
+import SessionAnnotations from "./SessionAnnotations";
 import {
   Plus,
   Search,
@@ -583,6 +584,8 @@ export default function TiresManager({
           )}
         </div>
       </div>
+
+      <SessionAnnotations moduleKey="tires" title="Anotações & Prints de Pneus" />
 
       {/* CREATE NEW TIRE MODAL */}
       {isAddModalOpen && (

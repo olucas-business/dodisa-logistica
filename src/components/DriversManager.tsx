@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Driver, Freight, Refuel } from "../types";
+import SessionAnnotations from "./SessionAnnotations";
 import { Users, UserPlus, Phone, Calendar, Search, Award, TrendingUp, AlertTriangle, Trash2, Edit2, CheckCircle, FileText, Share2, Copy, ExternalLink, MessageSquare, Check, Lock, Upload, Download } from "lucide-react";
 
 interface DriversManagerProps {
@@ -613,6 +614,8 @@ export default function DriversManager({
           )}
         </div>
       </div>
+
+      <SessionAnnotations moduleKey="drivers" title="Anotações & Prints de Motoristas" />
 
       {/* CREATE/EDIT MODAL FORM */}
       {isFormOpen && (

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Vehicle, MaintenanceRecord, VehicleDocument } from "../types";
+import SessionAnnotations from "./SessionAnnotations";
 import { Truck, Plus, Eye, Calendar, Search, AlertTriangle, Trash2, Edit2, CheckCircle, FileText, Settings, Hammer, Upload, Download } from "lucide-react";
 
 interface VehiclesManagerProps {
@@ -561,6 +562,8 @@ export default function VehiclesManager({
           )}
         </div>
       </div>
+
+      <SessionAnnotations moduleKey="vehicles" title="Anotações & Prints de Veículos" />
 
       {/* CREATE/EDIT MODAL FORM */}
       {isFormOpen && (

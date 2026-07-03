@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Freight, Driver, Vehicle } from "../types";
+import SessionAnnotations from "./SessionAnnotations";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { Truck, Plus, Search, Calendar, MapPin, Navigation, Coins, Trash2, Edit2, CheckCircle, Clock, PieChart as PieChartIcon } from "lucide-react";
 
@@ -451,6 +452,8 @@ export default function FreightsManager({
           </table>
         </div>
       </div>
+
+      <SessionAnnotations moduleKey="freights" title="Anotações & Prints de Fretes" />
 
       {/* CREATE / EDIT REGISTER MODAL */}
       {isFormOpen && (
