@@ -28,7 +28,8 @@ import {
   Fuel,
   Percent,
   FileSpreadsheet,
-  Route
+  Route,
+  BarChart3
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -707,9 +708,51 @@ export default function DashboardOverview({
         </div>
       </div>
 
+      {/* 1b. HERO CHART: Faturamento vs Custos ao longo do ano (destaque visual principal) */}
+      <div className="bg-card border border-border rounded-2xl p-5 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Faturamento vs Custos</h3>
+            <p className="text-[11px] text-muted-foreground">Evolução mensal de receita e despesas operacionais em {currentYear}.</p>
+          </div>
+          <div className="flex items-center gap-4 text-[10.5px] font-semibold">
+            <span className="flex items-center gap-1.5 text-muted-foreground"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />Faturamento</span>
+            <span className="flex items-center gap-1.5 text-muted-foreground"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" />Custos</span>
+          </div>
+        </div>
+        <div className="h-[260px] w-full">
+          {dynamicMonthlyData.length === 0 || dynamicMonthlyData.every(d => d.Faturamento === 0 && d.Custos === 0) ? (
+            <div className="h-full flex flex-col items-center justify-center text-center gap-1.5">
+              <BarChart3 className="w-8 h-8 text-muted-foreground/30" />
+              <p className="text-xs text-muted-foreground font-medium">Sem dados financeiros suficientes para exibir o gráfico ainda.</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={dynamicMonthlyData} margin={{ top: 4, right: 8, left: -12, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="heroFaturamentoGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.4} />
+                <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  formatter={(value: any, name: string) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, name]}
+                  contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "11px" }}
+                />
+                <Area type="monotone" dataKey="Faturamento" stroke="#10b981" strokeWidth={2.5} fill="url(#heroFaturamentoGrad)" />
+                <Line type="monotone" dataKey="Custos" stroke="#f43f5e" strokeWidth={2.5} dot={{ r: 3 }} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
       {/* 2. CORE METRICS GRID OF 8 INDICATORS (More Charts, Less Text) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        
+
         {/* KPI 1: Faturamento por frete */}
         <div className="bg-card border border-border p-5 rounded-2xl flex flex-col justify-between hover:border-primary/20 transition-all duration-300 group">
           <div className="flex items-center justify-between">
@@ -1011,10 +1054,6 @@ export default function DashboardOverview({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
             {/* Direct Metrics Column (Left - 5 cols) */}
             <div className="lg:col-span-5 space-y-4">
-              <p className="text-[11px] font-medium text-muted-foreground leading-relaxed">
-                As dívidas e compromissos financeiros da Dodisa Logística são categorizados por urgência para controle inteligente do fluxo de caixa operacional.
-              </p>
-              
               <div className="space-y-3">
                 {/* Yellow Priority */}
                 <div className="flex items-center justify-between p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
