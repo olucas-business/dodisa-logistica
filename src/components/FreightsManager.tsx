@@ -767,45 +767,45 @@ export default function FreightsManager({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    <div className="space-y-1.5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5 min-w-0">
                       <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500 block truncate">Pedágios</label>
                       <input
                         type="number"
                         value={toll}
                         onChange={(e) => setToll(e.target.value)}
                         placeholder="150"
-                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
+                        className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
                       />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 min-w-0">
                       <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500 block truncate">Alimentação</label>
                       <input
                         type="number"
                         value={food}
                         onChange={(e) => setFood(e.target.value)}
                         placeholder="120"
-                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
+                        className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
                       />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 min-w-0">
                       <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500 block truncate">Hospedagem</label>
                       <input
                         type="number"
                         value={lodging}
                         onChange={(e) => setLodging(e.target.value)}
                         placeholder="0"
-                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
+                        className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
                       />
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1.5 min-w-0">
                       <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500 block truncate">Outros custos</label>
                       <input
                         type="number"
                         value={otherExpenses}
                         onChange={(e) => setOtherExpenses(e.target.value)}
                         placeholder="50"
-                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
+                        className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
                       />
                     </div>
                   </div>

@@ -776,12 +776,15 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
               </div>
 
               <div className="overflow-auto border border-gray-200 dark:border-slate-800 rounded-xl max-h-60 bg-white dark:bg-slate-950 shadow-sm">
-                <table className="w-full text-left text-[10px] border-collapse bg-white dark:bg-slate-950 table-fixed min-w-[600px]">
+                <table
+                  className="text-left text-xs border-collapse bg-white dark:bg-slate-950 table-auto"
+                  style={{ minWidth: `${Math.max(600, 60 + validation.headers.length * 140)}px` }}
+                >
                   <thead className="sticky top-0 z-10 bg-gray-50/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)]">
                     <tr className="font-bold text-gray-700 dark:text-gray-300">
                       <th className="p-2 px-3 w-[45px]">#</th>
                       {validation.headers.map((h, i) => (
-                        <th key={i} className="p-2 px-3 border-l border-gray-200 dark:border-slate-800 truncate" title={h}>
+                        <th key={i} className="p-2 px-3 min-w-[140px] border-l border-gray-200 dark:border-slate-800 truncate" title={h}>
                           <div className="flex flex-col justify-start">
                             <span className="text-gray-900 dark:text-white font-bold leading-tight">{h}</span>
                             {getMappedFieldPill(h)}
@@ -814,7 +817,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
                         <tr key={rIdx} className="border-b border-gray-100 dark:border-slate-800/60 hover:bg-gray-50/70 dark:hover:bg-slate-900/30 text-gray-600 dark:text-gray-400 transition-colors">
                           <td className="p-2 px-3 font-mono text-gray-400 dark:text-gray-500 font-semibold bg-gray-50/40 dark:bg-slate-950/20">{rIdx + 1}</td>
                           {validation.headers.map((_, cIdx) => (
-                            <td key={cIdx} className="p-2 px-3 border-l border-gray-150 dark:border-slate-800/50 truncate" title={row[cIdx] || ""}>
+                            <td key={cIdx} className="p-2 px-3 min-w-[140px] border-l border-gray-150 dark:border-slate-800/50 truncate" title={row[cIdx] || ""}>
                               {row[cIdx] || "-"}
                             </td>
                           ))}
