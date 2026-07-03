@@ -422,12 +422,12 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
                   {/* Password Field */}
                   <div className="space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <label className="text-[10px] uppercase font-mono font-black text-muted-foreground dark:text-slate-400 tracking-wider">Senha de Segurança</label>
+                    <div className="flex justify-between items-center gap-2 flex-wrap">
+                      <label className="text-[10px] uppercase font-mono font-black text-muted-foreground dark:text-slate-400 tracking-wider whitespace-nowrap">Senha de Segurança</label>
                       <button
                         type="button"
                         onClick={() => setMode("recovery")}
-                        className="text-[10px] text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-mono transition-colors font-bold"
+                        className="text-[10px] text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-mono transition-colors font-bold whitespace-nowrap"
                       >
                         Esqueceu a senha?
                       </button>
