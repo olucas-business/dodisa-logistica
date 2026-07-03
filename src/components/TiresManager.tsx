@@ -157,6 +157,13 @@ export default function TiresManager({
       return;
     }
 
+    const normalizedSerial = newSerialNumber.trim().toUpperCase();
+    const duplicate = tires.find(t => t.serialNumber.toUpperCase() === normalizedSerial);
+    if (duplicate) {
+      alert(`Já existe um pneu cadastrado com o código de controle "${normalizedSerial}" (${duplicate.brand} ${duplicate.model}). Cada pneu deve ter um código único — não é permitido reutilizar o código de outro pneu.`);
+      return;
+    }
+
     const payload: Partial<Tire> = {
       serialNumber: newSerialNumber.toUpperCase(),
       brand: newBrand,
@@ -587,7 +594,7 @@ export default function TiresManager({
 
             <form onSubmit={handleAddSubmit} className="space-y-4 overflow-y-auto pr-1 flex-1 min-h-0 scrollbar-thin">
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Número Serial (DOT / S/N) *</label>
+                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Código de Controle (Serial / DOT) *</label>
                 <input
                   type="text"
                   required
@@ -596,6 +603,7 @@ export default function TiresManager({
                   onChange={(e) => setNewSerialNumber(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none uppercase font-mono"
                 />
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">Código único de identificação do pneu — não pode ser reutilizado em outro pneu.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

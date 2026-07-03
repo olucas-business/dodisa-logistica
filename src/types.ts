@@ -219,6 +219,19 @@ export interface Debt {
   createdAt: string;
 }
 
+export interface MaintenanceLog {
+  id: string;
+  vehicleId: string;
+  item: string;
+  category: "Óleo e Filtros" | "Freios" | "Suspensão e Direção" | "Lubrificação" | "Elétrica" | "Outros";
+  date: string;
+  km: number;
+  cost: number;
+  notes?: string;
+  nextDueKm?: number;
+  createdAt: string;
+}
+
 export interface TruckCashTransaction {
   id: string;
   veiculo_id: string;

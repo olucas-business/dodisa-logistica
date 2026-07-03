@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { User, Driver, Vehicle, Freight, Refuel, Expense, Tire, Debt, TruckCashTransaction, CaixaCaminhao, CaixaMovimentacao } from "./types";
+import { User, Driver, Vehicle, Freight, Refuel, Expense, Tire, Debt, TruckCashTransaction, CaixaCaminhao, CaixaMovimentacao, MaintenanceLog } from "./types";
 import LoginForm from "./components/LoginForm";
 import BrandMark from "./components/BrandMark";
 import VehicleTracking from "./components/VehicleTracking";
@@ -13,6 +13,7 @@ import FreightsManager from "./components/FreightsManager";
 import RefuelManager from "./components/RefuelManager";
 import ExpensesManager from "./components/ExpensesManager";
 import TiresManager from "./components/TiresManager";
+import MaintenanceManager from "./components/MaintenanceManager";
 import DebtsManager from "./components/DebtsManager";
 import TruckCashManager from "./components/TruckCashManager";
 import InteractiveMap from "./components/InteractiveMap";
@@ -47,7 +48,8 @@ import {
   Image,
   MessageSquare,
   Satellite,
-  Building2
+  Building2,
+  Wrench
 } from "lucide-react";
 
 export default function App() {
@@ -92,6 +94,7 @@ export default function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [tires, setTires] = useState<Tire[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
+  const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([]);
   const [caixasCaminhao, setCaixasCaminhao] = useState<CaixaCaminhao[]>([]);
   const [caixaMovimentacoes, setCaixaMovimentacoes] = useState<CaixaMovimentacao[]>([]);
   
@@ -120,7 +123,7 @@ export default function App() {
     setLoading(true);
     setErrorMsg("");
     try {
-      const [drvRes, vhcRes, frtRes, refRes, expRes, tirRes, debRes, tcRes] = await Promise.all([
+      const [drvRes, vhcRes, frtRes, refRes, expRes, tirRes, debRes, tcRes, maintRes] = await Promise.all([
         fetch("/api/drivers"),
         fetch("/api/vehicles"),
         fetch("/api/freights"),
@@ -128,10 +131,11 @@ export default function App() {
         fetch("/api/expenses"),
         fetch("/api/tires"),
         fetch("/api/debts"),
-        fetch("/api/caixa-caminhao")
+        fetch("/api/caixa-caminhao"),
+        fetch("/api/maintenance-logs")
       ]);
 
-      const [drvData, vhcData, frtData, refData, expData, tirData, debData, tcData] = await Promise.all([
+      const [drvData, vhcData, frtData, refData, expData, tirData, debData, tcData, maintData] = await Promise.all([
         drvRes.json(),
         vhcRes.json(),
         frtRes.json(),
@@ -139,7 +143,8 @@ export default function App() {
         expRes.json(),
         tirRes.json(),
         debRes.json(),
-        tcRes.json()
+        tcRes.json(),
+        maintRes.json()
       ]);
 
       setDrivers(Array.isArray(drvData) ? drvData : (drvData.success ? drvData.drivers : []));
@@ -151,6 +156,7 @@ export default function App() {
       setDebts(debData.success ? debData.debts : (Array.isArray(debData) ? debData : []));
       setCaixasCaminhao(tcData.success && tcData.caixas ? tcData.caixas : []);
       setCaixaMovimentacoes(tcData.success && tcData.movimentacoes ? tcData.movimentacoes : []);
+      setMaintenanceLogs(maintData.success ? maintData.maintenanceLogs : (Array.isArray(maintData) ? maintData : []));
     } catch (err) {
       setErrorMsg("Erro de sincronização com o banco de dados. Tentando novamente.");
     } finally {
@@ -517,6 +523,40 @@ export default function App() {
     }
   };
 
+  const handleAddMaintenanceLog = async (payload: Partial<MaintenanceLog>) => {
+    try {
+      const res = await fetch("/api/maintenance-logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchAllData();
+        return true;
+      }
+      alert(data.message || "Erro ao cadastrar manutenção");
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const handleDeleteMaintenanceLog = async (id: string) => {
+    try {
+      const res = await fetch(`/api/maintenance-logs/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        await fetchAllData();
+        return true;
+      }
+      alert(data.message || "Erro ao excluir manutenção");
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
   const handleDefinirSaldo = async (payload: { veiculo_id: string; saldo_inicial: number; observacao?: string }) => {
     try {
       const res = await fetch("/api/caixa-caminhao/saldo", {
@@ -595,6 +635,7 @@ export default function App() {
     drivers: { label: "Fichas de Motoristas", key: "drivers" },
     vehicles: { label: "Veículos de Frota", key: "vehicles" },
     tires: { label: "Controle de Pneus", key: "tires" },
+    maintenance: { label: "Manutenção Preventiva", key: "maintenance-logs" },
     freights: { label: "Manifesto de Fretes", key: "freights" },
     refuels: { label: "Controle de Combustível", key: "refuels" },
     expenses: { label: "Despesas Operacionais", key: "expenses" },
@@ -667,6 +708,7 @@ export default function App() {
     { id: "vehicles", label: "Frota de Veículos", icon: Truck },
     { id: "tracking", label: "Rastreamento", icon: Satellite },
     { id: "tires", label: "Controle de Pneus", icon: RotateCw },
+    { id: "maintenance", label: "Manutenção Preventiva", icon: Wrench },
     { id: "freights", label: "Manifesto de Fretes", icon: Compass },
     { id: "refuels", label: "Combustível", icon: Fuel },
     { id: "expenses", label: "Controle Despesas", icon: DollarSign },
@@ -911,6 +953,15 @@ export default function App() {
                   onDeleteTire={handleDeleteTire}
                   onRecordChange={handleRecordChange}
                   onRecordRotation={handleRecordRotation}
+                />
+              )}
+
+              {tab === "maintenance" && (
+                <MaintenanceManager
+                  maintenanceLogs={maintenanceLogs}
+                  vehicles={vehicles}
+                  onAddMaintenanceLog={handleAddMaintenanceLog}
+                  onDeleteMaintenanceLog={handleDeleteMaintenanceLog}
                 />
               )}
 

@@ -66,6 +66,7 @@ interface Database {
   expenses: any[];
   tires: any[];
   debts: any[];
+  maintenance_logs: any[];
   caixa_caminhao: any[];
   caixa_movimentacoes: any[];
   image_analyses?: any[];
@@ -107,6 +108,7 @@ const DEFAULT_DB: Database = {
   expenses: [],
   tires: [],
   debts: [],
+  maintenance_logs: [],
   caixa_caminhao: [],
   caixa_movimentacoes: [],
   trip_logs: [],
@@ -1114,6 +1116,10 @@ async function loadDB(): Promise<Database> {
     }
     if (!db.debts) {
       db.debts = DEFAULT_DB.debts || [];
+      modified = true;
+    }
+    if (!db.maintenance_logs) {
+      db.maintenance_logs = [];
       modified = true;
     }
     if (!db.caixa_caminhao) {
@@ -2222,6 +2228,40 @@ app.delete("/api/debts/:id", async (req, res) => {
   res.json({ success: true });
 });
 
+// Preventive Maintenance (Óleo/Filtros/Freios/Direção/Lubrificação) CRUD
+app.get("/api/maintenance-logs", async (req, res) => {
+  res.json({ success: true, maintenanceLogs: (await loadDB()).maintenance_logs || [] });
+});
+
+app.post("/api/maintenance-logs", async (req, res) => {
+  const db = (await loadDB());
+  const newLog = {
+    id: `maint_${Date.now()}`,
+    vehicleId: req.body.vehicleId || "",
+    item: req.body.item || "",
+    category: req.body.category || "Outros",
+    date: req.body.date || new Date().toISOString().split("T")[0],
+    km: Number(req.body.km) || 0,
+    cost: Number(req.body.cost) || 0,
+    notes: req.body.notes || "",
+    nextDueKm: req.body.nextDueKm !== undefined && req.body.nextDueKm !== "" ? Number(req.body.nextDueKm) : undefined,
+    createdAt: new Date().toISOString()
+  };
+  db.maintenance_logs = db.maintenance_logs || [];
+  db.maintenance_logs.push(newLog);
+  await saveDB(db);
+  res.json({ success: true, maintenanceLog: newLog });
+});
+
+app.delete("/api/maintenance-logs/:id", async (req, res) => {
+  const { id } = req.params;
+  const db = (await loadDB());
+  db.maintenance_logs = db.maintenance_logs || [];
+  db.maintenance_logs = db.maintenance_logs.filter(m => m.id !== id);
+  await saveDB(db);
+  res.json({ success: true });
+});
+
 // Truck Cash (Caixa do Caminhão) CRUD
 app.get("/api/caixa-caminhao", async (req, res) => {
   const db = (await loadDB());
@@ -2399,6 +2439,8 @@ app.post("/api/reset/:module", async (req, res) => {
     db.expenses = [];
   } else if (module === "tires") {
     db.tires = [];
+  } else if (module === "maintenance-logs") {
+    db.maintenance_logs = [];
   } else if (module === "debts") {
     db.debts = [];
   } else if (module === "caixa-caminhao") {
@@ -2412,6 +2454,7 @@ app.post("/api/reset/:module", async (req, res) => {
     db.refuels = [];
     db.expenses = [];
     db.tires = [];
+    db.maintenance_logs = [];
     db.debts = [];
     db.caixa_caminhao = [];
     db.image_analyses = [];
