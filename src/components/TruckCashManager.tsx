@@ -817,9 +817,9 @@ export default function TruckCashManager({
                                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                                 </linearGradient>
                               </defs>
-                              <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-gray-300 dark:text-gray-700" opacity={0.6} />
                               <XAxis dataKey="month" stroke="currentColor" className="text-muted-foreground" fontSize={10} tickLine={false} axisLine={false} />
-                              <YAxis stroke="currentColor" className="text-muted-foreground" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                              <YAxis stroke="currentColor" className="text-muted-foreground" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : v} />
                               <Tooltip formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Gastos"]} />
                               <Area type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2.5} fill="url(#truckCashMonthlyGrad)" dot={{ r: 3 }} />
                             </AreaChart>
