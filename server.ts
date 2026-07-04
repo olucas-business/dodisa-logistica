@@ -2268,7 +2268,7 @@ app.delete("/api/maintenance-logs/:id", async (req, res) => {
   res.json({ success: true });
 });
 
-// Session Annotations (upload de imagem + anotacao por modulo)
+// Session Annotations (upload de imagem + transcricao automatica por IA, por modulo)
 app.get("/api/annotations", async (req, res) => {
   const { module: moduleKey } = req.query;
   const db = (await loadDB());
@@ -2277,9 +2277,75 @@ app.get("/api/annotations", async (req, res) => {
   res.json({ success: true, annotations: filtered });
 });
 
+// Reads an uploaded image (recibo, print, comprovante) and transcreve os campos
+// estruturados encontrados. Nunca inventa dados - deixa em branco se nao encontrar.
+app.post("/api/annotations/extract", async (req, res) => {
+  const { image, mimeType } = req.body;
+  if (!image || typeof image !== "string") {
+    return res.status(400).json({ success: false, message: "A imagem em base64 é obrigatória." });
+  }
+
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(503).json({ success: false, message: "IA não configurada. Preencha as informações manualmente." });
+  }
+
+  const cleanMimeType = mimeType || "image/png";
+  const base64Data = image.includes(",") ? image.split(",")[1] : image;
+
+  try {
+    const ai = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: { headers: { "User-Agent": "aistudio-build" } }
+    });
+
+    const imagePart = { inlineData: { mimeType: cleanMimeType, data: base64Data } };
+    const systemPrompt = `Você é o motor de IA da DODISA LOGÍSTICA. Analise a imagem enviada (recibo, nota fiscal, comprovante, print de gasto ou documento operacional) e transcreva SOMENTE as informações que estiverem clara e explicitamente visíveis na imagem, separando-as em campos estruturados.
+
+REGRAS CRÍTICAS:
+- NUNCA invente, estime ou "chute" valores, datas, descrições ou categorias que não estejam explicitamente legíveis na imagem.
+- Se um campo não for encontrado ou não estiver legível, retorne string vazia "" (ou 0 para o valor numérico) — nunca invente um valor plausível.
+- O campo "description" deve ser um resumo curto e objetivo do que a imagem representa (ex: "Troca de óleo - Posto Ipiranga", "Pedágio BR-116 km 80").
+- O campo "value" deve ser o valor monetário PRINCIPAL/total encontrado no documento, como número puro (sem "R$", sem separador de milhar).
+- O campo "date" deve estar no formato YYYY-MM-DD, apenas se uma data estiver visível no documento.
+- O campo "category" deve ser a categoria mais provável dentre exatamente estas opções: "Combustível", "Pedágio", "Oficina", "Pneus", "Alimentação", "Hospedagem", "Manutenção", "Documentação", "Multas", "Boletos", "Cartão de Crédito", "Seguros", "Outros". Se não for possível inferir com confiança, use "Outros".`;
+
+    const response = await withTimeout(ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        imagePart,
+        { text: "Transcreva e estruture as informações desta imagem de acordo com as instruções do sistema." }
+      ],
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            description: { type: Type.STRING },
+            value: { type: Type.NUMBER },
+            date: { type: Type.STRING },
+            category: { type: Type.STRING }
+          },
+          required: ["description", "value", "date", "category"]
+        }
+      }
+    }), 25000);
+
+    if (!response.text) {
+      return res.status(503).json({ success: false, message: "Não foi possível analisar a imagem no momento. Tente novamente ou preencha manualmente." });
+    }
+
+    const extracted = sanitizePlaceholders(JSON.parse(response.text));
+    res.json({ success: true, extracted });
+  } catch (err: any) {
+    console.warn("Erro ao transcrever anotação com IA:", err);
+    res.status(503).json({ success: false, message: "Não foi possível analisar a imagem no momento. Tente novamente ou preencha manualmente." });
+  }
+});
+
 app.post("/api/annotations", async (req, res) => {
   const db = (await loadDB());
-  const { module: moduleKey, imageUrl, note } = req.body;
+  const { module: moduleKey, imageUrl, note, description, value, date, category } = req.body;
   if (!moduleKey || !imageUrl) {
     return res.status(400).json({ success: false, message: "Módulo e imagem são obrigatórios." });
   }
@@ -2288,7 +2354,10 @@ app.post("/api/annotations", async (req, res) => {
     module: moduleKey,
     imageUrl,
     note: note || "",
-    date: new Date().toISOString().split("T")[0],
+    description: description || "",
+    value: value !== undefined && value !== "" ? Number(value) : 0,
+    category: category || "",
+    date: date || new Date().toISOString().split("T")[0],
     createdAt: new Date().toISOString()
   };
   db.annotations = db.annotations || [];
