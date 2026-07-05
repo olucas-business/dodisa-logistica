@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
-import { 
-  Freight, 
-  Driver, 
-  Vehicle, 
-  Refuel, 
+import {
+  Freight,
+  Driver,
+  Vehicle,
+  Refuel,
   Expense,
   Debt
 } from "../types";
+import RadialGauge from "./RadialGauge";
 import { 
   Truck, 
   Users, 
@@ -166,6 +167,27 @@ export default function DashboardOverview({
 
   const estimatedProfitMonth = billingMonth - expensesMonth;
   const marginPercentage = billingMonth > 0 ? Math.round((estimatedProfitMonth / billingMonth) * 100) : 0;
+
+  // Performance ring gauges: real ratios, no fabricated data
+  const fleetActivePercentage = useMemo(() => {
+    if (vehicles.length === 0) return 0;
+    const activeVehicleIds = new Set(
+      freights.filter(f => f.status === "Em andamento").map(f => f.vehicleId)
+    );
+    return Math.round((activeVehicleIds.size / vehicles.length) * 100);
+  }, [vehicles, freights]);
+
+  const freightsCompletedPercentage = useMemo(() => {
+    if (freightsMonth.length === 0) return 0;
+    const completed = freightsMonth.filter(f => f.status === "Finalizado").length;
+    return Math.round((completed / freightsMonth.length) * 100);
+  }, [freightsMonth]);
+
+  const driversActivePercentage = useMemo(() => {
+    if (drivers.length === 0) return 0;
+    const activeDriverIds = new Set(freightsMonth.map(f => f.driverId));
+    return Math.round((activeDriverIds.size / drivers.length) * 100);
+  }, [drivers, freightsMonth]);
 
   // Helper for previous month matching (e.g. 2026-05)
   const isPrevMonth = (dateStr: string) => {
@@ -745,6 +767,20 @@ export default function DashboardOverview({
               </ComposedChart>
             </ResponsiveContainer>
           )}
+        </div>
+      </div>
+
+      {/* 1c. INDICADORES DE PERFORMANCE (Anéis de Progresso) */}
+      <div className="bg-card border border-border rounded-2xl p-5 sm:p-6">
+        <div className="mb-4">
+          <h3 className="text-sm font-bold text-foreground">Indicadores de Performance</h3>
+          <p className="text-[11px] text-muted-foreground">Proporções operacionais do mês em {currentMonthName}.</p>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <RadialGauge label="Frota Ativa" value={fleetActivePercentage} color="#3b82f6" />
+          <RadialGauge label="Fretes Finalizados" value={freightsCompletedPercentage} color="#10b981" />
+          <RadialGauge label="Motoristas Ativos" value={driversActivePercentage} color="#8b5cf6" />
+          <RadialGauge label="Margem Operacional" value={marginPercentage} color="#14b8a6" />
         </div>
       </div>
 
