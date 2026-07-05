@@ -770,18 +770,12 @@ export default function DashboardOverview({
         </div>
       </div>
 
-      {/* 1c. INDICADORES DE PERFORMANCE (Anéis de Progresso) */}
-      <div className="bg-card border border-border rounded-2xl p-5 sm:p-6">
-        <div className="mb-4">
-          <h3 className="text-sm font-bold text-foreground">Indicadores de Performance</h3>
-          <p className="text-[11px] text-muted-foreground">Proporções operacionais do mês em {currentMonthName}.</p>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <RadialGauge label="Frota Ativa" value={fleetActivePercentage} color="#3b82f6" />
-          <RadialGauge label="Fretes Finalizados" value={freightsCompletedPercentage} color="#10b981" />
-          <RadialGauge label="Motoristas Ativos" value={driversActivePercentage} color="#8b5cf6" />
-          <RadialGauge label="Margem Operacional" value={marginPercentage} color="#14b8a6" />
-        </div>
+      {/* 1c. INDICADORES DE PERFORMANCE (Anéis de Progresso, mesmo estilo do BI Analítico) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <RadialGauge label="Frota Ativa" value={fleetActivePercentage} color="#3b82f6" />
+        <RadialGauge label="Fretes Finalizados" value={freightsCompletedPercentage} color="#10b981" />
+        <RadialGauge label="Motoristas Ativos" value={driversActivePercentage} color="#8b5cf6" />
+        <RadialGauge label="Margem Operacional" value={marginPercentage} color="#14b8a6" />
       </div>
 
       {/* 2. CORE METRICS GRID OF 8 INDICATORS (More Charts, Less Text) */}
