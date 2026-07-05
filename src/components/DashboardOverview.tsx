@@ -1130,29 +1130,12 @@ export default function DashboardOverview({
             {/* Direct Metrics Column (Left - 5 cols) */}
             <div className="lg:col-span-5 space-y-4">
               <div className="space-y-3">
-                {/* Yellow Priority */}
-                <div className="flex items-center justify-between p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
-                    <div>
-                      <span className="text-xs font-black text-foreground block">Quitar Primeiro</span>
-                      <span className="text-[10px] text-muted-foreground block">Alta prioridade / Emergencial</span>
-                    </div>
-                  </div>
-                  <span className="text-sm font-black font-mono text-amber-600 dark:text-amber-400">
-                    R$ {(() => {
-                      const total = debts.filter(d => d.status === "Quitar Primeiro").reduce((acc, curr) => acc + curr.value, 0);
-                      return total.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
-                    })()}
-                  </span>
-                </div>
-
                 {/* Red Pending */}
                 <div className="flex items-center justify-between p-3 bg-red-500/5 border border-red-500/20 rounded-xl">
                   <div className="flex items-center gap-2.5">
                     <span className="w-3 h-3 rounded-full bg-red-500" />
                     <div>
-                      <span className="text-xs font-black text-foreground block">Falta Pagar</span>
+                      <span className="text-xs font-black text-foreground block">Pagar</span>
                       <span className="text-[10px] text-muted-foreground block">Pendente de vencimento</span>
                     </div>
                   </div>
@@ -1169,7 +1152,7 @@ export default function DashboardOverview({
                   <div className="flex items-center gap-2.5">
                     <span className="w-3 h-3 rounded-full bg-emerald-500" />
                     <div>
-                      <span className="text-xs font-black text-foreground block">Foi Pago</span>
+                      <span className="text-xs font-black text-foreground block">Pago</span>
                       <span className="text-[10px] text-muted-foreground block">Baixa operacional efetuada</span>
                     </div>
                   </div>
@@ -1186,15 +1169,13 @@ export default function DashboardOverview({
             {/* Interactive Graph Column (Right - 7 cols) */}
             <div className="lg:col-span-7 h-[250px] w-full flex items-center justify-center">
               {(() => {
-                const priorityTotal = debts.filter(d => d.status === "Quitar Primeiro").reduce((acc, curr) => acc + curr.value, 0);
                 const pendingTotal = debts.filter(d => d.status === "Falta Pagar").reduce((acc, curr) => acc + curr.value, 0);
                 const paidTotal = debts.filter(d => d.status === "Pago").reduce((acc, curr) => acc + curr.value, 0);
                 const donutData = [
-                  { name: "Quitar Primeiro", value: priorityTotal, color: "#f59e0b" },
-                  { name: "Falta Pagar", value: pendingTotal, color: "#ef4444" },
-                  { name: "Foi Pago", value: paidTotal, color: "#10b981" }
+                  { name: "Pagar", value: pendingTotal, color: "#ef4444" },
+                  { name: "Pago", value: paidTotal, color: "#10b981" }
                 ].filter(d => d.value > 0);
-                const grandTotal = priorityTotal + pendingTotal + paidTotal;
+                const grandTotal = pendingTotal + paidTotal;
 
                 if (donutData.length === 0) {
                   return <div className="text-xs text-muted-foreground font-medium">Nenhuma dívida cadastrada.</div>;

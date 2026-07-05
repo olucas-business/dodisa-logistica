@@ -28,10 +28,20 @@ interface DebtsManagerProps {
   onDeleteDebt: (id: string) => Promise<boolean>;
 }
 
-const DEBT_CATEGORIES = [
+// Categorias de financiamento: saldo acumulado, NAO reseta por mes
+const FINANCING_CATEGORIES = [
   "Financiamento BNDES",
-  "Rotativo Sicredi",
+  "Sicredi Rotativo 1",
+  "Sicredi Rotativo 2",
+  "Sicredi Rotativo 3",
+  "Cresol Rotativo",
+  "Empréstimo Sicredi",
   "Empréstimos",
+  "Consórcio"
+];
+
+// Categorias de despesa mensal: cada mes (dia 01 ao ultimo dia) e um ciclo fechado, nao acumula mes a mes
+const MONTHLY_EXPENSE_CATEGORIES = [
   "Oficina",
   "Pneus",
   "Combustível",
@@ -39,8 +49,11 @@ const DEBT_CATEGORIES = [
   "Salários",
   "Seguro",
   "Administrativo",
+  "Cartão de Crédito",
   "Outros"
 ];
+
+const DEBT_CATEGORIES = [...FINANCING_CATEGORIES, ...MONTHLY_EXPENSE_CATEGORIES];
 
 export default function DebtsManager({
   debts,
@@ -179,11 +192,19 @@ export default function DebtsManager({
   const sumTotal = debts.reduce((acc, curr) => acc + curr.value, 0);
 
   // Filtered lists
-  // Category totals for the bar chart
-  const categoryTotals = DEBT_CATEGORIES.map(cat => ({
-    category: cat,
-    value: debts.filter(d => d.category === cat).reduce((sum, d) => sum + (d.value || 0), 0)
-  })).filter(c => c.value > 0);
+  // Category totals for the bar chart.
+  // Financiamentos acumulam o saldo total; despesas mensais consideram apenas
+  // o ciclo do mes corrente (dia 01 ao ultimo dia), sem somar meses anteriores.
+  const now = new Date();
+  const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const categoryTotals = DEBT_CATEGORIES.map(cat => {
+    const isMonthly = MONTHLY_EXPENSE_CATEGORIES.includes(cat);
+    const categoryDebts = debts.filter(d => d.category === cat && (!isMonthly || d.dueDate.startsWith(currentYearMonth)));
+    return {
+      category: cat,
+      value: categoryDebts.reduce((sum, d) => sum + (d.value || 0), 0)
+    };
+  }).filter(c => c.value > 0);
 
   const filteredDebts = debts.filter((debt) => {
     const matchesSearch = debt.description.toLowerCase().includes(searchTerm.toLowerCase()) || 

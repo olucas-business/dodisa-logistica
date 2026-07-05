@@ -91,6 +91,7 @@ export interface CompanyProfile {
   contratoSocialUrl: string;
   contratoSocialName: string;
   logoUrl: string;
+  taxRate?: string;
 }
 
 export interface RouteStop {

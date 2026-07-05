@@ -1,5 +1,6 @@
+import { useState, useEffect } from "react";
 import { Freight, Driver, Vehicle, Expense, Refuel } from "../types";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from "recharts";
+import { ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Coins, DollarSign, Activity, Users, Truck } from "lucide-react";
 import RadialGauge from "./RadialGauge";
 
@@ -12,6 +13,18 @@ interface AnalyticsBIProps {
 }
 
 export default function AnalyticsBI({ freights, drivers, vehicles, expenses, refuels }: AnalyticsBIProps) {
+  // Alíquota de imposto configurada no Perfil da Empresa (soma-se aos custos operacionais)
+  const [taxRate, setTaxRate] = useState(0);
+  useEffect(() => {
+    fetch("/api/company")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.company?.taxRate) {
+          setTaxRate(Number(data.company.taxRate) || 0);
+        }
+      })
+      .catch(() => {});
+  }, []);
   // 1. Prepare Month-over-Month dataset (Faturamento vs Despesas) dynamically
   const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   const targetYear = String(new Date().getFullYear());
@@ -219,31 +232,54 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
       <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
         <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-1.5">
           <Activity className="w-4 h-4 text-blue-500" />
-          Desempenho Financeiro da Transportadora (MoM)
+          Desempenho Financeiro da Transportadora (Acumulado)
         </h3>
-        <div className="h-[300px] w-full font-sans text-xs">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={monthsList} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorBilling" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.45}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorExpenses" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.45}/>
-                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-              <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} />
-              <YAxis stroke="var(--muted-foreground)" fontSize={11} tickFormatter={(val) => `R$ ${val/1000}k`} tickLine={false} />
-              <Tooltip formatter={(value) => [`R$ ${value.toLocaleString()}`, ""]} />
-              <Legend />
-              <Area type="monotone" name="Faturamento" dataKey="billing" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorBilling)" />
-              <Area type="monotone" name="Custos Operacionais" dataKey="expenses" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorExpenses)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        {(() => {
+          const totalBilling = monthsList.reduce((sum, m) => sum + (m.billing || 0), 0);
+          const totalExpenses = monthsList.reduce((sum, m) => sum + (m.expenses || 0), 0);
+          const taxAmount = taxRate > 0 ? totalBilling * (taxRate / 100) : 0;
+          const grandTotal = totalBilling + totalExpenses + taxAmount;
+          const financialData = [
+            { name: "Faturamento", value: totalBilling, color: "#3b82f6" },
+            { name: "Custos Operacionais", value: totalExpenses, color: "#10b981" },
+            { name: `Impostos (${taxRate}%)`, value: taxAmount, color: "#f59e0b" }
+          ].filter(d => d.value > 0);
+
+          if (financialData.length === 0) {
+            return <div className="h-[220px] flex items-center justify-center text-xs text-muted-foreground">Nenhum dado financeiro disponível.</div>;
+          }
+
+          return (
+            <div className="flex flex-col sm:flex-row items-center gap-8 justify-center">
+              <div className="h-[220px] w-[220px] relative shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={financialData} cx="50%" cy="50%" innerRadius={65} outerRadius={95} paddingAngle={3} dataKey="value">
+                      {financialData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, "Total"]} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">Total</span>
+                  <span className="text-base font-black font-mono text-foreground">R$ {grandTotal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {financialData.map(d => (
+                  <div key={d.name} className="flex items-center gap-2 text-xs font-semibold">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                    <span className="text-muted-foreground">{d.name}:</span>
+                    <span className="text-foreground font-mono">R$ {d.value.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                    <span className="text-muted-foreground font-mono">({grandTotal > 0 ? ((d.value / grandTotal) * 100).toFixed(0) : 0}%)</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Cost category & rankings Split Grid */}
