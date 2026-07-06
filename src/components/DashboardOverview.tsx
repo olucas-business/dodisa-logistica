@@ -238,6 +238,12 @@ export default function DashboardOverview({
   const estimatedProfitMonth = billingMonth - expensesMonth;
   const marginPercentage = billingMonth > 0 ? Math.round((estimatedProfitMonth / billingMonth) * 100) : 0;
 
+  // Dívida/Alavancagem: total de dívidas e obrigações ainda pendentes de pagamento (todas as categorias)
+  const totalDividaPendente = useMemo(
+    () => debts.filter(d => d.status === "Falta Pagar").reduce((sum, d) => sum + (d.value || 0), 0),
+    [debts]
+  );
+
   // Performance ring gauges: real ratios, no fabricated data
   const fleetActivePercentage = useMemo(() => {
     if (vehicles.length === 0) return 0;
@@ -787,7 +793,32 @@ export default function DashboardOverview({
 
   return (
     <div id="central-controle-dashboard" className="space-y-6 animate-fade-in text-left">
-      
+
+      {/* 0. RESUMO RÁPIDO: Faturamento / Dívida-Alavancagem / Despesas do mês */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 shadow-sm">
+          <span className="w-3 h-3 rounded-full bg-blue-500 shrink-0 shadow-[0_0_10px_rgba(59,130,246,0.6)]" />
+          <div className="min-w-0">
+            <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Faturamento</span>
+            <p className="text-lg font-black text-blue-500 font-mono truncate">R$ {billingMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 shadow-sm">
+          <span className="w-3 h-3 rounded-full bg-red-500 shrink-0 shadow-[0_0_10px_rgba(239,68,68,0.6)]" />
+          <div className="min-w-0">
+            <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Dívida / Alavancagem</span>
+            <p className="text-lg font-black text-red-500 font-mono truncate">R$ {totalDividaPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 shadow-sm">
+          <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_10px_rgba(16,185,129,0.6)]" />
+          <div className="min-w-0">
+            <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Despesas</span>
+            <p className="text-lg font-black text-emerald-500 font-mono truncate">R$ {expensesMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+          </div>
+        </div>
+      </div>
+
       {/* 1. CLEAN MODERN WELCOME HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card p-6 rounded-2xl border border-border">
         <div>
