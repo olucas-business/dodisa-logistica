@@ -30,7 +30,10 @@ import {
   Percent,
   FileSpreadsheet,
   Route,
-  BarChart3
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -88,10 +91,34 @@ export default function DashboardOverview({
   // Constants
   const today = new Date();
   const CURRENT_DATE_STR = today.toISOString().split("T")[0];
-  const currentYear: number = today.getFullYear();
-  const currentMonth: number = today.getMonth() + 1;
   const FULL_MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+  // Filtro de mês/ano: controla todas as métricas "do mês" abaixo. Por padrão
+  // mostra o mês corrente, mas o usuário pode navegar para outros meses.
+  const [selectedMonth, setSelectedMonth] = useState<number>(today.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(today.getFullYear());
+  const currentYear: number = selectedYear;
+  const currentMonth: number = selectedMonth;
   const currentMonthName = FULL_MONTH_NAMES[currentMonth - 1];
+  const isViewingCurrentMonth = selectedMonth === today.getMonth() + 1 && selectedYear === today.getFullYear();
+
+  const goToPrevMonth = () => {
+    if (selectedMonth === 1) {
+      setSelectedMonth(12);
+      setSelectedYear(y => y - 1);
+    } else {
+      setSelectedMonth(m => m - 1);
+    }
+  };
+
+  const goToNextMonth = () => {
+    if (selectedMonth === 12) {
+      setSelectedMonth(1);
+      setSelectedYear(y => y + 1);
+    } else {
+      setSelectedMonth(m => m + 1);
+    }
+  };
 
   // Active tab toggle for bottom right charts: expenses vs cargo breakdown
   const [bottomActiveTab, setBottomActiveTab] = useState<"expenses" | "cargo">("expenses");
@@ -719,12 +746,44 @@ export default function DashboardOverview({
           </p>
         </div>
         
-        <div className="flex items-center gap-2.5 text-xs text-muted-foreground font-mono bg-muted px-3 py-1.5 rounded-lg border border-border shrink-0 md:self-center">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span>Sincronizado: {CURRENT_DATE_STR}</span>
+        <div className="flex items-center gap-3 shrink-0 md:self-center">
+          {/* Filtro de mês/ano */}
+          <div className="flex items-center gap-1 bg-muted px-1.5 py-1.5 rounded-lg border border-border">
+            <button
+              onClick={goToPrevMonth}
+              className="p-1 hover:bg-card rounded-md text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+              title="Mês anterior"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <span className="flex items-center gap-1.5 text-xs font-bold text-foreground px-1.5 min-w-[110px] justify-center">
+              <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
+              {currentMonthName} {currentYear}
+            </span>
+            <button
+              onClick={goToNextMonth}
+              className="p-1 hover:bg-card rounded-md text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+              title="Próximo mês"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+            {!isViewingCurrentMonth && (
+              <button
+                onClick={() => { setSelectedMonth(today.getMonth() + 1); setSelectedYear(today.getFullYear()); }}
+                className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-1.5 cursor-pointer"
+              >
+                Hoje
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2.5 text-xs text-muted-foreground font-mono bg-muted px-3 py-1.5 rounded-lg border border-border">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>Sincronizado: {CURRENT_DATE_STR}</span>
+          </div>
         </div>
       </div>
 
