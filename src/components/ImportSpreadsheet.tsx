@@ -69,6 +69,12 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Suporte a múltiplas abas: guarda o workbook carregado para poder trocar de
+  // aba sem reler o arquivo, e a lista de nomes de abas para o seletor.
+  const [loadedWorkbook, setLoadedWorkbook] = useState<XLSX.WorkBook | null>(null);
+  const [loadedFileName, setLoadedFileName] = useState("");
+  const [selectedSheetName, setSelectedSheetName] = useState("");
+
   // States for preview modal and saving step
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [tempParsedData, setTempParsedData] = useState<ImportResponse | null>(null);
@@ -425,21 +431,24 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
           }
           const arr = new Uint8Array(data as ArrayBuffer);
           const workbook = XLSX.read(arr, { type: 'array' });
-          
+
           if (workbook.SheetNames.length === 0) {
             throw new Error("A pasta de trabalho do Excel está vazia (nenhuma aba encontrada).");
           }
 
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
-          
+
           // Convert sheet to clean CSV content
           const csvContent = XLSX.utils.sheet_to_csv(worksheet);
-          
+
           if (!csvContent || csvContent.trim().length === 0) {
             throw new Error("A primeira aba da planilha está em branco ou sem dados válidos.");
           }
 
+          setLoadedWorkbook(workbook);
+          setLoadedFileName(file.name);
+          setSelectedSheetName(firstSheetName);
           setInputText(csvContent);
           setErrorMsg("");
         } catch (err: any) {
@@ -462,6 +471,9 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
           if (!text || text.trim().length === 0) {
             throw new Error("O arquivo carregado está vazio.");
           }
+          setLoadedWorkbook(null);
+          setLoadedFileName("");
+          setSelectedSheetName("");
           setInputText(text);
           setErrorMsg("");
         } catch (err: any) {
@@ -474,6 +486,22 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
       };
 
       reader.readAsText(file);
+    }
+  };
+
+  // Troca a aba ativa de um arquivo Excel já carregado, reconvertendo para CSV
+  // sem precisar reler o arquivo do disco.
+  const handleSheetChange = (sheetName: string) => {
+    if (!loadedWorkbook) return;
+    const worksheet = loadedWorkbook.Sheets[sheetName];
+    if (!worksheet) return;
+    const csvContent = XLSX.utils.sheet_to_csv(worksheet);
+    setSelectedSheetName(sheetName);
+    setInputText(csvContent);
+    if (!csvContent || csvContent.trim().length === 0) {
+      setErrorMsg(`A aba "${sheetName}" está em branco ou sem dados válidos.`);
+    } else {
+      setErrorMsg("");
     }
   };
 
@@ -656,6 +684,25 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
             rows={5}
             className="w-full bg-gray-50 border border-gray-200 focus:border-blue-500 focus:bg-white rounded-lg p-3 text-xs font-mono outline-none resize-none transition-all"
           />
+
+          {/* Seletor de aba: o arquivo Excel carregado tem mais de uma aba */}
+          {loadedWorkbook && loadedWorkbook.SheetNames.length > 1 && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-lg p-3">
+              <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400 flex items-center gap-1.5 shrink-0">
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                "{loadedFileName}" tem {loadedWorkbook.SheetNames.length} abas — selecione qual importar:
+              </span>
+              <select
+                value={selectedSheetName}
+                onChange={(e) => handleSheetChange(e.target.value)}
+                className="bg-white dark:bg-slate-950 border border-amber-300 dark:border-amber-900/60 text-gray-900 dark:text-gray-100 rounded-lg px-2.5 py-1.5 text-xs outline-none font-semibold"
+              >
+                {loadedWorkbook.SheetNames.map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Client-side Live Validation Reporting */}
