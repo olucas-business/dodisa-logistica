@@ -222,10 +222,10 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
 
       {/* Radial Gauges Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <RadialGauge label="Margem Operacional" value={Number(averageMargin)} color="#10b981" />
-        <RadialGauge label="Fretes Finalizados" value={pctFretesFinalizados} color="#3b82f6" />
-        <RadialGauge label="Frota Ativa" value={pctFrotaAtiva} color="#06b6d4" />
-        <RadialGauge label="Motoristas Ativos" value={pctMotoristasAtivos} color="#22c55e" />
+        <RadialGauge label="Frota Ativa" value={pctFrotaAtiva} color="#3b82f6" />
+        <RadialGauge label="Fretes Finalizados" value={pctFretesFinalizados} color="#06b6d4" />
+        <RadialGauge label="Motoristas Ativos" value={pctMotoristasAtivos} color="#10b981" />
+        <RadialGauge label="Margem Operacional" value={Number(averageMargin)} color="#22c55e" />
       </div>
 
       {/* MoM Performance Chart Card */}

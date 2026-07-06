@@ -728,7 +728,15 @@ export default function DashboardOverview({
         </div>
       </div>
 
-      {/* 1b. HERO CHART: Faturamento vs Custos ao longo do ano (destaque visual principal) */}
+      {/* 1b. INDICADORES DE PERFORMANCE (Anéis de Progresso, mesmo estilo do BI Analítico) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <RadialGauge label="Frota Ativa" value={fleetActivePercentage} color="#3b82f6" />
+        <RadialGauge label="Fretes Finalizados" value={freightsCompletedPercentage} color="#06b6d4" />
+        <RadialGauge label="Motoristas Ativos" value={driversActivePercentage} color="#10b981" />
+        <RadialGauge label="Margem Operacional" value={marginPercentage} color="#22c55e" />
+      </div>
+
+      {/* 1c. HERO CHART: Faturamento vs Custos ao longo do ano (destaque visual principal) */}
       <div className="bg-card border border-border rounded-2xl p-5 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
@@ -768,14 +776,6 @@ export default function DashboardOverview({
             </ResponsiveContainer>
           )}
         </div>
-      </div>
-
-      {/* 1c. INDICADORES DE PERFORMANCE (Anéis de Progresso, mesmo estilo do BI Analítico) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <RadialGauge label="Frota Ativa" value={fleetActivePercentage} color="#3b82f6" />
-        <RadialGauge label="Fretes Finalizados" value={freightsCompletedPercentage} color="#10b981" />
-        <RadialGauge label="Motoristas Ativos" value={driversActivePercentage} color="#8b5cf6" />
-        <RadialGauge label="Margem Operacional" value={marginPercentage} color="#14b8a6" />
       </div>
 
       {/* 2. CORE METRICS GRID OF 8 INDICATORS (More Charts, Less Text) */}

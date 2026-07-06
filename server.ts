@@ -3220,10 +3220,13 @@ app.post("/api/ai/import-spreadsheet", async (req, res) => {
     const result: string[] = [];
     let current = "";
     let inQuotes = false;
-    
+
+    // Only a double-quote toggles quoting (RFC 4180). A single quote is a
+    // literal character (apostrophes in names/addresses like "D'Ávila"
+    // must not corrupt the column split for the rest of the line).
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-      if (char === '"' || char === "'") {
+      if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === delimiter && !inQuotes) {
         result.push(current.trim());
@@ -3246,13 +3249,74 @@ app.post("/api/ai/import-spreadsheet", async (req, res) => {
     return { city: input, state: "" };
   }
 
-  // Robust number parsing (removes R$, currency formatting, spaces, etc.)
+  // Robust number parsing (removes R$, currency formatting, spaces, etc.).
+  // Detects whether the decimal separator is "," (Brazilian, e.g. "1.234,56")
+  // or "." (international, e.g. "1,234.56" or "1234.56") instead of assuming
+  // Brazilian formatting unconditionally.
   function parseNumber(input: string | number | undefined | null): number {
     if (input === undefined || input === null) return 0;
     if (typeof input === "number") return input;
-    const cleaned = input.replace(/[R$\s]/g, "").replace(/\./g, "").replace(",", ".");
+    let cleaned = input.replace(/[R$\s]/g, "").trim();
+    if (!cleaned) return 0;
+
+    const hasComma = cleaned.includes(",");
+    const hasDot = cleaned.includes(".");
+
+    if (hasComma && hasDot) {
+      // Whichever separator appears last is the decimal mark; the other is the thousands separator.
+      if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+        cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+      } else {
+        cleaned = cleaned.replace(/,/g, "");
+      }
+    } else if (hasComma) {
+      // Only a comma: treat as decimal mark if 1-2 digits follow it (e.g. "123,45"),
+      // otherwise it's a thousands separator with no decimals (e.g. "1,234").
+      const afterLastComma = cleaned.split(",").pop() || "";
+      cleaned = afterLastComma.length <= 2 ? cleaned.replace(",", ".") : cleaned.replace(/,/g, "");
+    }
+    // Only a dot (or no separator): already parseFloat-compatible as-is.
+
     const num = parseFloat(cleaned);
     return isNaN(num) ? 0 : num;
+  }
+
+  // Normalizes dates from spreadsheet cells to YYYY-MM-DD. Handles ISO strings
+  // already in that format, DD/MM/YYYY (and DD-MM-YYYY), and Excel's serial
+  // date number (days since 1899-12-30) which arrives as a plain numeric string
+  // when a date-formatted cell is flattened to CSV.
+  function parseDate(input: string | undefined | null): string {
+    if (!input) return "";
+    const trimmed = input.trim();
+    if (!trimmed) return "";
+
+    // Already ISO (YYYY-MM-DD), optionally with a time component.
+    if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.slice(0, 10);
+
+    // Excel serial date number (e.g. "45678").
+    if (/^\d{4,6}(\.\d+)?$/.test(trimmed)) {
+      const serial = parseFloat(trimmed);
+      if (serial > 0) {
+        const epoch = new Date(Date.UTC(1899, 11, 30));
+        const parsed = new Date(epoch.getTime() + serial * 86400000);
+        if (!isNaN(parsed.getTime())) return parsed.toISOString().split("T")[0];
+      }
+    }
+
+    // DD/MM/YYYY or DD-MM-YYYY (also accepts 2-digit years).
+    const dmyMatch = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (dmyMatch) {
+      let [, d, m, y] = dmyMatch;
+      if (y.length === 2) y = (Number(y) < 50 ? "20" : "19") + y;
+      const day = d.padStart(2, "0");
+      const month = m.padStart(2, "0");
+      if (Number(month) <= 12 && Number(day) <= 31) {
+        return `${y}-${month}-${day}`;
+      }
+    }
+
+    // Unrecognized format: return as-is rather than guessing further.
+    return trimmed;
   }
 
   try {
@@ -3642,7 +3706,7 @@ O formato de retorno do JSON deve ser:
           const km = parseNumber(kmStr);
           const val = parseNumber(valStr);
           const liters = parseNumber(litersStr);
-          const formattedDate = dateStr || new Date().toISOString().split('T')[0];
+          const formattedDate = parseDate(dateStr) || new Date().toISOString().split('T')[0];
 
           // Is it a refuel row?
           if (liters > 0 || categoryStr.toLowerCase().includes("combustivel") || descStr.toLowerCase().includes("abastec") || descStr.toLowerCase().includes("posto")) {
@@ -3704,15 +3768,15 @@ O formato de retorno do JSON deve ser:
               },
               financial: {
                 value: val,
-                commission: val * 0.12,
-                toll: 150,
-                food: 120,
+                commission: 0,
+                toll: 0,
+                food: 0,
                 lodging: 0,
                 otherExpenses: 0
               },
               mileage: {
-                start: 120000,
-                end: 120000 + km,
+                start: 0,
+                end: km,
                 total: km
               }
             });
