@@ -115,7 +115,7 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
   const isPieDataEmpty = pieData.length === 0;
   const finalPieData = isPieDataEmpty ? [{ name: "Sem custos", value: 1 }] : pieData;
 
-  const COLORS = ["#ef4444", "#f97316", "#06b6d4", "#8b5cf6", "#6b7280", "#10b981", "#ec4899"];
+  const COLORS = ["#3b82f6", "#0ea5e9", "#06b6d4", "#14b8a6", "#10b981", "#22c55e", "#6b7280"];
 
   // 3. Driver Ranking (Billing generated per driver)
   const driverBilling: { [key: string]: { name: string; value: number } } = {};

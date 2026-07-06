@@ -1391,7 +1391,7 @@ export default function DashboardOverview({
           </div>
 
           {(() => {
-            const freightCostColors = ["#f97316", "#8b5cf6", "#06b6d4", "#10b981", "#ef4444"];
+            const freightCostColors = ["#3b82f6", "#0ea5e9", "#06b6d4", "#14b8a6", "#10b981"];
             const activeFreightsForCost = freights.filter(f => f.status !== "Cancelado");
             const freightCostBreakdown = [
               { name: "Pedágio", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.toll || 0), 0) },

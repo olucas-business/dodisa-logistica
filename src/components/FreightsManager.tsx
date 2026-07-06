@@ -4,7 +4,7 @@ import SessionAnnotations from "./SessionAnnotations";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { Truck, Plus, Search, Calendar, MapPin, Navigation, Coins, Trash2, Edit2, CheckCircle, Clock, PieChart as PieChartIcon } from "lucide-react";
 
-const FREIGHT_COST_COLORS = ["#f97316", "#8b5cf6", "#06b6d4", "#10b981", "#ef4444"];
+const FREIGHT_COST_COLORS = ["#3b82f6", "#0ea5e9", "#06b6d4", "#14b8a6", "#10b981"];
 
 interface FreightsManagerProps {
   freights: Freight[];
@@ -268,7 +268,7 @@ export default function FreightsManager({
       {costBreakdown.length > 0 && (
         <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
           <h4 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1.5">
-            <PieChartIcon className="w-4 h-4 text-orange-500" />
+            <PieChartIcon className="w-4 h-4 text-blue-500" />
             Custos Operacionais dos Fretes
           </h4>
           <div className="flex flex-col sm:flex-row items-center gap-6">
