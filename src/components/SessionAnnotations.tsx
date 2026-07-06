@@ -183,16 +183,16 @@ export default function SessionAnnotations({ moduleKey, title = "Anotações & P
 
   return (
     <div className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-4">
-      <div className="flex items-center justify-between">
-        <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <Camera className="w-4 h-4 text-blue-500" />
-          {title}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 min-w-0">
+          <Camera className="w-4 h-4 text-blue-500 shrink-0" />
+          <span className="truncate">{title}</span>
         </h4>
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-[11px] flex items-center gap-1.5 transition-all cursor-pointer shadow-sm shadow-blue-500/10"
+          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-[11px] flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm shadow-blue-500/10 whitespace-nowrap self-start sm:self-auto shrink-0"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="w-3.5 h-3.5 shrink-0" />
           Adicionar Anotação
         </button>
         <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
@@ -258,7 +258,7 @@ export default function SessionAnnotations({ moduleKey, title = "Anotações & P
               )}
 
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Descrição (transcrita pela IA)</label>
+                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wide">Descrição (transcrita pela IA)</label>
                 <input
                   type="text"
                   value={description}
@@ -268,25 +268,25 @@ export default function SessionAnnotations({ moduleKey, title = "Anotações & P
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Valor (R$)</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Valor (R$)</label>
                   <input
                     type="number"
                     step="0.01"
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
                     placeholder="0,00"
-                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Data</label>
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Data</label>
                   <input
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
                   />
                 </div>
               </div>
@@ -305,7 +305,7 @@ export default function SessionAnnotations({ moduleKey, title = "Anotações & P
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Observações Adicionais (opcional)</label>
+                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wide whitespace-nowrap">Observações (opcional)</label>
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
