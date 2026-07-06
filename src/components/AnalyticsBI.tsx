@@ -171,16 +171,23 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
     ? ((totalFaturamento - totalDespesas) / totalFaturamento * 100).toFixed(1)
     : "0.0";
 
-  // Gauge metrics
-  const pctFretesFinalizados = freights.length > 0
-    ? (freights.filter(f => f.status === "Finalizado").length / freights.length) * 100
-    : 0;
-  const pctFrotaAtiva = vehicles.length > 0
-    ? (vehicles.filter(v => v.status === "Ativo" || v.status === "Em Viagem").length / vehicles.length) * 100
-    : 0;
-  const pctMotoristasAtivos = drivers.length > 0
-    ? (drivers.filter(d => d.status === "Ativo" || d.status === "Em Viagem").length / drivers.length) * 100
-    : 0;
+  // Gauge metrics (Indicadores de Performance, acumulado)
+  const totalComissao = freights
+    .filter(f => f.status !== "Cancelado")
+    .reduce((sum, f) => sum + (f.financial?.commission || 0), 0);
+  const totalKmAcumulado = freights
+    .filter(f => f.status !== "Cancelado")
+    .reduce((sum, f) => sum + (f.mileage?.total || 0), 0);
+  const totalLitrosAcumulado = refuels.reduce((sum, r) => sum + (r.liters || 0), 0);
+  const averageKmL = totalLitrosAcumulado > 0 ? totalKmAcumulado / totalLitrosAcumulado : 0;
+
+  const impostosPercentage = taxRate;
+  // Anel do valor de Combustível usa a mesma proporção (gasto/despesas) do anel "% Gasto c/ Combustível", mas exibe o valor em R$
+  const fuelSpendRingPercentage = totalDespesas > 0 ? (totalRefuelsCost / totalDespesas) * 100 : 0;
+  const comissaoPercentage = totalFaturamento > 0 ? (totalComissao / totalFaturamento) * 100 : 0;
+  // KM/L não é um percentual: normaliza visualmente contra um teto de referência de 3.5 km/L (eficiência típica de caminhões)
+  const kmLRingPercentage = Math.min(100, (averageKmL / 3.5) * 100);
+  const fuelSpendPercentageOfExpenses = totalDespesas > 0 ? (totalRefuelsCost / totalDespesas) * 100 : 0;
 
   return (
     <div id="modulo-analytics-container" className="space-y-6">
@@ -221,11 +228,13 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
       </div>
 
       {/* Radial Gauges Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <RadialGauge label="Frota Ativa" value={pctFrotaAtiva} color="#3b82f6" />
-        <RadialGauge label="Fretes Finalizados" value={pctFretesFinalizados} color="#06b6d4" />
-        <RadialGauge label="Motoristas Ativos" value={pctMotoristasAtivos} color="#10b981" />
-        <RadialGauge label="Margem Operacional" value={Number(averageMargin)} color="#22c55e" />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <RadialGauge label="Impostos" value={impostosPercentage} />
+        <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalRefuelsCost.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
+        <RadialGauge label="Comissão" value={comissaoPercentage} />
+        <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmL.toFixed(2)}`} />
+        <RadialGauge label="Margem Lucro" value={Number(averageMargin)} />
+        <RadialGauge label="% Gasto c/ Combustível" value={fuelSpendPercentageOfExpenses} />
       </div>
 
       {/* MoM Performance Chart Card */}

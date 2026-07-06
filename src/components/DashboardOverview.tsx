@@ -123,6 +123,19 @@ export default function DashboardOverview({
   // Active tab toggle for bottom right charts: expenses vs cargo breakdown
   const [bottomActiveTab, setBottomActiveTab] = useState<"expenses" | "cargo">("expenses");
 
+  // Alíquota de imposto configurada no Perfil da Empresa (usada no anel "Impostos")
+  const [taxRate, setTaxRate] = useState(0);
+  useEffect(() => {
+    fetch("/api/company")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.company?.taxRate) {
+          setTaxRate(Number(data.company.taxRate) || 0);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Time-based progress ticker for the live map animations
   const [mapProgressTick, setMapProgressTick] = useState(0.45);
   useEffect(() => {
@@ -732,6 +745,15 @@ export default function DashboardOverview({
     );
   };
 
+  // Indicadores de Performance (anéis): métricas financeiras e operacionais do mês filtrado
+  const impostosPercentage = taxRate;
+  // Anel do valor de Combustível usa a mesma proporção (gasto/despesas) do anel #6, mas exibe o valor em R$
+  const fuelSpendRingPercentage = expensesMonth > 0 ? (totalFuelSpendMonth / expensesMonth) * 100 : 0;
+  const comissaoPercentage = billingMonth > 0 ? (totalCommissionMonth / billingMonth) * 100 : 0;
+  // KM/L não é um percentual: normaliza visualmente contra um teto de referência de 3.5 km/L (eficiência típica de caminhões)
+  const kmLRingPercentage = Math.min(100, (averageKmLMonth / 3.5) * 100);
+  const fuelSpendPercentageOfExpenses = expensesMonth > 0 ? (totalFuelSpendMonth / expensesMonth) * 100 : 0;
+
   return (
     <div id="central-controle-dashboard" className="space-y-6 animate-fade-in text-left">
       
@@ -788,11 +810,13 @@ export default function DashboardOverview({
       </div>
 
       {/* 1b. INDICADORES DE PERFORMANCE (Anéis de Progresso, mesmo estilo do BI Analítico) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <RadialGauge label="Frota Ativa" value={fleetActivePercentage} color="#3b82f6" />
-        <RadialGauge label="Fretes Finalizados" value={freightsCompletedPercentage} color="#06b6d4" />
-        <RadialGauge label="Motoristas Ativos" value={driversActivePercentage} color="#10b981" />
-        <RadialGauge label="Margem Operacional" value={marginPercentage} color="#22c55e" />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <RadialGauge label="Impostos" value={impostosPercentage} />
+        <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalFuelSpendMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
+        <RadialGauge label="Comissão" value={comissaoPercentage} />
+        <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmLMonth.toFixed(2)}`} />
+        <RadialGauge label="Margem Lucro" value={marginPercentage} />
+        <RadialGauge label="% Gasto c/ Combustível" value={fuelSpendPercentageOfExpenses} />
       </div>
 
       {/* 1c. HERO CHART: Faturamento vs Custos ao longo do ano (destaque visual principal) */}
