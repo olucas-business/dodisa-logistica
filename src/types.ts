@@ -92,7 +92,6 @@ export interface CompanyProfile {
   contratoSocialName: string;
   logoUrl: string;
   taxRate?: string;
-  commissionRate?: string;
 }
 
 export interface RouteStop {

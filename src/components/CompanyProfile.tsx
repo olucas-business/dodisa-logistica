@@ -14,8 +14,7 @@ const EMPTY_COMPANY: CompanyProfileType = {
   contratoSocialUrl: "",
   contratoSocialName: "",
   logoUrl: "",
-  taxRate: "",
-  commissionRate: ""
+  taxRate: ""
 };
 
 export default function CompanyProfile() {
@@ -192,32 +191,19 @@ export default function CompanyProfile() {
             Configuração Fiscal
           </h3>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            Alíquota de imposto sobre o faturamento e comissão padrão — usados nos anéis "Impostos" e "Comissão" do Dashboard/BI quando não houver edição manual direta neles.
+            Alíquota de imposto sobre o faturamento — usada no anel "Impostos" do Dashboard/BI (também editável direto no anel).
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="max-w-xs space-y-1.5 flex-1">
-            <label className="text-[11px] font-bold text-muted-foreground uppercase">Alíquota de Imposto (%)</label>
-            <input
-              type="number"
-              step="0.01"
-              placeholder="Ex: 5.16"
-              value={company.taxRate || ""}
-              onChange={(e) => handleChange("taxRate", e.target.value)}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 font-mono"
-            />
-          </div>
-          <div className="max-w-xs space-y-1.5 flex-1">
-            <label className="text-[11px] font-bold text-muted-foreground uppercase">Comissão Padrão (%)</label>
-            <input
-              type="number"
-              step="0.01"
-              placeholder="Ex: 12"
-              value={company.commissionRate || ""}
-              onChange={(e) => handleChange("commissionRate", e.target.value)}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 font-mono"
-            />
-          </div>
+        <div className="max-w-xs space-y-1.5">
+          <label className="text-[11px] font-bold text-muted-foreground uppercase">Alíquota de Imposto (%)</label>
+          <input
+            type="number"
+            step="0.01"
+            placeholder="Ex: 5.16"
+            value={company.taxRate || ""}
+            onChange={(e) => handleChange("taxRate", e.target.value)}
+            className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500 font-mono"
+          />
         </div>
       </div>
 

@@ -35,20 +35,22 @@ import {
   ChevronRight,
   CalendarDays
 } from "lucide-react";
-import { 
-  ResponsiveContainer, 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
   CartesianGrid,
   PieChart,
   Pie,
   Cell,
   Legend,
   ComposedChart,
-  Line
+  Line,
+  BarChart,
+  Bar
 } from "recharts";
 import CountUp from "./CountUp";
 
@@ -133,23 +135,20 @@ export default function DashboardOverview({
   // Active tab toggle for bottom right charts: expenses vs cargo breakdown
   const [bottomActiveTab, setBottomActiveTab] = useState<"expenses" | "cargo">("expenses");
 
-  // Alíquota de imposto e comissão padrão configuradas no Perfil da Empresa
-  // (usadas nos anéis "Impostos" e "Comissão" — editáveis também direto no anel)
+  // Alíquota de imposto configurada no Perfil da Empresa (usada no anel "Impostos" — editável também direto no anel)
   const [taxRate, setTaxRate] = useState(0);
-  const [commissionRateOverride, setCommissionRateOverride] = useState<number | null>(null);
   useEffect(() => {
     fetch("/api/company")
       .then(res => res.json())
       .then(data => {
-        if (data.success) {
-          if (data.company?.taxRate) setTaxRate(Number(data.company.taxRate) || 0);
-          if (data.company?.commissionRate) setCommissionRateOverride(Number(data.company.commissionRate));
+        if (data.success && data.company?.taxRate) {
+          setTaxRate(Number(data.company.taxRate) || 0);
         }
       })
       .catch(() => {});
   }, []);
 
-  const saveCompanyField = async (field: "taxRate" | "commissionRate", value: number) => {
+  const saveCompanyField = async (field: "taxRate", value: number) => {
     try {
       const res = await fetch("/api/company", {
         method: "PUT",
@@ -157,10 +156,7 @@ export default function DashboardOverview({
         body: JSON.stringify({ [field]: String(value) })
       });
       const data = await res.json();
-      if (data.success) {
-        if (field === "taxRate") setTaxRate(value);
-        else setCommissionRateOverride(value);
-      }
+      if (data.success) setTaxRate(value);
     } catch (err) {
       // silent
     }
@@ -243,6 +239,18 @@ export default function DashboardOverview({
     () => debts.filter(d => d.status === "Falta Pagar").reduce((sum, d) => sum + (d.value || 0), 0),
     [debts]
   );
+
+  // Despesas do mês por categoria (gráfico de colunas)
+  const expensesByCategoryMonth = useMemo(() => {
+    const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
+    const totals: Record<string, number> = {};
+    expenses.filter(e => e.date.startsWith(targetYearMonth)).forEach(e => {
+      totals[e.category] = (totals[e.category] || 0) + (e.value || 0);
+    });
+    return Object.entries(totals)
+      .map(([category, value]) => ({ category, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [expenses, currentYear, currentMonth]);
 
   // Performance ring gauges: real ratios, no fabricated data
   const fleetActivePercentage = useMemo(() => {
@@ -785,8 +793,8 @@ export default function DashboardOverview({
   const impostosPercentage = taxRate;
   // Anel do valor de Combustível usa a mesma proporção (gasto/despesas) do anel #6, mas exibe o valor em R$
   const fuelSpendRingPercentage = expensesMonth > 0 ? (totalFuelSpendMonth / expensesMonth) * 100 : 0;
-  const comissaoPercentageCalculated = billingMonth > 0 ? (totalCommissionMonth / billingMonth) * 100 : 0;
-  const comissaoPercentage = commissionRateOverride !== null ? commissionRateOverride : comissaoPercentageCalculated;
+  // Comissão: calculada automaticamente a partir do somatório real dos manifestos de frete (nunca editável manualmente)
+  const comissaoPercentage = billingMonth > 0 ? Math.min(100, (totalCommissionMonth / billingMonth) * 100) : 0;
   // KM/L não é um percentual: normaliza visualmente contra um teto de referência de 3.5 km/L (eficiência típica de caminhões)
   const kmLRingPercentage = Math.min(100, (averageKmLMonth / 3.5) * 100);
   const fuelSpendPercentageOfExpenses = expensesMonth > 0 ? (totalFuelSpendMonth / expensesMonth) * 100 : 0;
@@ -929,7 +937,7 @@ export default function DashboardOverview({
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <RadialGauge label="Impostos" value={impostosPercentage} editable onEdit={(v) => saveCompanyField("taxRate", v)} />
         <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalFuelSpendMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
-        <RadialGauge label="Comissão" value={comissaoPercentage} editable onEdit={(v) => saveCompanyField("commissionRate", v)} />
+        <RadialGauge label="Comissão" value={comissaoPercentage} displayValue={`R$ ${totalCommissionMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmLMonth.toFixed(2)}`} />
         <RadialGauge label="Margem Lucro" value={marginPercentage} />
         <RadialGauge label="% Gasto c/ Combustível" value={fuelSpendPercentageOfExpenses} />
@@ -1297,7 +1305,42 @@ export default function DashboardOverview({
 
       </div>
 
-      {/* 3. MIDDLE SECTION: DEBTS CHART */}
+      {/* 2b. DESPESAS DO MÊS (gráfico de colunas) */}
+      <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="flex items-center gap-2.5 border-b border-border pb-4 mb-4">
+          <span className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl">
+            <BarChart3 className="w-4 h-4" />
+          </span>
+          <div>
+            <h3 className="text-sm font-bold text-foreground font-sans">Despesas do Mês</h3>
+            <p className="text-[11px] text-muted-foreground">Total de despesas lançadas em {currentMonthName} de {currentYear}, por categoria.</p>
+          </div>
+        </div>
+        <div className="h-[220px] w-full">
+          {expensesByCategoryMonth.length === 0 ? (
+            <div className="h-full flex items-center justify-center text-xs text-muted-foreground">Nenhuma despesa lançada neste mês.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={expensesByCategoryMonth} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="expensesMonthColGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" />
+                    <stop offset="100%" stopColor="#22c55e" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.4} />
+                <XAxis dataKey="category" stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-20} textAnchor="end" height={50} />
+                <YAxis stroke="var(--color-muted-foreground)" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : v} />
+                <Tooltip formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Despesas"]} />
+                <Bar dataKey="value" fill="url(#expensesMonthColGrad)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      {/* 3. MIDDLE SECTION: DEBTS CHART + DÍVIDAS POR CATEGORIA, lado a lado */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
       <div id="dashboard-performance-chart" className="w-full">
         <div className="bg-card border border-border rounded-2xl p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border pb-4 mb-4 gap-2">
@@ -1310,7 +1353,7 @@ export default function DashboardOverview({
                 <p className="text-[11px] text-muted-foreground">Classificação de contas por prioridade de quitação.</p>
               </div>
             </div>
-            
+
             <button
               onClick={() => onNavigateTo("debts")}
               className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 bg-blue-500/5 hover:bg-blue-500/10 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
@@ -1319,9 +1362,9 @@ export default function DashboardOverview({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
             {/* Direct Metrics Column (Left - 5 cols) */}
-            <div className="lg:col-span-5 space-y-4">
+            <div className="xl:col-span-5 space-y-4">
               <div className="space-y-3">
                 {/* Red Pending */}
                 <div className="flex items-center justify-between p-3 bg-red-500/5 border border-red-500/20 rounded-xl">
@@ -1360,7 +1403,7 @@ export default function DashboardOverview({
             </div>
 
             {/* Interactive Graph Column (Right - 7 cols) */}
-            <div className="lg:col-span-7 h-[250px] w-full flex items-center justify-center">
+            <div className="xl:col-span-7 h-[250px] w-full flex items-center justify-center">
               {(() => {
                 const pendingTotal = debts.filter(d => d.status === "Falta Pagar").reduce((acc, curr) => acc + curr.value, 0);
                 const paidTotal = debts.filter(d => d.status === "Pago").reduce((acc, curr) => acc + curr.value, 0);
@@ -1482,6 +1525,7 @@ export default function DashboardOverview({
             })()}
           </div>
         </div>
+      </div>
       </div>
 
       {/* 4b. CUSTOS OPERACIONAIS DOS FRETES */}

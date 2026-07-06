@@ -21,23 +21,20 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
   const [selectedYear, setSelectedYear] = useState<number>(today.getFullYear());
   const selectedYearMonth = `${selectedYear}-${selectedMonth < 10 ? "0" + selectedMonth : selectedMonth}`;
 
-  // Alíquota de imposto e comissão padrão configuradas no Perfil da Empresa
-  // (usadas nos anéis "Impostos" e "Comissão" — editáveis também direto no anel)
+  // Alíquota de imposto configurada no Perfil da Empresa (usada no anel "Impostos" — editável também direto no anel)
   const [taxRate, setTaxRate] = useState(0);
-  const [commissionRateOverride, setCommissionRateOverride] = useState<number | null>(null);
   useEffect(() => {
     fetch("/api/company")
       .then(res => res.json())
       .then(data => {
-        if (data.success) {
-          if (data.company?.taxRate) setTaxRate(Number(data.company.taxRate) || 0);
-          if (data.company?.commissionRate) setCommissionRateOverride(Number(data.company.commissionRate));
+        if (data.success && data.company?.taxRate) {
+          setTaxRate(Number(data.company.taxRate) || 0);
         }
       })
       .catch(() => {});
   }, []);
 
-  const saveCompanyField = async (field: "taxRate" | "commissionRate", value: number) => {
+  const saveCompanyField = async (field: "taxRate", value: number) => {
     try {
       const res = await fetch("/api/company", {
         method: "PUT",
@@ -45,10 +42,7 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
         body: JSON.stringify({ [field]: String(value) })
       });
       const data = await res.json();
-      if (data.success) {
-        if (field === "taxRate") setTaxRate(value);
-        else setCommissionRateOverride(value);
-      }
+      if (data.success) setTaxRate(value);
     } catch (err) {
       // silent
     }
@@ -209,8 +203,8 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
   const impostosPercentage = taxRate;
   // Anel do valor de Combustível usa a mesma proporção (gasto/despesas) do anel "% Gasto c/ Combustível", mas exibe o valor em R$
   const fuelSpendRingPercentage = totalDespesas > 0 ? (totalRefuelsCost / totalDespesas) * 100 : 0;
-  const comissaoPercentageCalculated = totalFaturamento > 0 ? (totalComissao / totalFaturamento) * 100 : 0;
-  const comissaoPercentage = commissionRateOverride !== null ? commissionRateOverride : comissaoPercentageCalculated;
+  // Comissão: calculada automaticamente a partir do somatório real dos manifestos de frete (nunca editável manualmente)
+  const comissaoPercentage = totalFaturamento > 0 ? Math.min(100, (totalComissao / totalFaturamento) * 100) : 0;
   // KM/L não é um percentual: normaliza visualmente contra um teto de referência de 3.5 km/L (eficiência típica de caminhões)
   const kmLRingPercentage = Math.min(100, (averageKmL / 3.5) * 100);
   const fuelSpendPercentageOfExpenses = totalDespesas > 0 ? (totalRefuelsCost / totalDespesas) * 100 : 0;
@@ -262,7 +256,7 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <RadialGauge label="Impostos" value={impostosPercentage} editable onEdit={(v) => saveCompanyField("taxRate", v)} />
         <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalRefuelsCost.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
-        <RadialGauge label="Comissão" value={comissaoPercentage} editable onEdit={(v) => saveCompanyField("commissionRate", v)} />
+        <RadialGauge label="Comissão" value={comissaoPercentage} displayValue={`R$ ${totalComissao.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmL.toFixed(2)}`} />
         <RadialGauge label="Margem Lucro" value={Number(averageMargin)} />
         <RadialGauge label="% Gasto c/ Combustível" value={fuelSpendPercentageOfExpenses} />
