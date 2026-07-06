@@ -74,7 +74,24 @@ interface Database {
   trip_logs: any[];
   trip_photos: any[];
   notifications: any[];
+  expenseCategories?: string[];
 }
+
+const DEFAULT_EXPENSE_CATEGORIES = [
+  "Combustível",
+  "Pedágio",
+  "Oficina",
+  "Manutenção",
+  "Borracheiro",
+  "Pneus",
+  "Chapa",
+  "Boletos",
+  "Multas",
+  "Cartão de Crédito",
+  "Impostos",
+  "Seguros",
+  "Outros"
+];
 
 // Seed Initial Data
 const DEFAULT_DB: Database = {
@@ -109,6 +126,7 @@ const DEFAULT_DB: Database = {
   freights: [],
   refuels: [],
   expenses: [],
+  expenseCategories: [...DEFAULT_EXPENSE_CATEGORIES],
   tires: [],
   debts: [],
   maintenance_logs: [],
@@ -1130,6 +1148,10 @@ async function loadDB(): Promise<Database> {
       db.annotations = [];
       modified = true;
     }
+    if (!db.expenseCategories || db.expenseCategories.length === 0) {
+      db.expenseCategories = [...DEFAULT_EXPENSE_CATEGORIES];
+      modified = true;
+    }
     if (!db.caixa_caminhao) {
       db.caixa_caminhao = DEFAULT_DB.caixa_caminhao || [];
       modified = true;
@@ -1308,6 +1330,38 @@ app.put("/api/company", async (req, res) => {
   db.company = { ...db.company, ...req.body };
   await saveDB(db);
   res.json({ success: true, company: db.company });
+});
+
+// Categorias de despesas (customizáveis pelo usuário em Controle de Despesas)
+app.get("/api/expense-categories", async (req, res) => {
+  const db = await loadDB();
+  res.json({ success: true, categories: db.expenseCategories || DEFAULT_EXPENSE_CATEGORIES });
+});
+
+app.post("/api/expense-categories", async (req, res) => {
+  const { name } = req.body;
+  if (!name || typeof name !== "string" || !name.trim()) {
+    return res.status(400).json({ success: false, message: "Nome da categoria é obrigatório." });
+  }
+  const trimmed = name.trim();
+  const db = await loadDB();
+  db.expenseCategories = db.expenseCategories || [...DEFAULT_EXPENSE_CATEGORIES];
+  if (db.expenseCategories.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
+    return res.status(400).json({ success: false, message: "Essa categoria já existe." });
+  }
+  db.expenseCategories.push(trimmed);
+  await saveDB(db);
+  res.json({ success: true, categories: db.expenseCategories });
+});
+
+app.delete("/api/expense-categories/:name", async (req, res) => {
+  const { name } = req.params;
+  const db = await loadDB();
+  db.expenseCategories = (db.expenseCategories || [...DEFAULT_EXPENSE_CATEGORIES]).filter(
+    c => c.toLowerCase() !== decodeURIComponent(name).toLowerCase()
+  );
+  await saveDB(db);
+  res.json({ success: true, categories: db.expenseCategories });
 });
 
 // Vehicle GPS tracking (Fulltrack2 integration)

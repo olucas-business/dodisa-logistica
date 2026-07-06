@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Expense } from "../types";
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area } from "recharts";
-import { Plus, Search, Calendar, DollarSign, Trash2, CheckCircle, ArrowDown, PieChart as PieChartIcon } from "lucide-react";
+import { Plus, Search, Calendar, DollarSign, Trash2, CheckCircle, ArrowDown, PieChart as PieChartIcon, X } from "lucide-react";
 import SessionAnnotations from "./SessionAnnotations";
+import MonthYearPicker from "./MonthYearPicker";
 
-const EXPENSE_CHART_COLORS = ["#ef4444", "#f97316", "#f59e0b", "#8b5cf6", "#06b6d4", "#10b981", "#ec4899", "#6b7280", "#3b82f6", "#a855f7", "#f43f5e", "#14b8a6", "#84cc16"];
+const EXPENSE_CHART_COLORS = ["#3b82f6", "#22c55e", "#06b6d4", "#10b981", "#0ea5e9", "#14b8a6", "#6b7280", "#2563eb", "#16a34a", "#0891b2", "#059669", "#0284c7", "#65a30d"];
 
-const EXPENSE_CATEGORIES = [
+const DEFAULT_EXPENSE_CATEGORIES = [
   "Combustível",
   "Pedágio",
   "Oficina",
@@ -54,6 +55,77 @@ export default function ExpensesManager({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
+  // Categorias customizáveis (persistidas no servidor, com fallback local enquanto carrega)
+  const [categories, setCategories] = useState<string[]>(DEFAULT_EXPENSE_CATEGORIES);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [confirmDeleteCategory, setConfirmDeleteCategory] = useState<string | null>(null);
+
+  const fetchCategories = () => {
+    fetch("/api/expense-categories")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.categories) && data.categories.length > 0) {
+          setCategories(data.categories);
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const handleAddCategory = async () => {
+    const trimmed = newCategoryName.trim();
+    if (!trimmed) return;
+    setAddingCategory(true);
+    try {
+      const res = await fetch("/api/expense-categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCategories(data.categories);
+        setNewCategoryName("");
+      } else {
+        alert(data.message || "Erro ao criar categoria.");
+      }
+    } catch (err) {
+      alert("Erro ao criar categoria.");
+    } finally {
+      setAddingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (cat: string) => {
+    if (confirmDeleteCategory !== cat) {
+      setConfirmDeleteCategory(cat);
+      setTimeout(() => setConfirmDeleteCategory(curr => curr === cat ? null : curr), 4000);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/expense-categories/${encodeURIComponent(cat)}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setCategories(data.categories);
+        if (categoryFilter === cat) setCategoryFilter("TODOS");
+      }
+    } catch (err) {
+      // silent
+    }
+    setConfirmDeleteCategory(null);
+  };
+
+  // Filtro de mês/ano: controla a tabela de lançamentos e o gráfico de categorias abaixo
+  const today = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(today.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(today.getFullYear());
+  const selectedYearMonth = `${selectedYear}-${selectedMonth < 10 ? "0" + selectedMonth : selectedMonth}`;
+  const expensesInSelectedMonth = expenses.filter(e => (e.date || "").startsWith(selectedYearMonth));
+
   // Form states
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [category, setCategory] = useState("Oficina");
@@ -62,7 +134,7 @@ export default function ExpensesManager({
 
   const resetForm = () => {
     setDate(new Date().toISOString().split("T")[0]);
-    setCategory("Oficina");
+    setCategory(categories[0] || "Outros");
     setValue("");
     setDescription("");
   };
@@ -105,16 +177,16 @@ export default function ExpensesManager({
     setConfirmDeleteId(null);
   };
 
-  const filteredExpenses = expenses.filter(exp => {
+  const filteredExpenses = expensesInSelectedMonth.filter(exp => {
     const matchesSearch = exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       exp.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "TODOS" || exp.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
-  // Category totals for charts
+  // Category totals for charts (mês selecionado)
   const categoryTotals = Object.values(
-    expenses.reduce((acc: Record<string, { category: string; value: number }>, e) => {
+    expensesInSelectedMonth.reduce((acc: Record<string, { category: string; value: number }>, e) => {
       acc[e.category] = acc[e.category] || { category: e.category, value: 0 };
       acc[e.category].value += e.value || 0;
       return acc;
@@ -134,39 +206,50 @@ export default function ExpensesManager({
 
   return (
     <div id="modulo-despesas-container" className="space-y-6">
+      {/* Filtro de mês/ano */}
+      <div className="flex justify-end">
+        <MonthYearPicker month={selectedMonth} year={selectedYear} onChange={(m, y) => { setSelectedMonth(m); setSelectedYear(y); }} />
+      </div>
+
       {/* Charts */}
       {expenses.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
             <h4 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-1.5">
               <PieChartIcon className="w-4 h-4 text-red-500" />
-              Distribuição por Categoria
+              Distribuição por Categoria (Mês)
             </h4>
-            <div className="h-[220px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={categoryTotals} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
-                    {categoryTotals.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={EXPENSE_CHART_COLORS[index % EXPENSE_CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 justify-center text-[10px] font-semibold text-gray-500 dark:text-gray-400">
-              {categoryTotals.map((item, index) => (
-                <div key={item.category} className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: EXPENSE_CHART_COLORS[index % EXPENSE_CHART_COLORS.length] }} />
-                  <span>{item.category}</span>
+            {categoryTotals.length === 0 ? (
+              <div className="h-[220px] flex items-center justify-center text-xs text-gray-400">Nenhuma despesa no mês selecionado.</div>
+            ) : (
+              <>
+                <div className="h-[220px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={categoryTotals} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
+                        {categoryTotals.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={EXPENSE_CHART_COLORS[index % EXPENSE_CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
-            </div>
+                <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 justify-center text-[10px] font-semibold text-gray-500 dark:text-gray-400">
+                  {categoryTotals.map((item, index) => (
+                    <div key={item.category} className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: EXPENSE_CHART_COLORS[index % EXPENSE_CHART_COLORS.length] }} />
+                      <span>{item.category}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm">
             <h4 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-4">
-              Despesas por Mês
+              Despesas por Mês (Histórico)
             </h4>
             <div className="h-[220px] w-full">
               {monthlyTotals.length === 0 ? (
@@ -207,20 +290,58 @@ export default function ExpensesManager({
             />
           </div>
 
-          <div className="flex gap-1.5 flex-wrap">
-            {["TODOS", ...EXPENSE_CATEGORIES].map((cat) => (
-              <button
+          <div className="flex gap-1.5 flex-wrap items-center">
+            <button
+              onClick={() => setCategoryFilter("TODOS")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                categoryFilter === "TODOS"
+                  ? "bg-red-600 text-white border-red-600 shadow-sm"
+                  : "bg-gray-50 dark:bg-slate-950 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-850"
+              }`}
+            >
+              TODOS
+            </button>
+            {categories.map((cat) => (
+              <span
                 key={cat}
-                onClick={() => setCategoryFilter(cat)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                className={`group flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-lg text-xs font-semibold border transition-all ${
                   categoryFilter === cat
                     ? "bg-red-600 text-white border-red-600 shadow-sm"
                     : "bg-gray-50 dark:bg-slate-950 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-850"
                 }`}
               >
-                {cat}
-              </button>
+                <button onClick={() => setCategoryFilter(cat)} className="cursor-pointer">{cat}</button>
+                <button
+                  onClick={() => handleDeleteCategory(cat)}
+                  title={confirmDeleteCategory === cat ? "Confirmar exclusão da categoria" : "Excluir categoria"}
+                  className={`p-0.5 rounded transition-all cursor-pointer ${
+                    confirmDeleteCategory === cat
+                      ? "bg-amber-500 text-white animate-pulse"
+                      : "opacity-40 group-hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10"
+                  }`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
             ))}
+            <span className="flex items-center gap-1">
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddCategory(); } }}
+                placeholder="Nova categoria..."
+                className="w-28 bg-gray-50 dark:bg-slate-950 border border-dashed border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-300 rounded-lg px-2 py-1 text-xs outline-none focus:border-blue-500"
+              />
+              <button
+                onClick={handleAddCategory}
+                disabled={addingCategory || !newCategoryName.trim()}
+                className="p-1 rounded-lg border border-dashed border-gray-300 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-850 transition-all cursor-pointer disabled:opacity-40"
+                title="Adicionar categoria"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </span>
           </div>
         </div>
 
@@ -315,19 +436,9 @@ export default function ExpensesManager({
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none"
                   >
-                    <option value="Combustível">Combustível</option>
-                    <option value="Pedágio">Pedágio</option>
-                    <option value="Oficina">Oficina (Manutenção)</option>
-                    <option value="Manutenção">Manutenção</option>
-                    <option value="Borracheiro">Borracheiro</option>
-                    <option value="Pneus">Pneus (Borracharia)</option>
-                    <option value="Chapa">Chapa (Carga/Descarga)</option>
-                    <option value="Boletos">Boletos</option>
-                    <option value="Multas">Multas</option>
-                    <option value="Cartão de Crédito">Cartão de Crédito</option>
-                    <option value="Impostos">Impostos (IPVA/Taxas)</option>
-                    <option value="Seguros">Seguros de Carga/Frota</option>
-                    <option value="Outros">Outros</option>
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
                   </select>
                 </div>
               </div>

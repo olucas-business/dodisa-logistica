@@ -3,6 +3,7 @@ import { Freight, Driver, Vehicle, Expense, Refuel } from "../types";
 import { ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from "recharts";
 import { TrendingUp, Coins, DollarSign, Activity, Users, Truck } from "lucide-react";
 import RadialGauge from "./RadialGauge";
+import MonthYearPicker from "./MonthYearPicker";
 
 interface AnalyticsBIProps {
   freights: Freight[];
@@ -13,6 +14,13 @@ interface AnalyticsBIProps {
 }
 
 export default function AnalyticsBI({ freights, drivers, vehicles, expenses, refuels }: AnalyticsBIProps) {
+  const today = new Date();
+  // Filtro de mês/ano: controla o KPI, os anéis e a distribuição de custos abaixo.
+  // O gráfico "Desempenho Financeiro (Acumulado)" continua mostrando a linha do ano inteiro.
+  const [selectedMonth, setSelectedMonth] = useState<number>(today.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(today.getFullYear());
+  const selectedYearMonth = `${selectedYear}-${selectedMonth < 10 ? "0" + selectedMonth : selectedMonth}`;
+
   // Alíquota de imposto e comissão padrão configuradas no Perfil da Empresa
   // (usadas nos anéis "Impostos" e "Comissão" — editáveis também direto no anel)
   const [taxRate, setTaxRate] = useState(0);
@@ -92,6 +100,12 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
 
   const monthsList = dynamicMonthlyData.slice(0, maxMonthIdx + 1);
 
+  // Dados filtrados pelo mês/ano selecionado — usados no KPI, anéis, distribuição de
+  // custos e rankings abaixo (o gráfico "Desempenho Financeiro (Acumulado)" continua anual)
+  const freightsMonth = freights.filter(f => f.date.startsWith(selectedYearMonth) && f.status !== "Cancelado");
+  const expensesMonth = expenses.filter(e => e.date.startsWith(selectedYearMonth));
+  const refuelsMonth = refuels.filter(r => r.date.startsWith(selectedYearMonth));
+
   // 2. Prepare Cost breakdown by Category (for Pie Chart)
   const categorySummary: { [key: string]: number } = {
     "Combustível": 0,
@@ -104,18 +118,18 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
   };
 
   // Add direct expenses
-  expenses.forEach(e => {
+  expensesMonth.forEach(e => {
     const cat = categorySummary[e.category] !== undefined ? e.category : "Outros";
     categorySummary[cat] += (e.value || 0);
   });
 
   // Add refuels under Combustível
-  refuels.forEach(r => {
+  refuelsMonth.forEach(r => {
     categorySummary["Combustível"] += (r.totalValue || 0);
   });
 
   // Add freight-specific costs
-  freights.filter(f => f.status !== "Cancelado").forEach(f => {
+  freightsMonth.forEach(f => {
     const fin = f.financial;
     if (!fin) return;
     categorySummary["Alimentação"] += (fin.food || 0);
@@ -143,7 +157,7 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
     driverBilling[d.id] = { name: d.fullName, value: 0 };
   });
 
-  freights.filter(f => f.status === "Finalizado").forEach(f => {
+  freightsMonth.filter(f => f.status === "Finalizado").forEach(f => {
     if (driverBilling[f.driverId]) {
       driverBilling[f.driverId].value += (f.financial?.value || 0);
     }
@@ -159,7 +173,7 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
     vehicleMileage[v.id] = { name: `${v.brand} ${v.plate}`, value: 0 };
   });
 
-  freights.filter(f => f.status === "Finalizado").forEach(f => {
+  freightsMonth.filter(f => f.status === "Finalizado").forEach(f => {
     if (vehicleMileage[f.vehicleId]) {
       vehicleMileage[f.vehicleId].value += (f.mileage?.total || 0);
     }
@@ -169,21 +183,16 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
     .sort((a, b) => b.value - a.value)
     .slice(0, 5); // top 5
 
-  // High-level metrics
-  const totalFaturamento = freights
-    .filter(f => f.status !== "Cancelado")
-    .reduce((sum, f) => sum + (f.financial?.value || 0), 0);
+  // High-level metrics (mês selecionado)
+  const totalFaturamento = freightsMonth.reduce((sum, f) => sum + (f.financial?.value || 0), 0);
 
-  // Total real costs across ALL months
-  const totalDirectExpenses = expenses.reduce((sum, e) => sum + (e.value || 0), 0);
-  const totalRefuelsCost = refuels.reduce((sum, r) => sum + (r.totalValue || 0), 0);
-  const totalFreightExpenses = freights
-    .filter(f => f.status !== "Cancelado")
-    .reduce((sum, f) => {
-      const fin = f.financial;
-      if (!fin) return sum;
-      return sum + (fin.commission || 0) + (fin.toll || 0) + (fin.food || 0) + (fin.lodging || 0) + (fin.otherExpenses || 0);
-    }, 0);
+  const totalDirectExpenses = expensesMonth.reduce((sum, e) => sum + (e.value || 0), 0);
+  const totalRefuelsCost = refuelsMonth.reduce((sum, r) => sum + (r.totalValue || 0), 0);
+  const totalFreightExpenses = freightsMonth.reduce((sum, f) => {
+    const fin = f.financial;
+    if (!fin) return sum;
+    return sum + (fin.commission || 0) + (fin.toll || 0) + (fin.food || 0) + (fin.lodging || 0) + (fin.otherExpenses || 0);
+  }, 0);
 
   const totalDespesas = totalDirectExpenses + totalRefuelsCost + totalFreightExpenses;
 
@@ -191,14 +200,10 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
     ? ((totalFaturamento - totalDespesas) / totalFaturamento * 100).toFixed(1)
     : "0.0";
 
-  // Gauge metrics (Indicadores de Performance, acumulado)
-  const totalComissao = freights
-    .filter(f => f.status !== "Cancelado")
-    .reduce((sum, f) => sum + (f.financial?.commission || 0), 0);
-  const totalKmAcumulado = freights
-    .filter(f => f.status !== "Cancelado")
-    .reduce((sum, f) => sum + (f.mileage?.total || 0), 0);
-  const totalLitrosAcumulado = refuels.reduce((sum, r) => sum + (r.liters || 0), 0);
+  // Gauge metrics (Indicadores de Performance, mês selecionado)
+  const totalComissao = freightsMonth.reduce((sum, f) => sum + (f.financial?.commission || 0), 0);
+  const totalKmAcumulado = freightsMonth.reduce((sum, f) => sum + (f.mileage?.total || 0), 0);
+  const totalLitrosAcumulado = refuelsMonth.reduce((sum, r) => sum + (r.liters || 0), 0);
   const averageKmL = totalLitrosAcumulado > 0 ? totalKmAcumulado / totalLitrosAcumulado : 0;
 
   const impostosPercentage = taxRate;
@@ -212,6 +217,11 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
 
   return (
     <div id="modulo-analytics-container" className="space-y-6">
+      {/* Filtro de mês/ano */}
+      <div className="flex justify-end">
+        <MonthYearPicker month={selectedMonth} year={selectedYear} onChange={(m, y) => { setSelectedMonth(m); setSelectedYear(y); }} />
+      </div>
+
       {/* Visual Analytics KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-card border border-border text-foreground rounded-xl p-5 shadow-sm flex items-center gap-4 transition-all duration-300">
@@ -219,9 +229,9 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
             <Coins className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 dark:text-zinc-400">Faturamento Acumulado 2026</span>
+            <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 dark:text-zinc-400">Faturamento do Mês</span>
             <p className="text-xl font-black mt-1">R$ {totalFaturamento.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}</p>
-            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">Soma de todas as viagens concluídas</p>
+            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">Soma das viagens concluídas no mês selecionado</p>
           </div>
         </div>
 
@@ -230,7 +240,7 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
             <DollarSign className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 dark:text-zinc-400">Custos Totais Operacionais</span>
+            <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 dark:text-zinc-400">Custos Operacionais do Mês</span>
             <p className="text-xl font-black mt-1">R$ {totalDespesas.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}</p>
             <p className="text-[10px] text-red-600 dark:text-red-400 font-medium mt-0.5">Combustíveis, pedágios e manutenção</p>
           </div>
@@ -241,7 +251,7 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
             <TrendingUp className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 dark:text-zinc-400">Margem Operacional Média</span>
+            <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 dark:text-zinc-400">Margem Operacional do Mês</span>
             <p className="text-xl font-black mt-1">{averageMargin}%</p>
             <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">Retorno operacional do negócio</p>
           </div>
@@ -391,7 +401,7 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
               </div>
             )}
           </div>
-          <p className="text-[10px] text-muted-foreground italic mt-2 text-center">Motoristas que mais geraram receita líquida este ano.</p>
+          <p className="text-[10px] text-muted-foreground italic mt-2 text-center">Motoristas que mais geraram receita líquida no mês selecionado.</p>
         </div>
 
         {/* Top vehicles ranking */}
