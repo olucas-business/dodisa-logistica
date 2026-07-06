@@ -804,25 +804,25 @@ export default function DashboardOverview({
 
       {/* 0. RESUMO RÁPIDO: Faturamento / Dívida-Alavancagem / Despesas do mês */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 shadow-sm">
-          <span className="w-3.5 h-3.5 rounded-full bg-blue-400 shrink-0 shadow-[0_0_16px_rgba(96,165,250,0.9)]" />
+        <div className="bg-card border border-border border-l-4 border-l-blue-400 rounded-xl p-5 flex items-center gap-4 shadow-sm">
+          <span className="w-4 h-4 rounded-full bg-blue-400 shrink-0 shadow-[0_0_22px_rgba(96,165,250,1)]" />
           <div className="min-w-0">
-            <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Faturamento</span>
-            <p className="text-2xl font-black text-blue-400 font-mono truncate" style={{ textShadow: "0 0 18px rgba(96,165,250,0.55)" }}>R$ {billingMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <span className="text-[11px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Faturamento</span>
+            <p className="text-3xl font-black text-blue-400 font-mono truncate" style={{ textShadow: "0 0 24px rgba(96,165,250,0.7)" }}>R$ {billingMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 shadow-sm">
-          <span className="w-3.5 h-3.5 rounded-full bg-red-400 shrink-0 shadow-[0_0_16px_rgba(248,113,113,0.9)]" />
+        <div className="bg-card border border-border border-l-4 border-l-red-400 rounded-xl p-5 flex items-center gap-4 shadow-sm">
+          <span className="w-4 h-4 rounded-full bg-red-400 shrink-0 shadow-[0_0_22px_rgba(248,113,113,1)]" />
           <div className="min-w-0">
-            <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Dívida / Alavancagem</span>
-            <p className="text-2xl font-black text-red-400 font-mono truncate" style={{ textShadow: "0 0 18px rgba(248,113,113,0.55)" }}>R$ {totalDividaPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <span className="text-[11px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Dívida / Alavancagem</span>
+            <p className="text-3xl font-black text-red-400 font-mono truncate" style={{ textShadow: "0 0 24px rgba(248,113,113,0.7)" }}>R$ {totalDividaPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 shadow-sm">
-          <span className="w-3.5 h-3.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_16px_rgba(52,211,153,0.9)]" />
+        <div className="bg-card border border-border border-l-4 border-l-emerald-400 rounded-xl p-5 flex items-center gap-4 shadow-sm">
+          <span className="w-4 h-4 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_22px_rgba(52,211,153,1)]" />
           <div className="min-w-0">
-            <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Despesas</span>
-            <p className="text-2xl font-black text-emerald-400 font-mono truncate" style={{ textShadow: "0 0 18px rgba(52,211,153,0.55)" }}>R$ {expensesMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <span className="text-[11px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Despesas</span>
+            <p className="text-3xl font-black text-emerald-400 font-mono truncate" style={{ textShadow: "0 0 24px rgba(52,211,153,0.7)" }}>R$ {expensesMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
       </div>
