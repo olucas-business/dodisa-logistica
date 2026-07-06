@@ -4,7 +4,10 @@ import SessionAnnotations from "./SessionAnnotations";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { Truck, Plus, Search, Calendar, MapPin, Navigation, Coins, Trash2, Edit2, CheckCircle, Clock, PieChart as PieChartIcon } from "lucide-react";
 
-const FREIGHT_COST_COLORS = ["#3b82f6", "#0ea5e9", "#06b6d4", "#14b8a6", "#10b981"];
+// Cores intercaladas (azul/verde/ciano/esmeralda/céu) para garantir contraste
+// entre quaisquer 2-3 categorias ativas simultaneamente, mesmo dentro da
+// paleta azul->verde da marca.
+const FREIGHT_COST_COLORS = ["#3b82f6", "#22c55e", "#06b6d4", "#10b981", "#0ea5e9"];
 
 interface FreightsManagerProps {
   freights: Freight[];

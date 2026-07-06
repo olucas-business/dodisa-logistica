@@ -13,18 +13,38 @@ interface AnalyticsBIProps {
 }
 
 export default function AnalyticsBI({ freights, drivers, vehicles, expenses, refuels }: AnalyticsBIProps) {
-  // Alíquota de imposto configurada no Perfil da Empresa (soma-se aos custos operacionais)
+  // Alíquota de imposto e comissão padrão configuradas no Perfil da Empresa
+  // (usadas nos anéis "Impostos" e "Comissão" — editáveis também direto no anel)
   const [taxRate, setTaxRate] = useState(0);
+  const [commissionRateOverride, setCommissionRateOverride] = useState<number | null>(null);
   useEffect(() => {
     fetch("/api/company")
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.company?.taxRate) {
-          setTaxRate(Number(data.company.taxRate) || 0);
+        if (data.success) {
+          if (data.company?.taxRate) setTaxRate(Number(data.company.taxRate) || 0);
+          if (data.company?.commissionRate) setCommissionRateOverride(Number(data.company.commissionRate));
         }
       })
       .catch(() => {});
   }, []);
+
+  const saveCompanyField = async (field: "taxRate" | "commissionRate", value: number) => {
+    try {
+      const res = await fetch("/api/company", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: String(value) })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (field === "taxRate") setTaxRate(value);
+        else setCommissionRateOverride(value);
+      }
+    } catch (err) {
+      // silent
+    }
+  };
   // 1. Prepare Month-over-Month dataset (Faturamento vs Despesas) dynamically
   const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   const targetYear = String(new Date().getFullYear());
@@ -115,7 +135,7 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
   const isPieDataEmpty = pieData.length === 0;
   const finalPieData = isPieDataEmpty ? [{ name: "Sem custos", value: 1 }] : pieData;
 
-  const COLORS = ["#3b82f6", "#0ea5e9", "#06b6d4", "#14b8a6", "#10b981", "#22c55e", "#6b7280"];
+  const COLORS = ["#3b82f6", "#22c55e", "#06b6d4", "#10b981", "#0ea5e9", "#14b8a6", "#6b7280"];
 
   // 3. Driver Ranking (Billing generated per driver)
   const driverBilling: { [key: string]: { name: string; value: number } } = {};
@@ -184,7 +204,8 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
   const impostosPercentage = taxRate;
   // Anel do valor de Combustível usa a mesma proporção (gasto/despesas) do anel "% Gasto c/ Combustível", mas exibe o valor em R$
   const fuelSpendRingPercentage = totalDespesas > 0 ? (totalRefuelsCost / totalDespesas) * 100 : 0;
-  const comissaoPercentage = totalFaturamento > 0 ? (totalComissao / totalFaturamento) * 100 : 0;
+  const comissaoPercentageCalculated = totalFaturamento > 0 ? (totalComissao / totalFaturamento) * 100 : 0;
+  const comissaoPercentage = commissionRateOverride !== null ? commissionRateOverride : comissaoPercentageCalculated;
   // KM/L não é um percentual: normaliza visualmente contra um teto de referência de 3.5 km/L (eficiência típica de caminhões)
   const kmLRingPercentage = Math.min(100, (averageKmL / 3.5) * 100);
   const fuelSpendPercentageOfExpenses = totalDespesas > 0 ? (totalRefuelsCost / totalDespesas) * 100 : 0;
@@ -228,10 +249,10 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
       </div>
 
       {/* Radial Gauges Row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <RadialGauge label="Impostos" value={impostosPercentage} />
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <RadialGauge label="Impostos" value={impostosPercentage} editable onEdit={(v) => saveCompanyField("taxRate", v)} />
         <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalRefuelsCost.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
-        <RadialGauge label="Comissão" value={comissaoPercentage} />
+        <RadialGauge label="Comissão" value={comissaoPercentage} editable onEdit={(v) => saveCompanyField("commissionRate", v)} />
         <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmL.toFixed(2)}`} />
         <RadialGauge label="Margem Lucro" value={Number(averageMargin)} />
         <RadialGauge label="% Gasto c/ Combustível" value={fuelSpendPercentageOfExpenses} />

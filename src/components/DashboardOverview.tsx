@@ -92,6 +92,7 @@ export default function DashboardOverview({
   const today = new Date();
   const CURRENT_DATE_STR = today.toISOString().split("T")[0];
   const FULL_MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  const SHORT_MONTH_NAMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
   // Filtro de mês/ano: controla todas as métricas "do mês" abaixo. Por padrão
   // mostra o mês corrente, mas o usuário pode navegar para outros meses.
@@ -99,6 +100,15 @@ export default function DashboardOverview({
   const [selectedYear, setSelectedYear] = useState<number>(today.getFullYear());
   const currentYear: number = selectedYear;
   const currentMonth: number = selectedMonth;
+
+  // Seletor de mês/ano em calendário: permite pular direto para qualquer mês/ano,
+  // além dos botões de avançar/voltar um mês por vez.
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
+  const [pickerYear, setPickerYear] = useState<number>(selectedYear);
+  const openMonthPicker = () => {
+    setPickerYear(selectedYear);
+    setMonthPickerOpen(true);
+  };
   const currentMonthName = FULL_MONTH_NAMES[currentMonth - 1];
   const isViewingCurrentMonth = selectedMonth === today.getMonth() + 1 && selectedYear === today.getFullYear();
 
@@ -123,18 +133,38 @@ export default function DashboardOverview({
   // Active tab toggle for bottom right charts: expenses vs cargo breakdown
   const [bottomActiveTab, setBottomActiveTab] = useState<"expenses" | "cargo">("expenses");
 
-  // Alíquota de imposto configurada no Perfil da Empresa (usada no anel "Impostos")
+  // Alíquota de imposto e comissão padrão configuradas no Perfil da Empresa
+  // (usadas nos anéis "Impostos" e "Comissão" — editáveis também direto no anel)
   const [taxRate, setTaxRate] = useState(0);
+  const [commissionRateOverride, setCommissionRateOverride] = useState<number | null>(null);
   useEffect(() => {
     fetch("/api/company")
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.company?.taxRate) {
-          setTaxRate(Number(data.company.taxRate) || 0);
+        if (data.success) {
+          if (data.company?.taxRate) setTaxRate(Number(data.company.taxRate) || 0);
+          if (data.company?.commissionRate) setCommissionRateOverride(Number(data.company.commissionRate));
         }
       })
       .catch(() => {});
   }, []);
+
+  const saveCompanyField = async (field: "taxRate" | "commissionRate", value: number) => {
+    try {
+      const res = await fetch("/api/company", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: String(value) })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (field === "taxRate") setTaxRate(value);
+        else setCommissionRateOverride(value);
+      }
+    } catch (err) {
+      // silent
+    }
+  };
 
   // Time-based progress ticker for the live map animations
   const [mapProgressTick, setMapProgressTick] = useState(0.45);
@@ -749,7 +779,8 @@ export default function DashboardOverview({
   const impostosPercentage = taxRate;
   // Anel do valor de Combustível usa a mesma proporção (gasto/despesas) do anel #6, mas exibe o valor em R$
   const fuelSpendRingPercentage = expensesMonth > 0 ? (totalFuelSpendMonth / expensesMonth) * 100 : 0;
-  const comissaoPercentage = billingMonth > 0 ? (totalCommissionMonth / billingMonth) * 100 : 0;
+  const comissaoPercentageCalculated = billingMonth > 0 ? (totalCommissionMonth / billingMonth) * 100 : 0;
+  const comissaoPercentage = commissionRateOverride !== null ? commissionRateOverride : comissaoPercentageCalculated;
   // KM/L não é um percentual: normaliza visualmente contra um teto de referência de 3.5 km/L (eficiência típica de caminhões)
   const kmLRingPercentage = Math.min(100, (averageKmLMonth / 3.5) * 100);
   const fuelSpendPercentageOfExpenses = expensesMonth > 0 ? (totalFuelSpendMonth / expensesMonth) * 100 : 0;
@@ -778,10 +809,64 @@ export default function DashboardOverview({
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="flex items-center gap-1.5 text-xs font-bold text-foreground px-1.5 min-w-[110px] justify-center">
-              <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
-              {currentMonthName} {currentYear}
-            </span>
+            <div className="relative">
+              <button
+                onClick={() => (monthPickerOpen ? setMonthPickerOpen(false) : openMonthPicker())}
+                className="flex items-center gap-1.5 text-xs font-bold text-foreground px-1.5 min-w-[110px] justify-center cursor-pointer hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                title="Escolher mês e ano"
+              >
+                <CalendarDays className="w-3.5 h-3.5 text-muted-foreground" />
+                {currentMonthName} {currentYear}
+              </button>
+              {monthPickerOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setMonthPickerOpen(false)} />
+                  <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 z-50 bg-card border border-border rounded-xl shadow-2xl p-3 w-60 animate-scale-in">
+                    <div className="flex items-center justify-between mb-2.5 px-1">
+                      <button
+                        onClick={() => setPickerYear(y => y - 1)}
+                        className="p-1 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="text-xs font-black text-foreground">{pickerYear}</span>
+                      <button
+                        onClick={() => setPickerYear(y => y + 1)}
+                        className="p-1 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-all cursor-pointer"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {SHORT_MONTH_NAMES.map((m, idx) => {
+                        const monthNum = idx + 1;
+                        const isSelected = monthNum === selectedMonth && pickerYear === selectedYear;
+                        const isCurrent = monthNum === today.getMonth() + 1 && pickerYear === today.getFullYear();
+                        return (
+                          <button
+                            key={m}
+                            onClick={() => {
+                              setSelectedMonth(monthNum);
+                              setSelectedYear(pickerYear);
+                              setMonthPickerOpen(false);
+                            }}
+                            className={`text-[11px] font-bold py-1.5 rounded-lg transition-all cursor-pointer ${
+                              isSelected
+                                ? "bg-blue-600 text-white shadow-sm shadow-blue-500/20"
+                                : isCurrent
+                                  ? "border border-blue-500/50 text-blue-500 dark:text-blue-400"
+                                  : "hover:bg-muted text-foreground"
+                            }`}
+                          >
+                            {m}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
             <button
               onClick={goToNextMonth}
               className="p-1 hover:bg-card rounded-md text-muted-foreground hover:text-foreground transition-all cursor-pointer"
@@ -810,10 +895,10 @@ export default function DashboardOverview({
       </div>
 
       {/* 1b. INDICADORES DE PERFORMANCE (Anéis de Progresso, mesmo estilo do BI Analítico) */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <RadialGauge label="Impostos" value={impostosPercentage} />
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <RadialGauge label="Impostos" value={impostosPercentage} editable onEdit={(v) => saveCompanyField("taxRate", v)} />
         <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalFuelSpendMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
-        <RadialGauge label="Comissão" value={comissaoPercentage} />
+        <RadialGauge label="Comissão" value={comissaoPercentage} editable onEdit={(v) => saveCompanyField("commissionRate", v)} />
         <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmLMonth.toFixed(2)}`} />
         <RadialGauge label="Margem Lucro" value={marginPercentage} />
         <RadialGauge label="% Gasto c/ Combustível" value={fuelSpendPercentageOfExpenses} />
@@ -1391,7 +1476,7 @@ export default function DashboardOverview({
           </div>
 
           {(() => {
-            const freightCostColors = ["#3b82f6", "#0ea5e9", "#06b6d4", "#14b8a6", "#10b981"];
+            const freightCostColors = ["#3b82f6", "#22c55e", "#06b6d4", "#10b981", "#0ea5e9"];
             const activeFreightsForCost = freights.filter(f => f.status !== "Cancelado");
             const freightCostBreakdown = [
               { name: "Pedágio", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.toll || 0), 0) },

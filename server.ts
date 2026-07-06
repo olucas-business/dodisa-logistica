@@ -101,7 +101,8 @@ const DEFAULT_DB: Database = {
     contratoSocialUrl: "",
     contratoSocialName: "",
     logoUrl: "",
-    taxRate: ""
+    taxRate: "",
+    commissionRate: ""
   },
   drivers: [],
   vehicles: [],
