@@ -805,24 +805,24 @@ export default function DashboardOverview({
       {/* 0. RESUMO RÁPIDO: Faturamento / Dívida-Alavancagem / Despesas do mês */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 shadow-sm">
-          <span className="w-3 h-3 rounded-full bg-blue-500 shrink-0 shadow-[0_0_10px_rgba(59,130,246,0.6)]" />
+          <span className="w-3.5 h-3.5 rounded-full bg-blue-400 shrink-0 shadow-[0_0_16px_rgba(96,165,250,0.9)]" />
           <div className="min-w-0">
             <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Faturamento</span>
-            <p className="text-lg font-black text-blue-500 font-mono truncate">R$ {billingMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-black text-blue-400 font-mono truncate" style={{ textShadow: "0 0 18px rgba(96,165,250,0.55)" }}>R$ {billingMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
         <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 shadow-sm">
-          <span className="w-3 h-3 rounded-full bg-red-500 shrink-0 shadow-[0_0_10px_rgba(239,68,68,0.6)]" />
+          <span className="w-3.5 h-3.5 rounded-full bg-red-400 shrink-0 shadow-[0_0_16px_rgba(248,113,113,0.9)]" />
           <div className="min-w-0">
             <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Dívida / Alavancagem</span>
-            <p className="text-lg font-black text-red-500 font-mono truncate">R$ {totalDividaPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-black text-red-400 font-mono truncate" style={{ textShadow: "0 0 18px rgba(248,113,113,0.55)" }}>R$ {totalDividaPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
         <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 shadow-sm">
-          <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_10px_rgba(16,185,129,0.6)]" />
+          <span className="w-3.5 h-3.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_16px_rgba(52,211,153,0.9)]" />
           <div className="min-w-0">
             <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Despesas</span>
-            <p className="text-lg font-black text-emerald-500 font-mono truncate">R$ {expensesMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-black text-emerald-400 font-mono truncate" style={{ textShadow: "0 0 18px rgba(52,211,153,0.55)" }}>R$ {expensesMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
           </div>
         </div>
       </div>
@@ -935,11 +935,11 @@ export default function DashboardOverview({
 
       {/* 1b. INDICADORES DE PERFORMANCE (Anéis de Progresso, mesmo estilo do BI Analítico) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <RadialGauge label="Impostos" value={impostosPercentage} editable onEdit={(v) => saveCompanyField("taxRate", v)} />
+        <RadialGauge label="Impostos" value={impostosPercentage} displayValue={`R$ ${(billingMonth * (impostosPercentage / 100)).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} editable onEdit={(v) => saveCompanyField("taxRate", v)} />
         <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalFuelSpendMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="Comissão" value={comissaoPercentage} displayValue={`R$ ${totalCommissionMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmLMonth.toFixed(2)}`} />
-        <RadialGauge label="Margem Lucro" value={marginPercentage} />
+        <RadialGauge label="Margem Lucro" value={marginPercentage} displayValue={`R$ ${estimatedProfitMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} / ${marginPercentage}%`} />
         <RadialGauge label="% Gasto c/ Combustível" value={fuelSpendPercentageOfExpenses} />
       </div>
 
@@ -1006,30 +1006,24 @@ export default function DashboardOverview({
               <span className="flex items-center gap-0.5"><span className="w-1 h-1 rounded-full bg-amber-500" /> Saldo</span>
             </div>
           </div>
-          <div className="w-full mt-2">
+          <div className="h-[55px] w-full mt-2">
             {(() => {
               const recent = recentFreightsChartData.slice(-6);
-              const totalAdiantamento = recent.reduce((sum: number, f: any) => sum + (f["Pago (Adiantamento)"] || 0), 0);
-              const totalSaldo = recent.reduce((sum: number, f: any) => sum + (f["Não Pago (Saldo)"] || 0), 0);
-              const total = totalAdiantamento + totalSaldo;
-              const pctAdiantamento = total > 0 ? (totalAdiantamento / total) * 100 : 0;
-              const pctSaldo = total > 0 ? 100 - pctAdiantamento : 0;
-
-              if (total === 0) {
-                return <div className="text-[10px] text-muted-foreground/60 h-[24px] flex items-center justify-center font-medium">Nenhum dado</div>;
+              const hasData = recent.some((f: any) => (f["Pago (Adiantamento)"] || 0) > 0 || (f["Não Pago (Saldo)"] || 0) > 0);
+              if (!hasData) {
+                return <div className="text-[10px] text-muted-foreground/60 h-full flex items-center justify-center font-medium">Nenhum dado</div>;
               }
-
               return (
-                <div className="space-y-1.5">
-                  <div className="w-full h-2 rounded-full bg-muted flex overflow-hidden border border-border/40">
-                    <div className="bg-emerald-500 h-full" style={{ width: `${pctAdiantamento}%` }} />
-                    <div className="bg-amber-500 h-full" style={{ width: `${pctSaldo}%` }} />
-                  </div>
-                  <div className="flex justify-between text-[8.5px] font-mono font-medium text-muted-foreground">
-                    <span>R$ {totalAdiantamento.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
-                    <span>R$ {totalSaldo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
-                  </div>
-                </div>
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={recent} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+                    <Bar dataKey="Pago (Adiantamento)" fill="#10b981" radius={[3, 3, 0, 0]} barSize={8} />
+                    <Line type="monotone" dataKey="Não Pago (Saldo)" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
+                    <Tooltip
+                      formatter={(value: any, name: any) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, name]}
+                      contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "9px" }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
               );
             })()}
           </div>
@@ -1171,19 +1165,13 @@ export default function DashboardOverview({
               <div className="text-[10px] text-muted-foreground/60 h-full flex items-center justify-center font-medium">Nenhum dado</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={fuelSpendByVehicleChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                  <defs>
-                    <linearGradient id="miniFuelGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={2} fill="url(#miniFuelGrad)" dot={{ r: 2 }} />
+                <BarChart data={fuelSpendByVehicleChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+                  <Bar dataKey="value" fill="#ef4444" radius={[3, 3, 0, 0]} />
                   <Tooltip
                     formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, "Combustível"]}
                     contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "9px" }}
                   />
-                </AreaChart>
+                </BarChart>
               </ResponsiveContainer>
             )}
           </div>
@@ -1209,19 +1197,13 @@ export default function DashboardOverview({
               <div className="text-[10px] text-muted-foreground/60 h-full flex items-center justify-center font-medium">Nenhum dado</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={kmByVehicleChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                  <defs>
-                    <linearGradient id="miniKmGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={2} fill="url(#miniKmGrad)" dot={{ r: 2 }} />
+                <BarChart data={kmByVehicleChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+                  <Bar dataKey="value" fill="#6366f1" radius={[3, 3, 0, 0]} />
                   <Tooltip
                     formatter={(value: any) => [`${Number(value).toLocaleString("pt-BR")} KM`, "Distância"]}
                     contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "9px" }}
                   />
-                </AreaChart>
+                </BarChart>
               </ResponsiveContainer>
             )}
           </div>
@@ -1247,19 +1229,13 @@ export default function DashboardOverview({
               <div className="text-[10px] text-muted-foreground/60 h-full flex items-center justify-center font-medium">Nenhum dado</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={litersByVehicleChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                  <defs>
-                    <linearGradient id="miniLitersGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="value" stroke="#f59e0b" strokeWidth={2} fill="url(#miniLitersGrad)" dot={{ r: 2 }} />
+                <BarChart data={litersByVehicleChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+                  <Bar dataKey="value" fill="#f59e0b" radius={[3, 3, 0, 0]} />
                   <Tooltip
                     formatter={(value: any) => [`${Number(value).toLocaleString("pt-BR")} Litros`, "Consumo"]}
                     contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "9px" }}
                   />
-                </AreaChart>
+                </BarChart>
               </ResponsiveContainer>
             )}
           </div>
@@ -1285,19 +1261,13 @@ export default function DashboardOverview({
               <div className="text-[10px] text-muted-foreground/60 h-full flex items-center justify-center font-medium">Nenhum dado</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={kmLByVehicleChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                  <defs>
-                    <linearGradient id="miniKmLGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="KM/L" stroke="#14b8a6" strokeWidth={2} fill="url(#miniKmLGrad)" dot={{ r: 2 }} />
+                <BarChart data={kmLByVehicleChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
+                  <Bar dataKey="KM/L" fill="#14b8a6" radius={[3, 3, 0, 0]} />
                   <Tooltip
                     formatter={(value: any) => [`${value} km/L`, "KM/L"]}
                     contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "9px" }}
                   />
-                </AreaChart>
+                </BarChart>
               </ResponsiveContainer>
             )}
           </div>
@@ -1305,37 +1275,119 @@ export default function DashboardOverview({
 
       </div>
 
-      {/* 2b. DESPESAS DO MÊS (gráfico de colunas) */}
-      <div className="bg-card border border-border rounded-2xl p-5">
-        <div className="flex items-center gap-2.5 border-b border-border pb-4 mb-4">
-          <span className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl">
-            <BarChart3 className="w-4 h-4" />
-          </span>
-          <div>
-            <h3 className="text-sm font-bold text-foreground font-sans">Despesas do Mês</h3>
-            <p className="text-[11px] text-muted-foreground">Total de despesas lançadas em {currentMonthName} de {currentYear}, por categoria.</p>
+      {/* 2b. DESPESAS DO MÊS: donut resumo + ranking por categoria, lado a lado (mesmo padrão do Balanço de Dívidas abaixo) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="w-full">
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="flex items-center gap-2.5 border-b border-border pb-4 mb-4">
+              <span className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl">
+                <BarChart3 className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-foreground font-sans">Despesas do Mês</h3>
+                <p className="text-[11px] text-muted-foreground">Total de despesas lançadas em {currentMonthName} de {currentYear}, por categoria.</p>
+              </div>
+            </div>
+            <div className="h-[220px] w-full flex items-center justify-center">
+              {expensesByCategoryMonth.length === 0 ? (
+                <div className="text-xs text-muted-foreground font-medium">Nenhuma despesa lançada neste mês.</div>
+              ) : (() => {
+                const expenseColors = ["#3b82f6", "#22c55e", "#06b6d4", "#10b981", "#0ea5e9", "#14b8a6", "#6b7280"];
+                const expensesTotal = expensesByCategoryMonth.reduce((sum, c) => sum + c.value, 0);
+                return (
+                  <div className="flex items-center gap-8 w-full justify-center">
+                    <div className="h-[180px] w-[180px] relative shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={expensesByCategoryMonth} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value">
+                            {expensesByCategoryMonth.map((_, index) => (
+                              <Cell key={`cell-${index}`} fill={expenseColors[index % expenseColors.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Total"]}
+                            contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">Total</span>
+                        <span className="text-sm font-black font-mono text-foreground">R$ {expensesTotal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                      {expensesByCategoryMonth.map((d, index) => (
+                        <div key={d.category} className="flex items-center gap-2 text-xs font-semibold">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: expenseColors[index % expenseColors.length] }} />
+                          <span className="text-muted-foreground">{d.category}:</span>
+                          <span className="text-foreground font-mono">{expensesTotal > 0 ? ((d.value / expensesTotal) * 100).toFixed(0) : 0}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         </div>
-        <div className="h-[220px] w-full">
-          {expensesByCategoryMonth.length === 0 ? (
-            <div className="h-full flex items-center justify-center text-xs text-muted-foreground">Nenhuma despesa lançada neste mês.</div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={expensesByCategoryMonth} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="expensesMonthColGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#22c55e" />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.4} />
-                <XAxis dataKey="category" stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-20} textAnchor="end" height={50} />
-                <YAxis stroke="var(--color-muted-foreground)" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : v} />
-                <Tooltip formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Despesas"]} />
-                <Bar dataKey="value" fill="url(#expensesMonthColGrad)" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+
+        <div className="w-full">
+          <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-4 gap-2">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 bg-blue-500/10 text-blue-500 rounded-xl">
+                  <BarChart3 className="w-4 h-4" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground font-sans">Despesas por Categoria</h3>
+                  <p className="text-[11px] text-muted-foreground">Ranking das categorias com maior gasto no mês selecionado.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => onNavigateTo("expenses")}
+                className="px-3 py-1.5 bg-card hover:bg-muted border border-border text-foreground font-semibold rounded-xl text-[11px] transition-all flex items-center gap-1.5"
+              >
+                <Compass className="w-3.5 h-3.5 text-muted-foreground" />
+                Ir para Controle de Despesas
+              </button>
+            </div>
+
+            <div className="h-[260px] w-full">
+              {expensesByCategoryMonth.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full w-full py-8 text-center bg-card/50 rounded-xl border border-dashed border-border p-4">
+                  <BarChart3 className="w-8 h-8 text-muted-foreground/40 mb-2 stroke-[1.5]" />
+                  <p className="text-xs text-muted-foreground font-medium">Nenhuma despesa lançada neste mês.</p>
+                </div>
+              ) : (() => {
+                const expenseColors = ["#3b82f6", "#22c55e", "#06b6d4", "#10b981", "#0ea5e9", "#14b8a6", "#6b7280"];
+                const maxVal = Math.max(...expensesByCategoryMonth.map(c => c.value), 1);
+                return (
+                  <div className="space-y-3.5 overflow-y-auto h-full pr-1">
+                    {expensesByCategoryMonth.map((item, index) => {
+                      const color = expenseColors[index % expenseColors.length];
+                      const pct = (item.value / maxVal) * 100;
+                      return (
+                        <div key={item.category} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs font-semibold">
+                            <span className="flex items-center gap-1.5 text-foreground">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                              {item.category}
+                            </span>
+                            <span className="text-foreground font-mono">
+                              R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-300" style={{ backgroundColor: color, width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
         </div>
       </div>
 

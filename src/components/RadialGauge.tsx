@@ -75,8 +75,8 @@ export default function RadialGauge({ label, value, displayValue, editable, onEd
             />
           ) : (
             <span
-              className={`font-black font-mono bg-gradient-to-br from-blue-400 to-emerald-400 bg-clip-text text-transparent text-center leading-none ${
-                (displayValue?.length ?? 0) > 6 ? "text-2xl" : "text-4xl"
+              className={`font-black font-mono bg-gradient-to-br from-blue-400 to-emerald-400 bg-clip-text text-transparent text-center ${
+                (displayValue?.length ?? 0) > 10 ? "text-base leading-tight" : (displayValue?.length ?? 0) > 6 ? "text-2xl leading-none" : "text-4xl leading-none"
               }`}
             >
               {displayValue !== undefined ? displayValue : `${value.toFixed(0)}%`}

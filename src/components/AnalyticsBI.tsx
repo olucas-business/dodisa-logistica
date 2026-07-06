@@ -254,11 +254,11 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
 
       {/* Radial Gauges Row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        <RadialGauge label="Impostos" value={impostosPercentage} editable onEdit={(v) => saveCompanyField("taxRate", v)} />
+        <RadialGauge label="Impostos" value={impostosPercentage} displayValue={`R$ ${(totalFaturamento * (impostosPercentage / 100)).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} editable onEdit={(v) => saveCompanyField("taxRate", v)} />
         <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalRefuelsCost.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="Comissão" value={comissaoPercentage} displayValue={`R$ ${totalComissao.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmL.toFixed(2)}`} />
-        <RadialGauge label="Margem Lucro" value={Number(averageMargin)} />
+        <RadialGauge label="Margem Lucro" value={Number(averageMargin)} displayValue={`R$ ${(totalFaturamento - totalDespesas).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} / ${averageMargin}%`} />
         <RadialGauge label="% Gasto c/ Combustível" value={fuelSpendPercentageOfExpenses} />
       </div>
 
