@@ -143,7 +143,7 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
   const isPieDataEmpty = pieData.length === 0;
   const finalPieData = isPieDataEmpty ? [{ name: "Sem custos", value: 1 }] : pieData;
 
-  const COLORS = ["#3b82f6", "#22c55e", "#06b6d4", "#10b981", "#0ea5e9", "#14b8a6", "#6b7280"];
+  const COLORS = ["#ef4444", "#fb7185", "#dc2626", "#f43f5e", "#b91c1c", "#fca5a5", "#9f1239"];
 
   // 3. Driver Ranking (Billing generated per driver)
   const driverBilling: { [key: string]: { name: string; value: number } } = {};
@@ -196,9 +196,29 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
 
   // Gauge metrics (Indicadores de Performance, mês selecionado)
   const totalComissao = freightsMonth.reduce((sum, f) => sum + (f.financial?.commission || 0), 0);
-  const totalKmAcumulado = freightsMonth.reduce((sum, f) => sum + (f.mileage?.total || 0), 0);
-  const totalLitrosAcumulado = refuelsMonth.reduce((sum, r) => sum + (r.liters || 0), 0);
-  const averageKmL = totalLitrosAcumulado > 0 ? totalKmAcumulado / totalLitrosAcumulado : 0;
+  // Média KM/L: mesmo cálculo do módulo Combustível — diferença de odômetro entre
+  // abastecimentos consecutivos do mesmo veículo, dividida pelos litros do abastecimento atual.
+  const kmLPerRefuel = (() => {
+    const byVehicle: Record<string, typeof refuels> = {};
+    refuels.forEach(r => {
+      byVehicle[r.vehicleId] = byVehicle[r.vehicleId] || [];
+      byVehicle[r.vehicleId].push(r);
+    });
+    const enriched: Record<string, number> = {};
+    Object.values(byVehicle).forEach(list => {
+      const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
+      for (let i = 0; i < sorted.length; i++) {
+        const curr = sorted[i];
+        const prev = sorted[i - 1];
+        if (prev && curr.odometer && prev.odometer && curr.odometer > prev.odometer && curr.liters > 0) {
+          enriched[curr.id] = (curr.odometer - prev.odometer) / curr.liters;
+        }
+      }
+    });
+    return enriched;
+  })();
+  const kmLMonthValues = refuelsMonth.map(r => kmLPerRefuel[r.id]).filter((v): v is number => v !== undefined);
+  const averageKmL = kmLMonthValues.length > 0 ? kmLMonthValues.reduce((sum, v) => sum + v, 0) / kmLMonthValues.length : 0;
 
   const impostosPercentage = taxRate;
   // Anel do valor de Combustível usa a mesma proporção (gasto/despesas) do anel "% Gasto c/ Combustível", mas exibe o valor em R$

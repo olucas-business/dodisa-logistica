@@ -200,25 +200,25 @@ export default function RefuelManager({
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
             <span className="text-[9.5px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1"><Wallet className="w-3 h-3" />Gasto Total</span>
-            <p className="text-lg font-black font-mono text-gray-900 dark:text-gray-100 mt-1">R$ {totalValueAll.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</p>
+            <p className="text-lg font-black font-mono text-gray-900 dark:text-emerald-400 mt-1">R$ {totalValueAll.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</p>
           </div>
           <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
             <span className="text-[9.5px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1"><Droplets className="w-3 h-3" />Litros Totais</span>
-            <p className="text-lg font-black font-mono text-gray-900 dark:text-gray-100 mt-1">{totalLitersAll.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L</p>
+            <p className="text-lg font-black font-mono text-gray-900 dark:text-emerald-400 mt-1">{totalLitersAll.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L</p>
           </div>
           <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
             <span className="text-[9.5px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1"><Route className="w-3 h-3" />Média / Abastecimento</span>
-            <p className="text-lg font-black font-mono text-gray-900 dark:text-gray-100 mt-1">R$ {avgValuePerRefuel.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</p>
+            <p className="text-lg font-black font-mono text-gray-900 dark:text-emerald-400 mt-1">R$ {avgValuePerRefuel.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</p>
             <span className="text-[9px] text-gray-400 dark:text-gray-500">{avgLitersPerRefuel.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} L em média</span>
           </div>
           <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
             <span className="text-[9.5px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1"><Gauge className="w-3 h-3" />Consumo Médio</span>
-            <p className="text-lg font-black font-mono text-gray-900 dark:text-gray-100 mt-1">{avgKmPerLiter !== null ? `${avgKmPerLiter.toFixed(2)} Km/L` : "—"}</p>
+            <p className="text-lg font-black font-mono text-gray-900 dark:text-emerald-400 mt-1">{avgKmPerLiter !== null ? `${avgKmPerLiter.toFixed(2)} Km/L` : "—"}</p>
             <span className="text-[9px] text-gray-400 dark:text-gray-500">{avgKmPerLiter === null ? "Informe o odômetro" : "Baseado no odômetro"}</span>
           </div>
           <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
             <span className="text-[9.5px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1"><Route className="w-3 h-3" />Km Rastreado</span>
-            <p className="text-lg font-black font-mono text-gray-900 dark:text-gray-100 mt-1">{totalKmTracked.toLocaleString("pt-BR")} Km</p>
+            <p className="text-lg font-black font-mono text-gray-900 dark:text-emerald-400 mt-1">{totalKmTracked.toLocaleString("pt-BR")} Km</p>
           </div>
         </div>
       )}
@@ -302,7 +302,7 @@ export default function RefuelManager({
                               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
                               <span className="truncate">{item.station}</span>
                             </span>
-                            <span className="text-gray-900 dark:text-gray-100 font-mono shrink-0 ml-2">
+                            <span className="text-gray-900 dark:text-emerald-400 font-mono shrink-0 ml-2">
                               R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                           </div>

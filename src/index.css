@@ -530,6 +530,12 @@ html.dark .text-slate-600, html.dark .text-gray-600, html.dark .text-zinc-600, h
   color: #94A3B8 !important; /* Muted slate */
 }
 
+/* Force dark: color-variant utilities to win over their light-mode base class on p/span/li/td/th
+   (Tailwind's dark: variant uses :where(), which has zero specificity, so it ties with — and can
+   lose to — a plain base utility of equal specificity depending on generated CSS order). */
+html.dark .dark\:text-emerald-400 { color: #34d399 !important; }
+html.dark .dark\:text-gray-100 { color: #F1F5F9 !important; }
+
 /* Map slate and gray typography for sub-titles in light mode */
 html:not(.dark) .text-slate-500, 
 html:not(.dark) .text-gray-500, 

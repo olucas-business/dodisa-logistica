@@ -739,26 +739,54 @@ export default function DashboardOverview({
       .sort((a, b) => b.value - a.value);
   }, [refuels, vehicles]);
 
-  // 8. Média KM/L (Average KM/L efficiency)
+  // 8. Média KM/L: mesmo cálculo do módulo Combustível — diferença de odômetro entre
+  // abastecimentos consecutivos do mesmo veículo, dividida pelos litros do abastecimento atual.
+  const kmLPerRefuel = useMemo(() => {
+    const byVehicle: Record<string, Refuel[]> = {};
+    refuels.forEach(r => {
+      byVehicle[r.vehicleId] = byVehicle[r.vehicleId] || [];
+      byVehicle[r.vehicleId].push(r);
+    });
+    const enriched: Record<string, number> = {};
+    Object.values(byVehicle).forEach(list => {
+      const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
+      for (let i = 0; i < sorted.length; i++) {
+        const curr = sorted[i];
+        const prev = sorted[i - 1];
+        if (prev && curr.odometer && prev.odometer && curr.odometer > prev.odometer && curr.liters > 0) {
+          enriched[curr.id] = (curr.odometer - prev.odometer) / curr.liters;
+        }
+      }
+    });
+    return enriched;
+  }, [refuels]);
+
   const averageKmLMonth = useMemo(() => {
-    return totalLitersMonth > 0 ? kmMonth / totalLitersMonth : 0;
-  }, [kmMonth, totalLitersMonth]);
+    const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
+    const monthValues = refuels
+      .filter(r => r.date.startsWith(targetYearMonth))
+      .map(r => kmLPerRefuel[r.id])
+      .filter((v): v is number => v !== undefined);
+    return monthValues.length > 0 ? monthValues.reduce((sum, v) => sum + v, 0) / monthValues.length : 0;
+  }, [refuels, kmLPerRefuel, currentYear, currentMonth]);
 
   const kmLByVehicleChartData = useMemo(() => {
+    const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
     return vehicles.map(v => {
-      const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
-      const vRefuels = refuels.filter(r => r.vehicleId === v.id && r.date.startsWith(targetYearMonth));
-      const vLiters = vRefuels.reduce((sum, r) => sum + r.liters, 0);
-      const vFreights = freightsMonth.filter(f => f.vehicleId === v.id);
-      const vKm = vFreights.reduce((sum, f) => sum + (f.mileage?.total || 0), 0);
-      const kmL = vLiters > 0 ? parseFloat((vKm / vLiters).toFixed(2)) : parseFloat(v.averageConsumption || "0");
+      const vValues = refuels
+        .filter(r => r.vehicleId === v.id && r.date.startsWith(targetYearMonth))
+        .map(r => kmLPerRefuel[r.id])
+        .filter((val): val is number => val !== undefined);
+      const kmL = vValues.length > 0
+        ? parseFloat((vValues.reduce((sum, val) => sum + val, 0) / vValues.length).toFixed(2))
+        : parseFloat(v.averageConsumption || "0");
       return {
         name: v.plate,
         "KM/L": kmL,
         model: v.model
       };
     }).filter(item => item["KM/L"] > 0).sort((a, b) => b["KM/L"] - a["KM/L"]);
-  }, [vehicles, refuels, freightsMonth]);
+  }, [vehicles, refuels, kmLPerRefuel, currentYear, currentMonth]);
 
   // Sparkline generator helper
   const renderSparkline = (points: number[], colorClass = "stroke-primary") => {
@@ -1280,7 +1308,7 @@ export default function DashboardOverview({
         <div className="w-full">
           <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-center gap-2.5 border-b border-border pb-4 mb-4">
-              <span className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl">
+              <span className="p-2 bg-red-500/10 text-red-500 rounded-xl">
                 <BarChart3 className="w-4 h-4" />
               </span>
               <div>
@@ -1288,46 +1316,67 @@ export default function DashboardOverview({
                 <p className="text-[11px] text-muted-foreground">Total de despesas lançadas em {currentMonthName} de {currentYear}, por categoria.</p>
               </div>
             </div>
-            <div className="h-[220px] w-full flex items-center justify-center">
-              {expensesByCategoryMonth.length === 0 ? (
-                <div className="text-xs text-muted-foreground font-medium">Nenhuma despesa lançada neste mês.</div>
-              ) : (() => {
-                const expenseColors = ["#3b82f6", "#22c55e", "#06b6d4", "#10b981", "#0ea5e9", "#14b8a6", "#6b7280"];
-                const expensesTotal = expensesByCategoryMonth.reduce((sum, c) => sum + c.value, 0);
-                return (
-                  <div className="flex items-center gap-8 w-full justify-center">
-                    <div className="h-[180px] w-[180px] relative shrink-0">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie data={expensesByCategoryMonth} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value">
-                            {expensesByCategoryMonth.map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={expenseColors[index % expenseColors.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Total"]}
-                            contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">Total</span>
-                        <span className="text-sm font-black font-mono text-foreground">R$ {expensesTotal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+            {expensesByCategoryMonth.length === 0 ? (
+              <div className="h-[220px] flex items-center justify-center text-xs text-muted-foreground font-medium">Nenhuma despesa lançada neste mês.</div>
+            ) : (() => {
+              const expenseColors = ["#ef4444", "#fb7185", "#dc2626", "#f43f5e", "#b91c1c", "#fca5a5", "#9f1239"];
+              const expensesTotal = expensesByCategoryMonth.reduce((sum, c) => sum + c.value, 0);
+              return (
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
+                  {/* Category Cards Column (Left - 5 cols), mesmo padrão do Balanço de Dívidas */}
+                  <div className="xl:col-span-5 space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                    {expensesByCategoryMonth.map((d, index) => {
+                      const color = expenseColors[index % expenseColors.length];
+                      return (
+                        <div key={d.category} className="flex items-center justify-between p-3 bg-red-500/5 border border-red-500/20 rounded-xl">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                            <span className="text-xs font-black text-foreground truncate">{d.category}</span>
+                          </div>
+                          <span className="text-sm font-black font-mono text-red-600 dark:text-red-400 shrink-0 ml-2">
+                            R$ {d.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Donut Column (Right - 7 cols) */}
+                  <div className="xl:col-span-7 h-[250px] w-full flex items-center justify-center">
+                    <div className="flex items-center gap-8 w-full justify-center">
+                      <div className="h-[220px] w-[220px] relative shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie data={expensesByCategoryMonth} cx="50%" cy="50%" innerRadius={65} outerRadius={95} paddingAngle={3} dataKey="value">
+                              {expensesByCategoryMonth.map((_, index) => (
+                                <Cell key={`cell-${index}`} fill={expenseColors[index % expenseColors.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Total"]}
+                              contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                          <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">Total</span>
+                          <span className="text-base font-black font-mono text-foreground">R$ {expensesTotal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2.5">
+                        {expensesByCategoryMonth.map((d, index) => (
+                          <div key={d.category} className="flex items-center gap-2 text-xs font-semibold">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: expenseColors[index % expenseColors.length] }} />
+                            <span className="text-muted-foreground">{d.category}:</span>
+                            <span className="text-foreground font-mono">{expensesTotal > 0 ? ((d.value / expensesTotal) * 100).toFixed(0) : 0}%</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
-                      {expensesByCategoryMonth.map((d, index) => (
-                        <div key={d.category} className="flex items-center gap-2 text-xs font-semibold">
-                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: expenseColors[index % expenseColors.length] }} />
-                          <span className="text-muted-foreground">{d.category}:</span>
-                          <span className="text-foreground font-mono">{expensesTotal > 0 ? ((d.value / expensesTotal) * 100).toFixed(0) : 0}%</span>
-                        </div>
-                      ))}
-                    </div>
                   </div>
-                );
-              })()}
-            </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -1335,7 +1384,7 @@ export default function DashboardOverview({
           <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-4 gap-2">
               <div className="flex items-center gap-2.5">
-                <span className="p-2 bg-blue-500/10 text-blue-500 rounded-xl">
+                <span className="p-2 bg-red-500/10 text-red-500 rounded-xl">
                   <BarChart3 className="w-4 h-4" />
                 </span>
                 <div>
@@ -1359,7 +1408,7 @@ export default function DashboardOverview({
                   <p className="text-xs text-muted-foreground font-medium">Nenhuma despesa lançada neste mês.</p>
                 </div>
               ) : (() => {
-                const expenseColors = ["#3b82f6", "#22c55e", "#06b6d4", "#10b981", "#0ea5e9", "#14b8a6", "#6b7280"];
+                const expenseColors = ["#ef4444", "#fb7185", "#dc2626", "#f43f5e", "#b91c1c", "#fca5a5", "#9f1239"];
                 const maxVal = Math.max(...expensesByCategoryMonth.map(c => c.value), 1);
                 return (
                   <div className="space-y-3.5 overflow-y-auto h-full pr-1">
@@ -1512,7 +1561,7 @@ export default function DashboardOverview({
         <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-4 gap-2">
             <div className="flex items-center gap-2.5">
-              <span className="p-2 bg-blue-500/10 text-blue-500 rounded-xl">
+              <span className="p-2 bg-red-500/10 text-red-500 rounded-xl">
                 <Coins className="w-4 h-4" />
               </span>
               <div>
@@ -1548,7 +1597,7 @@ export default function DashboardOverview({
                 );
               }
 
-              const debtColors = ["#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#6b7280"];
+              const debtColors = ["#ef4444", "#fb7185", "#dc2626", "#f43f5e", "#b91c1c", "#fca5a5", "#9f1239", "#7f1d1d"];
               const maxVal = Math.max(...debtCategoryTotals.map((c: any) => c.value), 1);
               return (
                 <div className="space-y-3.5 overflow-y-auto h-full pr-1">
@@ -1603,7 +1652,7 @@ export default function DashboardOverview({
           </div>
 
           {(() => {
-            const freightCostColors = ["#3b82f6", "#22c55e", "#06b6d4", "#10b981", "#0ea5e9"];
+            const freightCostColors = ["#ef4444", "#fb7185", "#dc2626", "#f43f5e", "#b91c1c"];
             const activeFreightsForCost = freights.filter(f => f.status !== "Cancelado");
             const freightCostBreakdown = [
               { name: "Pedágio", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.toll || 0), 0) },

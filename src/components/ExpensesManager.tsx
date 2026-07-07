@@ -5,7 +5,7 @@ import { Plus, Search, Calendar, DollarSign, Trash2, CheckCircle, ArrowDown, Pie
 import SessionAnnotations from "./SessionAnnotations";
 import MonthYearPicker from "./MonthYearPicker";
 
-const EXPENSE_CHART_COLORS = ["#3b82f6", "#22c55e", "#06b6d4", "#10b981", "#0ea5e9", "#14b8a6", "#6b7280", "#2563eb", "#16a34a", "#0891b2", "#059669", "#0284c7", "#65a30d"];
+const EXPENSE_CHART_COLORS = ["#ef4444", "#fb7185", "#dc2626", "#f43f5e", "#b91c1c", "#fca5a5", "#9f1239", "#7f1d1d", "#f87171", "#e11d48", "#991b1b", "#fda4af", "#be123c"];
 
 const DEFAULT_EXPENSE_CATEGORIES = [
   "Combustível",
