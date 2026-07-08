@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Freight, Driver, Vehicle, Expense, Refuel } from "../types";
+import { todayLocalISO } from "../utils/date";
 import { FileText, Download, CheckCircle, Search, Filter, Printer, HelpCircle } from "lucide-react";
 
 interface ReportsPanelProps {
@@ -14,7 +15,7 @@ export default function ReportsPanel({ freights, drivers, vehicles, expenses, re
   const [reportType, setReportType] = useState<"freights" | "expenses" | "refuels" | "drivers">("freights");
   const [exportFormat, setExportFormat] = useState<"CSV" | "PDF" | "XLSX">("CSV");
   const [startDate, setStartDate] = useState("2026-06-01");
-  const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(todayLocalISO());
   const [isExporting, setIsExporting] = useState(false);
   const [exportedFile, setExportedFile] = useState<string | null>(null);
 

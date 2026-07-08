@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Vehicle, MaintenanceRecord, VehicleDocument } from "../types";
+import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
 import { Truck, Plus, Eye, Calendar, Search, AlertTriangle, Trash2, Edit2, CheckCircle, FileText, Settings, Hammer, Upload, Download } from "lucide-react";
 
@@ -29,7 +30,7 @@ export default function VehiclesManager({
   const [maintKm, setMaintKm] = useState("");
   const [maintValue, setMaintValue] = useState("");
   const [maintDesc, setMaintDesc] = useState("");
-  const [maintDate, setMaintDate] = useState(new Date().toISOString().split("T")[0]);
+  const [maintDate, setMaintDate] = useState(todayLocalISO());
 
   // Vehicle form states
   const [plate, setPlate] = useState("");
@@ -157,7 +158,7 @@ export default function VehiclesManager({
             id: `doc_${Date.now()}`,
             name: file.name,
             url: data.url,
-            uploadedAt: new Date().toISOString().split("T")[0]
+            uploadedAt: todayLocalISO()
           };
           const updatedDocs = [...(selectedVehicle.documents || []), newDoc];
           const ok = await onUpdateVehicle(selectedVehicle.id, { documents: updatedDocs });

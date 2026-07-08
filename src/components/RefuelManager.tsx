@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Refuel, Driver, Vehicle } from "../types";
+import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
 import MonthYearPicker from "./MonthYearPicker";
 import { ResponsiveContainer, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Line, ComposedChart, AreaChart, Area } from "recharts";
@@ -37,7 +38,7 @@ export default function RefuelManager({
   const refuelsInSelectedMonth = refuels.filter(r => (r.date || "").startsWith(selectedYearMonth));
 
   // Form states
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(todayLocalISO());
   const [vehicleId, setVehicleId] = useState(vehicles[0]?.id || "");
   const [driverId, setDriverId] = useState(drivers[0]?.id || "");
   const [liters, setLiters] = useState("");
@@ -46,7 +47,7 @@ export default function RefuelManager({
   const [odometer, setOdometer] = useState("");
 
   const resetForm = () => {
-    setDate(new Date().toISOString().split("T")[0]);
+    setDate(todayLocalISO());
     setVehicleId(vehicles[0]?.id || "");
     setDriverId(drivers[0]?.id || "");
     setLiters("");

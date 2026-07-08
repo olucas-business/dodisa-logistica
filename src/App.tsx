@@ -768,7 +768,7 @@ export default function App() {
     { id: "maintenance", label: "Manutenção Preventiva", icon: Wrench },
     { id: "freights", label: "Manifesto de Fretes", icon: Compass },
     { id: "refuels", label: "Combustível", icon: Fuel },
-    { id: "expenses", label: "Controle Despesas", icon: DollarSign },
+    { id: "expenses", label: "Gestão de Despesas", icon: DollarSign },
     { id: "debts", label: "Gestão de Dívidas", icon: Coins },
     { id: "truck_cash", label: "Caixa do Caminhão", icon: Wallet },
     { id: "analytics", label: "BI Analítico", icon: TrendingUp },

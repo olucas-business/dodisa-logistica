@@ -99,6 +99,7 @@ export interface RouteStop {
   state: string;
   address: string;
   company: string;
+  country?: string;
 }
 
 export interface CargoDetails {

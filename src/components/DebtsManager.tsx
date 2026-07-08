@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Debt } from "../types";
+import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
 import {
   Coins,
@@ -88,7 +89,7 @@ export default function DebtsManager({
     setDescription("");
     setCategory("Outros");
     setValue("");
-    setDueDate(new Date().toISOString().split("T")[0]);
+    setDueDate(todayLocalISO());
     setStatus("Falta Pagar");
     setNotes("");
   };

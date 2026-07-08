@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Driver, Vehicle, CaixaCaminhao, CaixaMovimentacao } from "../types";
+import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
 import { 
   Wallet, 
@@ -148,7 +149,7 @@ export default function TruckCashManager({
   const [formGastoValor, setFormGastoValor] = useState("");
   const [formGastoCategoria, setFormGastoCategoria] = useState("Combustível");
   const [formGastoDescricao, setFormGastoDescricao] = useState("");
-  const [formGastoData, setFormGastoData] = useState(() => new Date().toISOString().split("T")[0]);
+  const [formGastoData, setFormGastoData] = useState(() => todayLocalISO());
   const [formGastoAnexo, setFormGastoAnexo] = useState("");
   const [formGastoMoeda, setFormGastoMoeda] = useState("BRL");
   const [formGastoCotacao, setFormGastoCotacao] = useState("1");
@@ -283,7 +284,7 @@ export default function TruckCashManager({
       setFormGastoValor("");
       setFormGastoCategoria("Combustível");
       setFormGastoDescricao("");
-      setFormGastoData(new Date().toISOString().split("T")[0]);
+      setFormGastoData(todayLocalISO());
       setFormGastoAnexo("");
       setFormGastoMoeda("BRL");
       setFormGastoCotacao("1");
@@ -379,7 +380,7 @@ export default function TruckCashManager({
 
   // Date formatter for items
   const formatMoveDate = (dateStr: string) => {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = todayLocalISO();
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split("T")[0];

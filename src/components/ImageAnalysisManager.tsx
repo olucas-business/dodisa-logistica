@@ -36,6 +36,7 @@ import {
   ExtractedCategory,
   InteractiveHighlight 
 } from "../types";
+import { todayLocalISO } from "../utils/date";
 
 export default function ImageAnalysisManager() {
   // Database analyses history
@@ -139,7 +140,7 @@ export default function ImageAnalysisManager() {
 
   // Helper to parse dates formatted as DD/MM/YYYY into YYYY-MM-DD
   const formatDetectedDateToIso = (dateStr: string) => {
-    if (!dateStr) return new Date().toISOString().split("T")[0];
+    if (!dateStr) return todayLocalISO();
     if (dateStr.includes("/")) {
       const parts = dateStr.split("/");
       if (parts.length === 3) {
@@ -161,7 +162,7 @@ export default function ImageAnalysisManager() {
     // 1. Resolve date
     const detectedDate = results.dates && results.dates.length > 0 
       ? formatDetectedDateToIso(results.dates[0]) 
-      : new Date().toISOString().split("T")[0];
+      : todayLocalISO();
     
     setRefuelDate(detectedDate);
     setExpenseDate(detectedDate);
@@ -377,7 +378,7 @@ export default function ImageAnalysisManager() {
         cnh: driverCnh || "12345678901",
         cnhCategory: driverCnhCategory,
         cnhExpiration: driverCnhExpiration || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-        admissionDate: new Date().toISOString().split("T")[0],
+        admissionDate: todayLocalISO(),
         observations: "Motorista mapeado automaticamente via inteligência artificial cognitiva."
       };
     } else if (sendTarget === "vehicle") {

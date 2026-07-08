@@ -20,6 +20,15 @@ const supabaseAuth = createClient(
   process.env.SUPABASE_ANON_KEY!
 );
 
+// Vercel serverless functions run in UTC, so `new Date().toISOString()` can
+// already be tomorrow (or, on month-end, next month) from the perspective of
+// a user in Brazil (UTC-3). These fallbacks only fire when a request omits
+// `date`, but must still resolve to "hoje" in Brazil time, not UTC.
+function todayBrazilISO(): string {
+  const brazilNow = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  return brazilNow.toISOString().split("T")[0];
+}
+
 // Gemini calls with a large response schema can take a very long time to
 // "think" through, risking serverless function timeouts. Cap them so we fall
 // back to the offline heuristic parser quickly and reliably instead of hanging.
@@ -1243,7 +1252,7 @@ app.post("/api/auth/signup", async (req, res) => {
         cnh: "Não cadastrado",
         cnhCategory: "D",
         cnhExpiration: "2030-12-31",
-        admissionDate: new Date().toISOString().split("T")[0],
+        admissionDate: todayBrazilISO(),
         status: "Ativo"
       });
     }
@@ -2133,7 +2142,7 @@ app.post("/api/tires", async (req, res) => {
   if (newTire.status === "Em uso" && newTire.vehicleId) {
     newTire.changesHistory.push({
       id: `ch_${Date.now()}`,
-      date: new Date().toISOString().split("T")[0],
+      date: todayBrazilISO(),
       type: "Instalação",
       km: Number(req.body.currentMileage) || 0,
       vehicleId: newTire.vehicleId,
@@ -2185,7 +2194,7 @@ app.post("/api/tires/:id/changes", async (req, res) => {
 
   const change = {
     id: `ch_${Date.now()}`,
-    date: date || new Date().toISOString().split("T")[0],
+    date: date || todayBrazilISO(),
     type,
     km: Number(km) || 0,
     vehicleId: vehicleId || "",
@@ -2246,7 +2255,7 @@ app.post("/api/tires/:id/rotations", async (req, res) => {
 
   const rotation = {
     id: `rot_${Date.now()}`,
-    date: date || new Date().toISOString().split("T")[0],
+    date: date || todayBrazilISO(),
     km: Number(km) || 0,
     fromPosition,
     toPosition,
@@ -2273,10 +2282,10 @@ app.post("/api/debts", async (req, res) => {
     description: req.body.description || "",
     category: req.body.category || "",
     value: Number(req.body.value) || 0,
-    dueDate: req.body.dueDate || new Date().toISOString().split("T")[0],
+    dueDate: req.body.dueDate || todayBrazilISO(),
     status: req.body.status || "Falta Pagar",
     notes: req.body.notes || "",
-    createdAt: new Date().toISOString().split("T")[0]
+    createdAt: todayBrazilISO()
   };
   db.debts = db.debts || [];
   db.debts.push(newDebt);
@@ -2327,7 +2336,7 @@ app.post("/api/maintenance-logs", async (req, res) => {
     vehicleId: req.body.vehicleId || "",
     item: req.body.item || "",
     category: req.body.category || "Outros",
-    date: req.body.date || new Date().toISOString().split("T")[0],
+    date: req.body.date || todayBrazilISO(),
     km: Number(req.body.km) || 0,
     cost: Number(req.body.cost) || 0,
     notes: req.body.notes || "",
@@ -2438,7 +2447,7 @@ app.post("/api/annotations", async (req, res) => {
     description: description || "",
     value: value !== undefined && value !== "" ? Number(value) : 0,
     category: category || "",
-    date: date || new Date().toISOString().split("T")[0],
+    date: date || todayBrazilISO(),
     createdAt: new Date().toISOString()
   };
   db.annotations = db.annotations || [];
@@ -2479,7 +2488,7 @@ app.post("/api/caixa-caminhao/saldo", async (req, res) => {
   
   let caixa = db.caixa_caminhao.find(c => c.veiculo_id === veiculo_id);
   const initialVal = Number(saldo_inicial) || 0;
-  const now = new Date().toISOString().split("T")[0];
+  const now = todayBrazilISO();
   
   if (caixa) {
     caixa.saldo_inicial = initialVal;
@@ -2604,7 +2613,7 @@ app.delete("/api/caixa-caminhao/gasto/:id", async (req, res) => {
   
   // Recalculate saldo_atual for the related caixa
   const caixa = db.caixa_caminhao.find(c => c.id === caixaId);
-  const now = new Date().toISOString().split("T")[0];
+  const now = todayBrazilISO();
   if (caixa) {
     const gastos = db.caixa_movimentacoes.filter(m => m.caixa_id === caixa.id);
     const totalGasto = gastos.reduce((sum, item) => sum + Number(item.valor), 0);
@@ -2888,7 +2897,7 @@ app.post("/api/ai/execute-command", async (req, res) => {
 
   try {
     const db = (await loadDB());
-    const cleanDate = extractedData.date || new Date().toISOString().split("T")[0];
+    const cleanDate = extractedData.date || todayBrazilISO();
     const cleanTime = extractedData.time || new Date().toTimeString().split(" ")[0].substring(0, 5);
     const valueNum = Number(extractedData.value) || 0;
     const odoNum = Number(extractedData.odometer) || null;

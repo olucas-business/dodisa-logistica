@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Driver, Freight, Refuel } from "../types";
+import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
 import { Users, UserPlus, Phone, Calendar, Search, Award, TrendingUp, AlertTriangle, Trash2, Edit2, CheckCircle, FileText, Share2, Copy, ExternalLink, MessageSquare, Check, Lock, Upload, Download } from "lucide-react";
 
@@ -65,7 +66,7 @@ export default function DriversManager({
         cnh: "A preencher",
         cnhCategory: "D",
         cnhExpiration: "2030-12-31",
-        admissionDate: new Date().toISOString().split("T")[0],
+        admissionDate: todayLocalISO(),
         temporaryPassword: tempPass,
         status: "Ativo"
       };
@@ -199,7 +200,7 @@ export default function DriversManager({
         });
         const data = await res.json();
         if (data.success) {
-          const newDoc = { id: `doc_${Date.now()}`, name: file.name, url: data.url, uploadedAt: new Date().toISOString().split("T")[0] };
+          const newDoc = { id: `doc_${Date.now()}`, name: file.name, url: data.url, uploadedAt: todayLocalISO() };
           const updatedDocs = [...(selectedDriver.documents || []), newDoc];
           await onUpdateDriver(selectedDriver.id, { documents: updatedDocs });
         }
@@ -237,7 +238,7 @@ export default function DriversManager({
       cnh,
       cnhCategory,
       cnhExpiration,
-      admissionDate: admissionDate || new Date().toISOString().split("T")[0],
+      admissionDate: admissionDate || todayLocalISO(),
       observations,
       photo,
       bio,

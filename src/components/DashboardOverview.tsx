@@ -238,15 +238,18 @@ export default function DashboardOverview({
     [debts]
   );
 
-  // Despesas do mês por categoria (gráfico de colunas)
+  // Despesas do mês por categoria (gráfico de colunas), com abertura de pago vs pendente
   const expensesByCategoryMonth = useMemo(() => {
     const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
-    const totals: Record<string, number> = {};
+    const totals: Record<string, { value: number; paid: number; pending: number }> = {};
     expenses.filter(e => e.date.startsWith(targetYearMonth)).forEach(e => {
-      totals[e.category] = (totals[e.category] || 0) + (e.value || 0);
+      totals[e.category] = totals[e.category] || { value: 0, paid: 0, pending: 0 };
+      totals[e.category].value += (e.value || 0);
+      if (e.status === "Pago") totals[e.category].paid += (e.value || 0);
+      else totals[e.category].pending += (e.value || 0);
     });
     return Object.entries(totals)
-      .map(([category, value]) => ({ category, value }))
+      .map(([category, t]) => ({ category, value: t.value, paid: t.paid, pending: t.pending }))
       .sort((a, b) => b.value - a.value);
   }, [expenses, currentYear, currentMonth]);
 
@@ -972,10 +975,10 @@ export default function DashboardOverview({
       {/* 1b. INDICADORES DE PERFORMANCE (Anéis de Progresso, mesmo estilo do BI Analítico) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <RadialGauge label="Impostos" value={impostosPercentage} displayValue={`R$ ${(billingMonth * (impostosPercentage / 100)).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} editable onEdit={(v) => saveCompanyField("taxRate", v)} />
-        <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalFuelSpendMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} / ${fuelSpendRingPercentage.toFixed(0)}%`} />
+        <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalFuelSpendMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="Comissão" value={comissaoPercentage} displayValue={`R$ ${totalCommissionMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmLMonth.toFixed(2)}`} />
-        <RadialGauge label="Margem Lucro" value={marginPercentage} displayValue={`R$ ${estimatedProfitMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} / ${marginPercentage}%`} />
+        <RadialGauge label="Margem Lucro" value={marginPercentage} displayValue={`${marginPercentage}%`} />
         <RadialGauge label="% Combustível" value={fuelSpendPercentageOfExpenses} />
       </div>
 
@@ -1378,14 +1381,26 @@ export default function DashboardOverview({
                     {expensesByCategoryMonth.map((d) => {
                       const color = getIntensityColor(d.value);
                       return (
-                        <div key={d.category} className="flex items-center justify-between p-3 rounded-xl border" style={{ backgroundColor: `${color}0d`, borderColor: `${color}33` }}>
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                            <span className="text-xs font-black text-foreground truncate">{d.category}</span>
+                        <div key={d.category} className="p-3 rounded-xl border space-y-1.5" style={{ backgroundColor: `${color}0d`, borderColor: `${color}33` }}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                              <span className="text-xs font-black text-foreground truncate">{d.category}</span>
+                            </div>
+                            <span className="text-sm font-black font-mono shrink-0 ml-2" style={{ color }}>
+                              R$ {d.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
                           </div>
-                          <span className="text-sm font-black font-mono shrink-0 ml-2" style={{ color }}>
-                            R$ {d.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
+                          <div className="flex items-center gap-3 text-[10px] font-mono font-semibold pl-5">
+                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              Pago: R$ {d.paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                              Pendente: R$ {d.pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
                         </div>
                       );
                     })}
@@ -1484,6 +1499,16 @@ export default function DashboardOverview({
                           </div>
                           <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
                             <div className="h-full rounded-full transition-all duration-300" style={{ backgroundColor: color, width: `${pct}%` }} />
+                          </div>
+                          <div className="flex items-center gap-3 text-[10px] font-mono font-semibold pt-0.5">
+                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              Pago: R$ {item.paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                              Pendente: R$ {item.pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
                           </div>
                         </div>
                       );

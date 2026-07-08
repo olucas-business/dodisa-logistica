@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { MaintenanceLog, Vehicle } from "../types";
+import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
 import {
   Wrench,
@@ -76,7 +77,7 @@ export default function MaintenanceManager({
   const [formCategory, setFormCategory] = useState<MaintenanceCategory>("Óleo e Filtros");
   const [formItem, setFormItem] = useState(CHECKLIST_ITEMS["Óleo e Filtros"][0]);
   const [formCustomItem, setFormCustomItem] = useState("");
-  const [formDate, setFormDate] = useState(new Date().toISOString().split("T")[0]);
+  const [formDate, setFormDate] = useState(todayLocalISO());
   const [formKm, setFormKm] = useState("");
   const [formCost, setFormCost] = useState("");
   const [formNotes, setFormNotes] = useState("");
@@ -88,7 +89,7 @@ export default function MaintenanceManager({
     setFormCategory("Óleo e Filtros");
     setFormItem(CHECKLIST_ITEMS["Óleo e Filtros"][0]);
     setFormCustomItem("");
-    setFormDate(new Date().toISOString().split("T")[0]);
+    setFormDate(todayLocalISO());
     const vehicle = vehicles.find(v => v.id === defaultVehicle);
     setFormKm(vehicle ? String(vehicle.currentMileage || 0) : "");
     setFormCost("");

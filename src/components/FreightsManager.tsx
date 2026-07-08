@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { Freight, Driver, Vehicle } from "../types";
+import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { Truck, Plus, Search, Calendar, MapPin, Navigation, Coins, Trash2, Edit2, CheckCircle, Clock, PieChart as PieChartIcon } from "lucide-react";
+
+const MERCOSUL_COUNTRIES = ["Brasil", "Argentina", "Chile", "Paraguai", "Peru", "Uruguai"];
 
 interface FreightsManagerProps {
   freights: Freight[];
@@ -29,7 +32,7 @@ export default function FreightsManager({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Form states
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(todayLocalISO());
   const [departureTime, setDepartureTime] = useState("08:00");
   const [arrivalTime, setArrivalTime] = useState("18:00");
   const [status, setStatus] = useState<"Pendente" | "Em andamento" | "Finalizado" | "Cancelado">("Pendente");
@@ -39,11 +42,13 @@ export default function FreightsManager({
   // Origem / Destino
   const [originCity, setOriginCity] = useState("");
   const [originState, setOriginState] = useState("PE");
+  const [originCountry, setOriginCountry] = useState("Brasil");
   const [originAddress, setOriginAddress] = useState("");
   const [originCompany, setOriginCompany] = useState("");
 
   const [destCity, setDestCity] = useState("");
   const [destState, setDestState] = useState("AL");
+  const [destCountry, setDestCountry] = useState("Brasil");
   const [destAddress, setDestAddress] = useState("");
   const [destCompany, setDestCompany] = useState("");
 
@@ -69,7 +74,7 @@ export default function FreightsManager({
   const [endKm, setEndKm] = useState("");
 
   const resetForm = () => {
-    setDate(new Date().toISOString().split("T")[0]);
+    setDate(todayLocalISO());
     setDepartureTime("08:00");
     setArrivalTime("18:00");
     setStatus("Pendente");
@@ -78,11 +83,13 @@ export default function FreightsManager({
 
     setOriginCity("");
     setOriginState("PE");
+    setOriginCountry("Brasil");
     setOriginAddress("");
     setOriginCompany("");
 
     setDestCity("");
     setDestState("AL");
+    setDestCountry("Brasil");
     setDestAddress("");
     setDestCompany("");
 
@@ -130,11 +137,13 @@ export default function FreightsManager({
 
     setOriginCity(f.origin.city);
     setOriginState(f.origin.state);
+    setOriginCountry(f.origin.country || "Brasil");
     setOriginAddress(f.origin.address);
     setOriginCompany(f.origin.company);
 
     setDestCity(f.destination.city);
     setDestState(f.destination.state);
+    setDestCountry(f.destination.country || "Brasil");
     setDestAddress(f.destination.address);
     setDestCompany(f.destination.company);
 
@@ -181,12 +190,14 @@ export default function FreightsManager({
       origin: {
         city: originCity,
         state: originState,
+        country: originCountry,
         address: originAddress,
         company: originCompany
       },
       destination: {
         city: destCity,
         state: destState,
+        country: destCountry,
         address: destAddress,
         company: destCompany
       },
@@ -377,10 +388,16 @@ export default function FreightsManager({
                       <p className="font-semibold text-gray-800 flex items-center gap-1">
                         <MapPin className="w-3.5 h-3.5 text-blue-500" />
                         {f.origin.city}-{f.origin.state}
+                        {f.origin.country && f.origin.country !== "Brasil" && (
+                          <span className="text-[9px] font-mono font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded px-1 py-0.5 ml-0.5">{f.origin.country}</span>
+                        )}
                       </p>
                       <p className="font-semibold text-gray-850 flex items-center gap-1 mt-0.5">
                         <Navigation className="w-3.5 h-3.5 text-emerald-500 animate-pulse" />
                         {f.destination.city}-{f.destination.state}
+                        {f.destination.country && f.destination.country !== "Brasil" && (
+                          <span className="text-[9px] font-mono font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1 py-0.5 ml-0.5">{f.destination.country}</span>
+                        )}
                       </p>
                     </td>
                     <td className="p-3">
@@ -555,6 +572,18 @@ export default function FreightsManager({
                     <MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                     Ponto de Origem
                   </h4>
+                  <div className="space-y-1">
+                    <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">País (Rota Mercosul)</label>
+                    <select
+                      value={originCountry}
+                      onChange={(e) => setOriginCountry(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 rounded p-1.5 text-xs outline-none"
+                    >
+                      {MERCOSUL_COUNTRIES.map((c) => (
+                        <option key={c} value={c} className="dark:bg-slate-950">{c}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="col-span-2 space-y-1">
                       <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">Cidade *</label>
@@ -568,12 +597,12 @@ export default function FreightsManager({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">UF</label>
+                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">UF/Prov.</label>
                       <input
                         type="text"
                         value={originState}
                         onChange={(e) => setOriginState(e.target.value)}
-                        placeholder="PE"
+                        placeholder={originCountry === "Brasil" ? "PE" : "Mendoza"}
                         className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 rounded p-1.5 text-xs outline-none uppercase"
                       />
                     </div>
@@ -606,6 +635,18 @@ export default function FreightsManager({
                     <Navigation className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     Ponto de Destino
                   </h4>
+                  <div className="space-y-1">
+                    <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">País (Rota Mercosul)</label>
+                    <select
+                      value={destCountry}
+                      onChange={(e) => setDestCountry(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 rounded p-1.5 text-xs outline-none"
+                    >
+                      {MERCOSUL_COUNTRIES.map((c) => (
+                        <option key={c} value={c} className="dark:bg-slate-950">{c}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div className="col-span-2 space-y-1">
                       <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">Cidade *</label>
@@ -619,12 +660,12 @@ export default function FreightsManager({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">UF</label>
+                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">UF/Prov.</label>
                       <input
                         type="text"
                         value={destState}
                         onChange={(e) => setDestState(e.target.value)}
-                        placeholder="AL"
+                        placeholder={destCountry === "Brasil" ? "AL" : "Mendoza"}
                         className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 focus:border-blue-500 rounded p-1.5 text-xs outline-none uppercase"
                       />
                     </div>

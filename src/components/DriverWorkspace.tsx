@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { User, Driver, Vehicle, Freight, TripLog, TripPhoto } from "../types";
+import { todayLocalISO } from "../utils/date";
 import BrandMark from "./BrandMark";
 import { 
   Truck, 
@@ -77,7 +78,7 @@ export default function DriverWorkspace({
   const [startDestination, setStartDestination] = useState("");
   const [startVehicleId, setStartVehicleId] = useState("");
   const [startKm, setStartKm] = useState("");
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [startDate, setStartDate] = useState(todayLocalISO());
   const [startTime, setStartTime] = useState(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
   const [startPanelPhoto, setStartPanelPhoto] = useState("");
   const [startFrontPhoto, setStartFrontPhoto] = useState("");
@@ -90,12 +91,12 @@ export default function DriverWorkspace({
   const [recordNotes, setRecordNotes] = useState("");
   const [recordPhoto, setRecordPhoto] = useState("");
   const [recordLocation, setRecordLocation] = useState("");
-  const [recordDate, setRecordDate] = useState(new Date().toISOString().split("T")[0]);
+  const [recordDate, setRecordDate] = useState(todayLocalISO());
   const [recordTime, setRecordTime] = useState(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
 
   // "Finalizar Viagem" fields
   const [endKm, setEndKm] = useState("");
-  const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(todayLocalISO());
   const [endTime, setEndTime] = useState(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
   const [endPanelPhoto, setEndPanelPhoto] = useState("");
   const [endVehiclePhoto, setEndVehiclePhoto] = useState("");
@@ -556,7 +557,7 @@ export default function DriverWorkspace({
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
-                      setRecordDate(new Date().toISOString().split("T")[0]);
+                      setRecordDate(todayLocalISO());
                       setRecordTime(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
                       setIsRecordModalOpen(true);
                     }}
@@ -568,7 +569,7 @@ export default function DriverWorkspace({
 
                   <button
                     onClick={() => {
-                      setEndDate(new Date().toISOString().split("T")[0]);
+                      setEndDate(todayLocalISO());
                       setEndTime(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
                       // Prefill endKm based on vehicle's current mileage (must be equal or greater)
                       if (linkedTruck) {

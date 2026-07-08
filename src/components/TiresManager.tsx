@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Tire, Vehicle, TireChange, TireRotation } from "../types";
+import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
 import {
   Plus,
@@ -108,7 +109,7 @@ export default function TiresManager({
 
   // Tire Change Form state
   const [changeType, setChangeType] = useState<"Instalação" | "Remoção" | "Reparo" | "Recapagem" | "Descarte">("Instalação");
-  const [changeDate, setChangeDate] = useState(new Date().toISOString().split("T")[0]);
+  const [changeDate, setChangeDate] = useState(todayLocalISO());
   const [changeKm, setChangeKm] = useState("");
   const [changeVehicleId, setChangeVehicleId] = useState("");
   const [changePosition, setChangePosition] = useState("Dianteiro Esquerdo");
@@ -116,7 +117,7 @@ export default function TiresManager({
   const [changeCost, setChangeCost] = useState("");
 
   // Tire Rotation Form state
-  const [rotDate, setRotDate] = useState(new Date().toISOString().split("T")[0]);
+  const [rotDate, setRotDate] = useState(todayLocalISO());
   const [rotKm, setRotKm] = useState("");
   const [rotToPosition, setRotToPosition] = useState("Dianteiro Direito");
   const [rotDescription, setRotDescription] = useState("");
@@ -225,7 +226,7 @@ export default function TiresManager({
   const handleOpenChangeModal = (tire: Tire) => {
     setSelectedTire(tire);
     setChangeType(tire.status === "Em uso" ? "Remoção" : "Instalação");
-    setChangeDate(new Date().toISOString().split("T")[0]);
+    setChangeDate(todayLocalISO());
     setChangeKm(tire.currentMileage.toString());
     setChangeVehicleId(vehicles[0]?.id || "");
     setChangePosition("Dianteiro Esquerdo");
@@ -264,7 +265,7 @@ export default function TiresManager({
 
   const handleOpenRotationModal = (tire: Tire) => {
     setSelectedTire(tire);
-    setRotDate(new Date().toISOString().split("T")[0]);
+    setRotDate(todayLocalISO());
     setRotKm(tire.currentMileage.toString());
     setRotToPosition("Dianteiro Direito");
     setRotDescription("");
@@ -698,6 +699,15 @@ export default function TiresManager({
                   />
                 </div>
               </div>
+
+              {newBrand && newModel && (
+                <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-lg px-3 py-2">
+                  <span className="text-[10px] font-mono font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Quantidade em estoque deste modelo</span>
+                  <span className="text-xs font-black font-mono bg-blue-600 text-white rounded px-2 py-0.5">
+                    {tiresByBrandModel.find((i) => i.brand === newBrand && i.model === newModel)?.quantity || 0} un.
+                  </span>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Expense } from "../types";
+import { todayLocalISO } from "../utils/date";
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area } from "recharts";
 import { Plus, Search, Calendar, DollarSign, Trash2, CheckCircle, ArrowDown, PieChart as PieChartIcon, X, Settings, ChevronDown } from "lucide-react";
 import SessionAnnotations from "./SessionAnnotations";
@@ -129,13 +130,13 @@ export default function ExpensesManager({
   const expensesInSelectedMonth = expenses.filter(e => (e.date || "").startsWith(selectedYearMonth));
 
   // Form states
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(todayLocalISO());
   const [category, setCategory] = useState("Oficina");
   const [value, setValue] = useState("");
   const [description, setDescription] = useState("");
 
   const resetForm = () => {
-    setDate(new Date().toISOString().split("T")[0]);
+    setDate(todayLocalISO());
     setCategory(categories[0] || "Outros");
     setValue("");
     setDescription("");
