@@ -412,7 +412,7 @@ Aqui está o resumo operacional de hoje:
             {editForm.value !== undefined && editForm.value !== null && (
               <div className="flex justify-between border-b border-slate-850 py-1">
                 <span className="text-slate-500 font-mono text-[10px]">Valor:</span>
-                <span className="font-bold text-white text-emerald-400">R$ {editForm.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                <span className="font-bold text-white text-emerald-400">R$ {editForm.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             )}
             {editForm.vehiclePlate && (

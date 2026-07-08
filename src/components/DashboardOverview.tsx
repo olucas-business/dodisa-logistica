@@ -829,21 +829,21 @@ export default function DashboardOverview({
           <span className="w-4 h-4 rounded-full bg-blue-400 shrink-0 shadow-[0_0_22px_rgba(96,165,250,1)]" />
           <div className="min-w-0">
             <span className="text-[11px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Faturamento</span>
-            <p className="text-3xl font-black text-blue-400 font-mono truncate" style={{ textShadow: "0 0 24px rgba(96,165,250,0.7)" }}>R$ {billingMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-3xl font-black text-blue-400 font-mono truncate" style={{ textShadow: "0 0 24px rgba(96,165,250,0.7)" }}>R$ {billingMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
         </div>
         <div className="bg-card border border-border border-l-4 border-l-red-400 rounded-xl p-5 flex items-center gap-4 shadow-sm">
           <span className="w-4 h-4 rounded-full bg-red-400 shrink-0 shadow-[0_0_22px_rgba(248,113,113,1)]" />
           <div className="min-w-0">
             <span className="text-[11px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Dívida / Alavancagem</span>
-            <p className="text-3xl font-black text-red-400 font-mono truncate" style={{ textShadow: "0 0 24px rgba(248,113,113,0.7)" }}>R$ {totalDividaPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-3xl font-black text-red-400 font-mono truncate" style={{ textShadow: "0 0 24px rgba(248,113,113,0.7)" }}>R$ {totalDividaPendente.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
         </div>
         <div className="bg-card border border-border border-l-4 border-l-emerald-400 rounded-xl p-5 flex items-center gap-4 shadow-sm">
           <span className="w-4 h-4 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_22px_rgba(52,211,153,1)]" />
           <div className="min-w-0">
             <span className="text-[11px] uppercase font-mono font-bold tracking-wider text-muted-foreground">Despesas</span>
-            <p className="text-3xl font-black text-emerald-400 font-mono truncate" style={{ textShadow: "0 0 24px rgba(52,211,153,0.7)" }}>R$ {expensesMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+            <p className="text-3xl font-black text-emerald-400 font-mono truncate" style={{ textShadow: "0 0 24px rgba(52,211,153,0.7)" }}>R$ {expensesMonth.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           </div>
         </div>
       </div>
@@ -1361,7 +1361,7 @@ export default function DashboardOverview({
                             <span className="text-xs font-black text-foreground truncate">{d.category}</span>
                           </div>
                           <span className="text-sm font-black font-mono shrink-0 ml-2" style={{ color }}>
-                            R$ {d.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            R$ {d.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         </div>
                       );
@@ -1380,7 +1380,7 @@ export default function DashboardOverview({
                               ))}
                             </Pie>
                             <Tooltip
-                              formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Total"]}
+                              formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, "Total"]}
                               contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
                             />
                           </PieChart>
@@ -1512,7 +1512,7 @@ export default function DashboardOverview({
                   <span className="text-sm font-black font-mono text-red-600 dark:text-red-400">
                     R$ {(() => {
                       const total = debts.filter(d => d.status === "Falta Pagar").reduce((acc, curr) => acc + curr.value, 0);
-                      return total.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+                      return total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     })()}
                   </span>
                 </div>
@@ -1529,7 +1529,7 @@ export default function DashboardOverview({
                   <span className="text-sm font-black font-mono text-emerald-600 dark:text-emerald-400">
                     R$ {(() => {
                       const total = debts.filter(d => d.status === "Pago").reduce((acc, curr) => acc + curr.value, 0);
-                      return total.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+                      return total.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     })()}
                   </span>
                 </div>
@@ -1562,7 +1562,7 @@ export default function DashboardOverview({
                             ))}
                           </Pie>
                           <Tooltip
-                            formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Total"]}
+                            formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, "Total"]}
                             contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
                           />
                         </PieChart>
@@ -1729,7 +1729,7 @@ export default function DashboardOverview({
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Total"]}
+                        formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, "Total"]}
                         contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
                       />
                     </PieChart>
@@ -1739,7 +1739,7 @@ export default function DashboardOverview({
                   {freightCostBreakdown.map((item) => (
                     <div key={item.name} className="flex items-center gap-1.5">
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getIntensityColor(item.value) }} />
-                      <span>{item.name}: <strong className="text-foreground">R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong></span>
+                      <span>{item.name}: <strong className="text-foreground">R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
                     </div>
                   ))}
                 </div>

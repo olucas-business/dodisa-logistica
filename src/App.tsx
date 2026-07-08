@@ -349,6 +349,25 @@ export default function App() {
     }
   };
 
+  const handleUpdateRefuel = async (id: string, payload: Partial<Refuel>) => {
+    try {
+      const res = await fetch(`/api/refuels/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchAllData();
+        return true;
+      }
+      alert(data.message || "Erro ao atualizar abastecimento");
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
   const handleDeleteRefuel = async (id: string) => {
     try {
       const res = await fetch(`/api/refuels/${id}`, { method: "DELETE" });
@@ -1021,6 +1040,7 @@ export default function App() {
                   drivers={drivers}
                   vehicles={vehicles}
                   onAddRefuel={handleAddRefuel}
+                  onUpdateRefuel={handleUpdateRefuel}
                   onDeleteRefuel={handleDeleteRefuel}
                 />
               )}

@@ -1199,13 +1199,13 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
                       <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800/80 p-3 rounded-xl shadow-sm flex flex-col">
                         <span className="text-[10px] text-gray-400 dark:text-gray-500 font-mono uppercase tracking-wider block">Faturamento Estimado</span>
                         <span className="text-lg font-black font-mono text-emerald-600 dark:text-emerald-400 mt-1">
-                          R$ {totalFreightValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          R$ {totalFreightValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                       <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800/80 p-3 rounded-xl shadow-sm flex flex-col">
                         <span className="text-[10px] text-gray-400 dark:text-gray-500 font-mono uppercase tracking-wider block">Ticket Médio por Viagem</span>
                         <span className="text-lg font-black font-mono text-purple-600 dark:text-purple-400 mt-1">
-                          R$ {avgFreightValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          R$ {avgFreightValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                     </div>
@@ -1251,7 +1251,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
                                 <td className="p-3 font-mono text-gray-500 font-bold"><span className="bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px]">{f.vehiclePlate || f.vehicleId || "Frota"}</span></td>
                                 <td className="p-3 text-gray-500">{f.cargo?.type || f.cargo?.description || "Carga Geral"}</td>
                                 <td className="p-3 text-right font-black text-emerald-600 dark:text-emerald-400">
-                                  {f.financial?.value ? `R$ ${f.financial.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "-"}
+                                  {f.financial?.value ? `R$ ${f.financial.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-"}
                                 </td>
                               </tr>
                             ));
@@ -1434,7 +1434,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
                       <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-3 rounded-xl shadow-sm flex flex-col">
                         <span className="text-[10px] text-gray-400 dark:text-gray-500 font-mono uppercase tracking-wider block">Custo Total de Diesel</span>
                         <span className="text-lg font-black font-mono text-red-600 dark:text-red-400 mt-1">
-                          R$ {totalFuelValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          R$ {totalFuelValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                     </div>
@@ -1480,7 +1480,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
                                 </td>
                                 <td className="p-3 font-mono font-bold text-gray-600 dark:text-gray-400">{r.liters} L</td>
                                 <td className="p-3 text-right font-black text-blue-600 dark:text-blue-400">
-                                  R$ {r.totalValue?.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) || "-"}
+                                  R$ {r.totalValue?.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "-"}
                                 </td>
                               </tr>
                             ));
@@ -1507,7 +1507,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
                       <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-3 rounded-xl shadow-sm flex flex-col">
                         <span className="text-[10px] text-gray-400 dark:text-gray-500 font-mono uppercase tracking-wider block">Total Acumulado de Outras Despesas</span>
                         <span className="text-lg font-black font-mono text-red-600 dark:text-red-400 mt-1">
-                          R$ {totalExpensesValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          R$ {totalExpensesValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                     </div>
@@ -1550,7 +1550,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
                                 </td>
                                 <td className="p-3 text-gray-700 dark:text-gray-300 font-medium">{e.description}</td>
                                 <td className="p-3 text-right font-black text-red-600 dark:text-red-400">
-                                  R$ {e.value?.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) || "-"}
+                                  R$ {e.value?.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "-"}
                                 </td>
                               </tr>
                             ));

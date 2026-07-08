@@ -218,7 +218,7 @@ export default function SessionAnnotations({ moduleKey, title = "Anotações & P
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold text-foreground truncate">{a.description || "Sem descrição"}</p>
                 <div className="flex items-center gap-1.5 text-[10.5px] text-muted-foreground font-mono mt-0.5">
-                  {a.value > 0 && <span className="font-bold text-foreground">R$ {a.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>}
+                  {a.value > 0 && <span className="font-bold text-foreground">R$ {a.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>}
                   {a.category && <span className="bg-muted px-1.5 py-0.5 rounded truncate">{a.category}</span>}
                 </div>
                 <span className="text-[9.5px] text-muted-foreground/70 font-mono">{formatDate(a.date)}</span>
@@ -356,7 +356,7 @@ export default function SessionAnnotations({ moduleKey, title = "Anotações & P
                 <div className="p-2.5 bg-gray-50 dark:bg-slate-950 rounded-lg border border-gray-150 dark:border-slate-800">
                   <span className="text-[9px] uppercase font-mono text-gray-400 dark:text-gray-500 block">Valor</span>
                   <span className="text-sm font-black font-mono text-gray-900 dark:text-gray-100">
-                    {viewing.value > 0 ? `R$ ${viewing.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—"}
+                    {viewing.value > 0 ? `R$ ${viewing.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                   </span>
                 </div>
                 <div className="p-2.5 bg-gray-50 dark:bg-slate-950 rounded-lg border border-gray-150 dark:border-slate-800">

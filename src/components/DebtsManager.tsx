@@ -750,7 +750,7 @@ export default function DebtsManager({
             <div className="space-y-1 mb-4">
               <p className="text-xs font-bold text-foreground">{payingDebt.description}</p>
               <p className="text-[11px] text-muted-foreground">
-                Valor pendente: <span className="font-mono font-bold text-foreground">R$ {payingDebt.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                Valor pendente: <span className="font-mono font-bold text-foreground">R$ {payingDebt.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </p>
             </div>
             <form onSubmit={handlePaySubmit} className="space-y-4">

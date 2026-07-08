@@ -310,7 +310,7 @@ export default function MaintenanceManager({
                     {(() => { const [y, m, d] = log.date.split("-"); return y && m && d ? `${d}/${m}/${y}` : log.date; })()}
                   </span>
                   <span className="text-muted-foreground">{log.km.toLocaleString("pt-BR")} km</span>
-                  <span className="font-black text-foreground">R$ {log.cost.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                  <span className="font-black text-foreground">R$ {log.cost.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
 
                 {dueStatus && (

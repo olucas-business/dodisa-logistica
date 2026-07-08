@@ -248,7 +248,7 @@ export default function ExpensesManager({
                           <Cell key={`cell-${index}`} fill={getExpenseIntensityColor(item.value)} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                      <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -283,7 +283,7 @@ export default function ExpensesManager({
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-gray-300 dark:text-gray-700" opacity={0.6} />
                     <XAxis dataKey="month" stroke="currentColor" className="text-gray-400" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : v} />
-                    <Tooltip formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Despesas"]} />
+                    <Tooltip formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, "Despesas"]} />
                     <Area type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={2.5} fill="url(#expensesMonthlyGrad)" dot={{ r: 3 }} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -446,7 +446,7 @@ export default function ExpensesManager({
                   <td className="p-3 text-gray-800 dark:text-gray-200 font-medium">{e.description}</td>
                   <td className="p-3 text-right font-mono font-black text-red-600 dark:text-red-400 flex items-center justify-end gap-1 pt-4">
                     <ArrowDown className="w-3.5 h-3.5 text-red-500" />
-                    R$ {e.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    R$ {e.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td className="p-3 text-center">
                     <button

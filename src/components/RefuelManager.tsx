@@ -12,6 +12,7 @@ interface RefuelManagerProps {
   drivers: Driver[];
   vehicles: Vehicle[];
   onAddRefuel: (r: Partial<Refuel>) => Promise<boolean>;
+  onUpdateRefuel: (id: string, r: Partial<Refuel>) => Promise<boolean>;
   onDeleteRefuel: (id: string) => Promise<boolean>;
 }
 
@@ -20,10 +21,12 @@ export default function RefuelManager({
   drivers,
   vehicles,
   onAddRefuel,
+  onUpdateRefuel,
   onDeleteRefuel
 }: RefuelManagerProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Filtro de mês/ano: mantém "Gasto Total" e demais KPIs consistentes com o Dashboard
@@ -54,6 +57,19 @@ export default function RefuelManager({
 
   const handleOpenAdd = () => {
     resetForm();
+    setEditingId(null);
+    setIsFormOpen(true);
+  };
+
+  const handleOpenEdit = (r: Refuel) => {
+    setDate(r.date);
+    setVehicleId(r.vehicleId);
+    setDriverId(r.driverId);
+    setLiters(String(r.liters));
+    setPricePerLiter(String(r.pricePerLiter));
+    setGasStation(r.gasStation);
+    setOdometer(r.odometer ? String(r.odometer) : "");
+    setEditingId(r.id);
     setIsFormOpen(true);
   };
 
@@ -80,29 +96,11 @@ export default function RefuelManager({
       receipt: ""
     };
 
-    const ok = await onAddRefuel(payload);
+    // A despesa de combustível vinculada é criada/sincronizada automaticamente pelo backend
+    const ok = editingId ? await onUpdateRefuel(editingId, payload) : await onAddRefuel(payload);
     if (ok) {
-      // Also register this fuel log as an expense in the DB
-      try {
-        const vehiclePlate = vehicles.find(v => v.id === vehicleId)?.plate || "";
-        const driverName = drivers.find(d => d.id === driverId)?.fullName || "";
-
-        await fetch("/api/expenses", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            date,
-            category: "Combustível",
-            value: total,
-            description: `Abastecimento de ${litersNum}L (${gasStation}) - Placa ${vehiclePlate} - Motorista ${driverName}`,
-            receipt: ""
-          })
-        });
-      } catch (err) {
-        console.error("Erro ao registrar despesa de combustível:", err);
-      }
-
       setIsFormOpen(false);
+      setEditingId(null);
     }
   };
 
@@ -254,7 +252,7 @@ export default function RefuelManager({
                       <Cell key={`cell-${index}`} fill={REFUEL_CHART_COLORS[index % REFUEL_CHART_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                  <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -287,7 +285,7 @@ export default function RefuelManager({
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-gray-300 dark:text-gray-700" opacity={0.6} />
                     <XAxis dataKey="month" stroke="currentColor" className="text-gray-400" fontSize={10} tickLine={false} axisLine={false} />
                     <YAxis stroke="currentColor" className="text-gray-400" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(v % 1000 === 0 ? 0 : 1)}k` : v} />
-                    <Tooltip formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, "Combustível"]} />
+                    <Tooltip formatter={(val: any) => [`R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, "Combustível"]} />
                     <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2.5} fill="url(#refuelMonthlyGrad)" dot={{ r: 3 }} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -414,20 +412,29 @@ export default function RefuelManager({
                     <td className="p-3 text-right font-mono text-gray-500 dark:text-gray-400">
                       {refuelsWithEfficiency[r.id]?.kmPerLiter ? `${refuelsWithEfficiency[r.id]?.kmPerLiter?.toFixed(2)} Km/L` : "—"}
                     </td>
-                    <td className="p-3 text-right font-mono font-black text-red-600 dark:text-red-400 pr-5">R$ {r.totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
+                    <td className="p-3 text-right font-mono font-black text-red-600 dark:text-red-400 pr-5">R$ {r.totalValue.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="p-3 text-center">
-                      <button
-                        onClick={() => handleDelete(r.id)}
-                        className={`p-1.5 transition-all duration-300 rounded inline-flex border items-center gap-1 text-xs font-semibold cursor-pointer ${
-                          confirmDeleteId === r.id
-                            ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600 px-2 animate-pulse"
-                            : "bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-350"
-                        }`}
-                        title={confirmDeleteId === r.id ? "Confirmar exclusão" : "Deletar registro de abastecimento"}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        {confirmDeleteId === r.id && "Confirmar?"}
-                      </button>
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={() => handleOpenEdit(r)}
+                          className="p-1.5 rounded inline-flex border items-center gap-1 text-xs font-semibold cursor-pointer bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 border-blue-200 dark:border-blue-900/40 text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-all duration-300"
+                          title="Editar registro de abastecimento"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(r.id)}
+                          className={`p-1.5 transition-all duration-300 rounded inline-flex border items-center gap-1 text-xs font-semibold cursor-pointer ${
+                            confirmDeleteId === r.id
+                              ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600 px-2 animate-pulse"
+                              : "bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-900/40 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-350"
+                          }`}
+                          title={confirmDeleteId === r.id ? "Confirmar exclusão" : "Deletar registro de abastecimento"}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          {confirmDeleteId === r.id && "Confirmar?"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -449,7 +456,7 @@ export default function RefuelManager({
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
           <div className="bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-2xl w-full max-w-md border border-gray-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 relative animate-scale-in max-h-[calc(100vh-2rem)] my-auto flex flex-col">
             <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-slate-850 pb-3 mb-4 flex-shrink-0">
-              Registrar Abastecimento de Frota
+              {editingId ? "Editar Abastecimento" : "Registrar Abastecimento de Frota"}
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto pr-1 flex-1 min-h-0 scrollbar-thin">
@@ -546,14 +553,14 @@ export default function RefuelManager({
               {Number(liters) > 0 && Number(pricePerLiter) > 0 && (
                 <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 p-3 rounded-lg text-xs font-semibold text-emerald-800 dark:text-emerald-400 text-center flex justify-between items-center">
                   <span>Valor Calculado Total:</span>
-                  <strong className="text-sm font-black">R$ {(Number(liters) * Number(pricePerLiter)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong>
+                  <strong className="text-sm font-black">R$ {(Number(liters) * Number(pricePerLiter)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                 </div>
               )}
 
               <div className="flex gap-3 justify-end pt-4 border-t border-gray-150 dark:border-slate-800 flex-shrink-0">
                 <button
                   type="button"
-                  onClick={() => setIsFormOpen(false)}
+                  onClick={() => { setIsFormOpen(false); setEditingId(null); }}
                   className="px-4 py-2 border border-gray-250 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-all cursor-pointer"
                 >
                   Cancelar
@@ -562,7 +569,7 @@ export default function RefuelManager({
                   type="submit"
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
                 >
-                  Salvar Registro
+                  {editingId ? "Salvar Alterações" : "Salvar Registro"}
                 </button>
               </div>
             </form>

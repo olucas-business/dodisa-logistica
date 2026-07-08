@@ -2034,6 +2034,32 @@ app.post("/api/refuels", async (req, res) => {
   res.json({ success: true, refuel: newRefuel });
 });
 
+app.put("/api/refuels/:id", async (req, res) => {
+  const { id } = req.params;
+  const db = (await loadDB());
+  const idx = db.refuels.findIndex(r => r.id === id);
+  if (idx === -1) {
+    res.status(404).json({ success: false, message: "Abastecimento não encontrado." });
+    return;
+  }
+  const updatedRefuel = { ...db.refuels[idx], ...req.body };
+  db.refuels[idx] = updatedRefuel;
+
+  // Keep the linked fueling expense in sync with the edited refuel
+  const expenseIdx = db.expenses.findIndex(e => e.id === `exp_ref_${id}`);
+  if (expenseIdx !== -1) {
+    db.expenses[expenseIdx] = {
+      ...db.expenses[expenseIdx],
+      date: updatedRefuel.date,
+      value: Number(updatedRefuel.totalValue) || 0,
+      description: `Abastecimento (${updatedRefuel.liters}L) - Posto: ${updatedRefuel.gasStation}`
+    };
+  }
+
+  await saveDB(db);
+  res.json({ success: true, refuel: updatedRefuel });
+});
+
 app.delete("/api/refuels/:id", async (req, res) => {
   const { id } = req.params;
   const db = (await loadDB());

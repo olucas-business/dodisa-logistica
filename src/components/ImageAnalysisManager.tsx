@@ -2253,13 +2253,13 @@ export default function ImageAnalysisManager() {
                         <div className="p-3 bg-red-500/5 border border-red-500/10 rounded-xl space-y-0.5 text-left animate-pulse">
                           <span className="text-[9px] text-red-500 uppercase font-mono font-bold">Total Saídas</span>
                           <p className="text-base font-black text-red-500 font-mono">
-                            R$ {(currentRecord.result.summary?.totalExpenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            R$ {(currentRecord.result.summary?.totalExpenses || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                         </div>
                         <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl space-y-0.5 text-left">
                           <span className="text-[9px] text-emerald-500 uppercase font-mono font-bold">Total Entradas</span>
                           <p className="text-base font-black text-emerald-500 font-mono">
-                            R$ {(currentRecord.result.summary?.totalRevenues || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            R$ {(currentRecord.result.summary?.totalRevenues || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                         </div>
                       </div>
@@ -2375,7 +2375,7 @@ export default function ImageAnalysisManager() {
                                   <span className={`font-mono font-bold text-sm ${
                                     isExpense ? "text-red-500" : isRevenue ? "text-emerald-500" : "text-foreground"
                                   }`}>
-                                    {v.original || `R$ ${v.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                                    {v.original || `R$ ${v.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                                   </span>
                                 </div>
                               );
@@ -2401,7 +2401,7 @@ export default function ImageAnalysisManager() {
                                   <div className="flex items-center justify-between text-xs font-semibold">
                                     <span className="text-foreground font-bold">{c.name}</span>
                                     <span className={`font-mono font-black ${isExpense ? "text-red-500" : "text-emerald-500"}`}>
-                                      R$ {c.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                      R$ {c.value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
                                   </div>
                                   <p className="text-[10px] text-muted-foreground leading-snug">{c.description}</p>

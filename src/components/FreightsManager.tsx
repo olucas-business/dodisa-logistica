@@ -287,7 +287,7 @@ export default function FreightsManager({
                       <Cell key={`cell-${index}`} fill={getCostIntensityColor(item.value)} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                  <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -295,7 +295,7 @@ export default function FreightsManager({
               {costBreakdown.map((item) => (
                 <div key={item.name} className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getCostIntensityColor(item.value) }} />
-                  <span>{item.name}: R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                  <span>{item.name}: R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               ))}
             </div>

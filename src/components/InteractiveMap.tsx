@@ -1614,7 +1614,7 @@ export default function InteractiveMap({ freights, drivers, vehicles }: Interact
                     <div className="flex justify-between">
                       <span className="text-slate-500">Valor do Frete:</span>
                       <span className="text-emerald-400 font-sans font-black text-sm">
-                        R$ {selectedFreight.financial.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        R$ {selectedFreight.financial.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                     <div className="border-t border-slate-800/80 my-2 pt-2" />
