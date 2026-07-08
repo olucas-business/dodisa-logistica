@@ -641,29 +641,22 @@ export default function DashboardOverview({
   }, [dynamicMonthlyData]);
 
   // 3. Frete pago + Frete não pago (Recebido vs Pendente real)
+  // Adiantamento vs Saldo reais dos fretes do mês (não confundir com status de pagamento:
+  // este card mostra os VALORES de adiantamento e saldo, independente de já terem sido recebidos)
   const paymentStatusData = useMemo(() => {
-    let totalPaid = 0;
-    let totalUnpaid = 0;
+    let totalAdvance = 0;
+    let totalBalance = 0;
 
     freightsMonth.forEach(f => {
       if (f.status === "Cancelado") return;
       const val = f.financial?.value || 0;
-      const adv = f.financial?.advance !== undefined ? f.financial.advance : Math.round(val * 0.7);
-      const bal = f.financial?.balance !== undefined ? f.financial.balance : Math.round(val * 0.3);
-      const balStatus = f.financial?.balanceStatus || "Pendente";
-
-      // Adiantamento is always paid
-      totalPaid += adv;
-      if (balStatus === "Pago") {
-        totalPaid += bal;
-      } else {
-        totalUnpaid += bal;
-      }
+      totalAdvance += f.financial?.advance !== undefined ? f.financial.advance : Math.round(val * 0.7);
+      totalBalance += f.financial?.balance !== undefined ? f.financial.balance : Math.round(val * 0.3);
     });
 
     return [
-      { name: "Pago (Adiantamento + Saldo Recebido)", value: totalPaid, color: "#10b981" },
-      { name: "Pendente (Saldo a Receber)", value: totalUnpaid, color: "#f59e0b" }
+      { name: "Adiantamento", value: totalAdvance, color: "#10b981" },
+      { name: "Saldo", value: totalBalance, color: "#f59e0b" }
     ];
   }, [freightsMonth]);
 
