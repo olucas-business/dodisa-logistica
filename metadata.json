@@ -1,6 +1,6 @@
 {
-  "name": "DODISA LOGISTICA",
-  "description": "Sistema completo de controle logístico, gestão de frotas, motoristas, fretes, financeiro e assistente inteligente de IA para transportadoras.",
+  "name": "Fleet One",
+  "description": "Fleet One é uma plataforma completa para gestão inteligente de frotas, desenvolvida para transportadoras que desejam centralizar toda a operação em um único ambiente. Gerencie caminhões, motoristas, viagens, financeiro, manutenção, rastreamento e documentos de forma simples, moderna e eficiente.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

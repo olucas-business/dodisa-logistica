@@ -621,7 +621,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
           <div>
             <h2 className="text-lg font-extrabold text-gray-900 flex items-center gap-2 tracking-tight">
               <Upload className="w-5 h-5 text-blue-600" />
-              Importador de Planilhas DODISA
+              Importador de Planilhas Fleet One
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
               Suporta arrastar arquivos Excel (.XLS, .XLSX) e CSV ou colagem livre de tabelas.
@@ -776,7 +776,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
             {/* Validation warning text */}
             {validation.score < 85 && (
               <div className="p-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-100/50 dark:border-blue-900/30 rounded-lg text-[11px] text-blue-800 dark:text-blue-300 leading-relaxed">
-                <strong>Análise Inteligente Ativada:</strong> Algumas colunas não foram detectadas de forma explícita. O motor de IA cognitiva da <strong>DODISA LOGÍSTICA</strong> deduzirá e extrairá as informações do texto de forma adaptativa.
+                <strong>Análise Inteligente Ativada:</strong> Algumas colunas não foram detectadas de forma explícita. O motor de IA cognitiva da <strong>Fleet One</strong> deduzirá e extrairá as informações do texto de forma adaptativa.
               </div>
             )}
 
@@ -1086,7 +1086,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
           </div>
           <div className="space-y-2">
             <h3 className="text-md font-extrabold text-gray-900 dark:text-white tracking-tight">
-              Análise Cognitiva DODISA
+              Análise Cognitiva Fleet One
             </h3>
             <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold font-mono animate-pulse min-h-[1.5rem]">
               {progressMsg}
@@ -1114,7 +1114,7 @@ export default function ImportSpreadsheet({ onImportComplete }: ImportSpreadshee
                   Pré-visualização e Confirmação de Importação
                 </h3>
                 <p className="text-[10px] text-gray-500">
-                  Verifique e aprove os registros lidos pela IA antes de salvar no ERP DODISA LOGÍSTICA
+                  Verifique e aprove os registros lidos pela IA antes de salvar no ERP Fleet One
                 </p>
               </div>
             </div>

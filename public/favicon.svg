@@ -1,11 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-  <rect width="24" height="24" rx="6" fill="#0F172A"/>
-  <path d="M2 3.5v17l6.5-1.4c3-2.6 3-11.6 0-14.2L2 3.5Z" fill="#FBBF24" fill-opacity="0.9"/>
-  <path d="M10.5 3.5v17l6.5-1.4c3-2.6 3-11.6 0-14.2L10.5 3.5Z" fill="#F59E0B"/>
-  <g transform="translate(1.5,7.5)">
-    <rect x="0" y="0" width="12" height="7" rx="1" fill="white"/>
-    <path d="M12 2h3.6a1 1 0 0 1 .8.4l2.1 2.7a1 1 0 0 1 .2.6V7h-6.7V2Z" fill="white" fill-opacity="0.85"/>
-    <circle cx="3.2" cy="8.2" r="1.7" fill="#0F172A" stroke="white" stroke-width="0.8"/>
-    <circle cx="15.3" cy="8.2" r="1.7" fill="#0F172A" stroke="white" stroke-width="0.8"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <rect width="48" height="48" rx="12" fill="#0B3D5C"/>
+  <path d="M12 14 L22 24 L12 34" stroke="#5B8DEF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+  <path d="M19 14 L29 24 L19 34" stroke="#3D6FE0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+  <path d="M26 14 L36 24 L26 34" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

@@ -113,7 +113,7 @@ export default function CompanyProfile() {
               type="text"
               value={company.name}
               onChange={(e) => handleChange("name", e.target.value)}
-              placeholder="Ex: Dodisa Transportes e Logística LTDA"
+              placeholder="Ex: Sua Transportadora LTDA"
               className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500"
             />
           </div>

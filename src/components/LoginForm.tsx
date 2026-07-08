@@ -248,10 +248,10 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
             <BrandMark size="lg" />
             <div>
               <h1 className="text-lg font-black tracking-tight flex items-center gap-1.5">
-                <span className="bg-gradient-to-r from-blue-600 to-indigo-500 dark:from-blue-400 dark:to-indigo-300 bg-clip-text text-transparent">DODISA</span>
-                <span className="font-light text-muted-foreground dark:text-slate-400 text-xs tracking-widest uppercase">LOGÍSTICA</span>
+                <span className="bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent">Fleet</span>
+                <span className="font-light text-muted-foreground dark:text-slate-400 tracking-tight">One</span>
               </h1>
-              <p className="text-[9px] text-blue-600 dark:text-blue-400/80 font-mono tracking-wider font-extrabold uppercase">NEXT-GEN INTELLIGENCE</p>
+              <p className="text-[9px] text-blue-600 dark:text-blue-400/80 font-mono tracking-wider font-extrabold uppercase">A maneira mais inteligente de gerenciar sua frota.</p>
             </div>
           </div>
 
@@ -275,7 +275,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
               <div className="flex items-center justify-between border-b border-border dark:border-[#1F2E4D] pb-2.5">
                 <span className="text-[10px] font-mono text-muted-foreground dark:text-slate-400 flex items-center gap-1.5 font-bold uppercase">
                   <Cpu className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                  DODISA AI ENGINE v2.5
+                  FLEET ONE AI ENGINE v2.5
                 </span>
                 <span className="flex items-center gap-1 text-[9px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-ping" />
@@ -333,7 +333,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
             <div className="flex items-center gap-2.5">
               <BrandMark size="sm" />
               <div>
-                <h1 className="text-sm font-black text-foreground dark:text-white tracking-wider uppercase">DODISA LOGÍSTICA</h1>
+                <h1 className="text-sm font-black text-foreground dark:text-white tracking-wider uppercase">Fleet One</h1>
                 <p className="text-[8px] text-blue-600 dark:text-blue-400/80 font-mono tracking-widest font-extrabold">SYSTEM ACCESS</p>
               </div>
             </div>
@@ -711,7 +711,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
           {/* Bottom Security Footer */}
           <div className="w-full text-center text-[10px] text-muted-foreground dark:text-slate-500 font-mono flex items-center justify-center gap-1.5 select-none px-4 uppercase font-bold tracking-wider mt-auto pt-4 border-t border-border/10">
             <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-500" />
-            <span>Sessão Criptografada • Módulo de Acesso DODISA v2.5 ERP</span>
+            <span>Sessão Criptografada • Módulo de Acesso Fleet One v2.5</span>
           </div>
 
         </div>

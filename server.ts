@@ -2380,7 +2380,7 @@ app.post("/api/annotations/extract", async (req, res) => {
     });
 
     const imagePart = { inlineData: { mimeType: cleanMimeType, data: base64Data } };
-    const systemPrompt = `Você é o motor de IA da DODISA LOGÍSTICA. Analise a imagem enviada (recibo, nota fiscal, comprovante, print de gasto ou documento operacional) e transcreva SOMENTE as informações que estiverem clara e explicitamente visíveis na imagem, separando-as em campos estruturados.
+    const systemPrompt = `Você é o motor de IA da Fleet One. Analise a imagem enviada (recibo, nota fiscal, comprovante, print de gasto ou documento operacional) e transcreva SOMENTE as informações que estiverem clara e explicitamente visíveis na imagem, separando-as em campos estruturados.
 
 REGRAS CRÍTICAS:
 - NUNCA invente, estime ou "chute" valores, datas, descrições ou categorias que não estejam explicitamente legíveis na imagem.
@@ -3620,7 +3620,7 @@ O formato de retorno do JSON deve ser:
       } catch (geminiError: any) {
         console.warn("Erro ao chamar o Gemini API (ativando fallback offline):", geminiError);
         usedOfflineFallback = true;
-        offlineFallbackReason = "A Inteligência Artificial está temporariamente indisponível devido a alta demanda de rede (Erro 503). O motor heurístico offline local da DODISA LOGÍSTICA foi ativado e processou seus dados com sucesso!";
+        offlineFallbackReason = "A Inteligência Artificial está temporariamente indisponível devido a alta demanda de rede (Erro 503). O motor heurístico offline local da Fleet One foi ativado e processou seus dados com sucesso!";
       }
     }
 
@@ -4013,10 +4013,10 @@ app.post("/api/ai/save-imported-data", async (req, res) => {
     });
 
     await saveDB(db);
-    res.json({ success: true, message: "Dados importados e salvos com sucesso na DODISA LOGÍSTICA!" });
+    res.json({ success: true, message: "Dados importados e salvos com sucesso na Fleet One!" });
   } catch (error: any) {
     console.error("Erro ao salvar dados importados:", error);
-    res.status(500).json({ success: false, message: "Erro ao salvar registros na DODISA LOGÍSTICA.", details: error.message });
+    res.status(500).json({ success: false, message: "Erro ao salvar registros na Fleet One.", details: error.message });
   }
 });
 
@@ -4089,7 +4089,7 @@ app.post("/api/image-analyses/analyze", async (req, res) => {
         },
       };
 
-      const systemPrompt = `Você é o motor de IA Cognitivo e Multimodal da transportadora DODISA LOGÍSTICA. Sua missão é analisar imagens de qualquer tipo de documento operacional (como recibos, notas, faturas, planilhas, tabelas, gráficos, relatórios, comprovantes, etc.) e extrair todas as informações de forma estruturada, contextual e inteligente.
+      const systemPrompt = `Você é o motor de IA Cognitivo e Multimodal da transportadora Fleet One. Sua missão é analisar imagens de qualquer tipo de documento operacional (como recibos, notas, faturas, planilhas, tabelas, gráficos, relatórios, comprovantes, etc.) e extrair todas as informações de forma estruturada, contextual e inteligente.
 Extraia:
 - Todos os textos importantes e números isolados relevantes.
 - Todos os valores monetários com uma descrição curta, valor em número real e tipo de lançamento: 'despesa', 'receita', ou 'neutro'.
@@ -4225,7 +4225,7 @@ Retorne a resposta estritamente em formato JSON que segue o schema de resposta e
     } catch (geminiError: any) {
       console.warn("Erro ao processar imagem no Gemini (ativando simulador offline):", geminiError);
       usedOfflineFallback = true;
-      offlineFallbackReason = "Serviço de Inteligência Artificial ocupado (Erro 503). O processador heurístico local da DODISA LOGÍSTICA interpretou o documento offline.";
+      offlineFallbackReason = "Serviço de Inteligência Artificial ocupado (Erro 503). O processador heurístico local da Fleet One interpretou o documento offline.";
     }
   } else {
     usedOfflineFallback = true;

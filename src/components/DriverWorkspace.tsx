@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { User, Driver, Vehicle, Freight, TripLog, TripPhoto } from "../types";
+import BrandMark from "./BrandMark";
 import { 
   Truck, 
   MapPin, 
@@ -414,11 +415,9 @@ export default function DriverWorkspace({
       <header className="bg-white dark:bg-slate-900 border-b border-slate-150 dark:border-slate-800 sticky top-0 z-40 transition-colors shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-              <Truck className="w-5 h-5" />
-            </div>
+            <BrandMark size="md" />
             <div>
-              <h1 className="text-sm font-black tracking-wide uppercase text-blue-600 dark:text-blue-400">DODISA MOTORISTA</h1>
+              <h1 className="text-sm font-black tracking-wide uppercase text-blue-600 dark:text-blue-400">Fleet One Motorista</h1>
               <p className="text-xs font-bold text-gray-700 dark:text-gray-300">{currentDriver.fullName}</p>
             </div>
           </div>

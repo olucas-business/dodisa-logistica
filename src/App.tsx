@@ -800,11 +800,11 @@ export default function App() {
               <BrandMark size="md" />
               {sidebarOpen && (
                 <div className="truncate leading-tight">
-                  <h1 className="text-sm font-black tracking-tight uppercase bg-gradient-to-r from-blue-600 to-sky-400 dark:from-blue-400 dark:to-sky-300 bg-clip-text text-transparent">
-                    DODISA
+                  <h1 className="text-sm font-black tracking-tight uppercase bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent">
+                    Fleet One
                   </h1>
                   <span className="block text-[10px] text-muted-foreground font-mono tracking-wider truncate">
-                    Logística · Carrier Manager
+                    Fleet Manager
                   </span>
                 </div>
               )}
@@ -956,7 +956,7 @@ export default function App() {
           {loading && (
             <div className="fixed inset-0 bg-background/70 backdrop-blur-md flex flex-col items-center justify-center z-40 space-y-3 font-mono">
               <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-sans font-bold">Carregando módulos do ERP...</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-sans font-bold">Carregando Fleet One...</p>
             </div>
           )}
 

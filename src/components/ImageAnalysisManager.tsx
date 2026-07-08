@@ -663,7 +663,7 @@ export default function ImageAnalysisManager() {
       despesa: {
         name: "relatorio_despesas_semanal.png",
         type: "image/png",
-        base64: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'><rect width='400' height='500' fill='%230f172a'/><text x='20' y='50' fill='%233b82f6' font-family='monospace' font-size='16' font-weight='bold'>DODISA LOGISTICA S/A</text><text x='20' y='80' fill='%2394a3b8' font-family='monospace' font-size='12'>RELATORIO SEMANAL DE DESPESAS</text><line x1='20' y1='100' x2='380' y2='100' stroke='%231e293b' stroke-width='2'/><text x='20' y='140' fill='%23f8fafc' font-family='monospace' font-size='13'>1. PNEUS REFORCO: R$ 2.350,00</text><text x='20' y='180' fill='%23f8fafc' font-family='monospace' font-size='13'>2. PEDAGIO ROTA AZUL: R$ 120,00</text><text x='20' y='220' fill='%23f8fafc' font-family='monospace' font-size='13'>3. REFEICOES MOTORISTAS: R$ 340,00</text><line x1='20' y1='260' x2='380' y2='260' stroke='%231e293b' stroke-width='2'/><rect x='20' y='290' width='360' height='50' fill='%23ef4444' fill-opacity='0.15' rx='4'/><text x='30' y='320' fill='%23f87171' font-family='monospace' font-size='15' font-weight='bold'>TOTAL DESPESAS: R$ 2.810,00</text><text x='20' y='410' fill='%23eab308' font-family='monospace' font-size='11' font-weight='bold'>AVISO: CUSTO DE PNEUS ACIMA DA MEDIA</text></svg>"
+        base64: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='500' viewBox='0 0 400 500'><rect width='400' height='500' fill='%230f172a'/><text x='20' y='50' fill='%233b82f6' font-family='monospace' font-size='16' font-weight='bold'>TRANSPORTES SILVA S/A</text><text x='20' y='80' fill='%2394a3b8' font-family='monospace' font-size='12'>RELATORIO SEMANAL DE DESPESAS</text><line x1='20' y1='100' x2='380' y2='100' stroke='%231e293b' stroke-width='2'/><text x='20' y='140' fill='%23f8fafc' font-family='monospace' font-size='13'>1. PNEUS REFORCO: R$ 2.350,00</text><text x='20' y='180' fill='%23f8fafc' font-family='monospace' font-size='13'>2. PEDAGIO ROTA AZUL: R$ 120,00</text><text x='20' y='220' fill='%23f8fafc' font-family='monospace' font-size='13'>3. REFEICOES MOTORISTAS: R$ 340,00</text><line x1='20' y1='260' x2='380' y2='260' stroke='%231e293b' stroke-width='2'/><rect x='20' y='290' width='360' height='50' fill='%23ef4444' fill-opacity='0.15' rx='4'/><text x='30' y='320' fill='%23f87171' font-family='monospace' font-size='15' font-weight='bold'>TOTAL DESPESAS: R$ 2.810,00</text><text x='20' y='410' fill='%23eab308' font-family='monospace' font-size='11' font-weight='bold'>AVISO: CUSTO DE PNEUS ACIMA DA MEDIA</text></svg>"
       },
       indicadores: {
         name: "grafico_trimestral_kpis.png",
@@ -796,7 +796,7 @@ export default function ImageAnalysisManager() {
     // We can compile a beautiful HTML table structures for Excel
     let html = `
       <meta charset="utf-8">
-      <h3>DODISA LOGÍSTICA - Leitura de Imagens IA (${currentRecord.imageName})</h3>
+      <h3>Fleet One - Leitura de Imagens IA (${currentRecord.imageName})</h3>
       <table border="1">
         <tr style="background:#2563eb;color:#fff;">
           <th colspan="4">Valores Extraídos</th>
@@ -1103,7 +1103,7 @@ export default function ImageAnalysisManager() {
                   Processamento Cognitivo Multimodal Ativo
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Nossa IA de leitura de imagens está processando os dados na nuvem da DODISA LOGÍSTICA.
+                  Nossa IA de leitura de imagens está processando os dados na nuvem da Fleet One.
                 </p>
               </div>
 
@@ -1244,7 +1244,7 @@ export default function ImageAnalysisManager() {
                   Nenhum Documento Carregado
                 </h3>
                 <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                  Por favor, selecione uma imagem de demonstração no cabeçalho ou faça o upload de um arquivo para que a IA da DODISA LOGÍSTICA possa interpretá-lo de forma inteligente.
+                  Por favor, selecione uma imagem de demonstração no cabeçalho ou faça o upload de um arquivo para que a IA da Fleet One possa interpretá-lo de forma inteligente.
                 </p>
               </div>
             </div>
@@ -2002,7 +2002,7 @@ export default function ImageAnalysisManager() {
             <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
               <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-emerald-500" />
-                Dados pré-formatados através de Heurística Cognitiva DODISA IA.
+                Dados pré-formatados através de Heurística Cognitiva IA da Fleet One.
               </span>
               <div className="flex items-center gap-3">
                 <button
