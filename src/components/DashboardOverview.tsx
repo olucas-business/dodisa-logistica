@@ -48,9 +48,7 @@ import {
   Cell,
   Legend,
   ComposedChart,
-  Line,
-  BarChart,
-  Bar
+  Line
 } from "recharts";
 import CountUp from "./CountUp";
 
@@ -309,7 +307,36 @@ export default function DashboardOverview({
   const estimatedProfitPrevMonth = billingPrevMonth - expensesPrevMonth;
 
   // Monthly KM calculations
-  const kmMonth = useMemo(() => freightsMonth.reduce((sum, f) => sum + (f.mileage?.total || 0), 0), [freightsMonth]);
+  // Deltas de odômetro entre abastecimentos consecutivos do mesmo veículo (mesma base do módulo Combustível)
+  const refuelOdometerDeltas = useMemo(() => {
+    const byVehicle: Record<string, Refuel[]> = {};
+    refuels.forEach(r => {
+      byVehicle[r.vehicleId] = byVehicle[r.vehicleId] || [];
+      byVehicle[r.vehicleId].push(r);
+    });
+    const enriched: Record<string, { kmSinceLast: number; kmPerLiter: number }> = {};
+    Object.values(byVehicle).forEach(list => {
+      const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
+      for (let i = 0; i < sorted.length; i++) {
+        const curr = sorted[i];
+        const prev = sorted[i - 1];
+        if (prev && curr.odometer && prev.odometer && curr.odometer > prev.odometer && curr.liters > 0) {
+          const kmSinceLast = curr.odometer - prev.odometer;
+          enriched[curr.id] = { kmSinceLast, kmPerLiter: kmSinceLast / curr.liters };
+        }
+      }
+    });
+    return enriched;
+  }, [refuels]);
+
+  const kmMonth = useMemo(() => {
+    const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
+    const odometerKm = refuels
+      .filter(r => r.date.startsWith(targetYearMonth))
+      .reduce((sum, r) => sum + (refuelOdometerDeltas[r.id]?.kmSinceLast || 0), 0);
+    if (odometerKm > 0) return odometerKm;
+    return freightsMonth.reduce((sum, f) => sum + (f.mileage?.total || 0), 0);
+  }, [refuels, refuelOdometerDeltas, freightsMonth, currentYear, currentMonth]);
   const kmPrevMonth = useMemo(() => freightsPrevMonth.reduce((sum, f) => sum + (f.mileage?.total || 0), 0), [freightsPrevMonth]);
 
   // Percentage variations
@@ -684,33 +711,41 @@ export default function DashboardOverview({
     return refuels.filter(r => r.date.startsWith(targetYearMonth)).reduce((sum, r) => sum + (r.totalValue || 0), 0);
   }, [refuels]);
 
-  const fuelSpendByVehicleChartData = useMemo(() => {
-    const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
-    const map: Record<string, number> = {};
-    refuels.filter(r => r.date.startsWith(targetYearMonth)).forEach(r => {
-      const vehicle = vehicles.find(v => v.id === r.vehicleId);
-      const name = vehicle ? vehicle.plate : "Outros";
-      map[name] = (map[name] || 0) + (r.totalValue || 0);
-    });
-    return Object.entries(map)
-      .map(([name, value]) => ({ name, value }))
-      .filter(item => item.value > 0)
-      .sort((a, b) => b.value - a.value);
-  }, [refuels, vehicles]);
+  // Tendência mensal (histórico completo, últimos 6 meses) para os mini-gráficos de onda —
+  // agrupar por veículo deixava só 1 ponto (frota com 1 veículo), impossível desenhar uma curva.
+  const last6MonthKeys = useMemo(() => {
+    const keys: string[] = [];
+    const d = new Date(currentYear, currentMonth - 1, 1);
+    for (let i = 5; i >= 0; i--) {
+      const m = new Date(d.getFullYear(), d.getMonth() - i, 1);
+      keys.push(`${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}`);
+    }
+    return keys;
+  }, [currentYear, currentMonth]);
 
-  // 6. Km (Distance traveled)
+  const monthShortLabel = (yearMonth: string) => {
+    const [, m] = yearMonth.split("-");
+    return ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"][Number(m) - 1];
+  };
+
+  const fuelSpendByVehicleChartData = useMemo(() => {
+    const map: Record<string, number> = {};
+    refuels.forEach(r => {
+      const ym = (r.date || "").slice(0, 7);
+      if (last6MonthKeys.includes(ym)) map[ym] = (map[ym] || 0) + (r.totalValue || 0);
+    });
+    return last6MonthKeys.map(ym => ({ name: monthShortLabel(ym), value: map[ym] || 0 }));
+  }, [refuels, last6MonthKeys]);
+
+  // 6. Km (Distance traveled) — mesma base de odômetro usada no KPI acima
   const kmByVehicleChartData = useMemo(() => {
     const map: Record<string, number> = {};
-    freightsMonth.forEach(f => {
-      const vehicle = vehicles.find(v => v.id === f.vehicleId);
-      const name = vehicle ? vehicle.plate : "Outros";
-      map[name] = (map[name] || 0) + (f.mileage?.total || 0);
+    refuels.forEach(r => {
+      const ym = (r.date || "").slice(0, 7);
+      if (last6MonthKeys.includes(ym)) map[ym] = (map[ym] || 0) + (refuelOdometerDeltas[r.id]?.kmSinceLast || 0);
     });
-    return Object.entries(map)
-      .map(([name, value]) => ({ name, value }))
-      .filter(item => item.value > 0)
-      .sort((a, b) => b.value - a.value);
-  }, [freightsMonth, vehicles]);
+    return last6MonthKeys.map(ym => ({ name: monthShortLabel(ym), value: map[ym] || 0 }));
+  }, [refuels, refuelOdometerDeltas, last6MonthKeys]);
 
   // 7. Consumo (Liters consumed)
   const totalLitersMonth = useMemo(() => {
@@ -719,40 +754,21 @@ export default function DashboardOverview({
   }, [refuels]);
 
   const litersByVehicleChartData = useMemo(() => {
-    const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
     const map: Record<string, number> = {};
-    refuels.filter(r => r.date.startsWith(targetYearMonth)).forEach(r => {
-      const vehicle = vehicles.find(v => v.id === r.vehicleId);
-      const name = vehicle ? vehicle.plate : "Outros";
-      map[name] = (map[name] || 0) + (r.liters || 0);
+    refuels.forEach(r => {
+      const ym = (r.date || "").slice(0, 7);
+      if (last6MonthKeys.includes(ym)) map[ym] = (map[ym] || 0) + (r.liters || 0);
     });
-    return Object.entries(map)
-      .map(([name, value]) => ({ name, value }))
-      .filter(item => item.value > 0)
-      .sort((a, b) => b.value - a.value);
-  }, [refuels, vehicles]);
+    return last6MonthKeys.map(ym => ({ name: monthShortLabel(ym), value: map[ym] || 0 }));
+  }, [refuels, last6MonthKeys]);
 
   // 8. Média KM/L: mesmo cálculo do módulo Combustível — diferença de odômetro entre
   // abastecimentos consecutivos do mesmo veículo, dividida pelos litros do abastecimento atual.
   const kmLPerRefuel = useMemo(() => {
-    const byVehicle: Record<string, Refuel[]> = {};
-    refuels.forEach(r => {
-      byVehicle[r.vehicleId] = byVehicle[r.vehicleId] || [];
-      byVehicle[r.vehicleId].push(r);
-    });
-    const enriched: Record<string, number> = {};
-    Object.values(byVehicle).forEach(list => {
-      const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
-      for (let i = 0; i < sorted.length; i++) {
-        const curr = sorted[i];
-        const prev = sorted[i - 1];
-        if (prev && curr.odometer && prev.odometer && curr.odometer > prev.odometer && curr.liters > 0) {
-          enriched[curr.id] = (curr.odometer - prev.odometer) / curr.liters;
-        }
-      }
-    });
-    return enriched;
-  }, [refuels]);
+    const map: Record<string, number> = {};
+    Object.keys(refuelOdometerDeltas).forEach((id) => { map[id] = refuelOdometerDeltas[id].kmPerLiter; });
+    return map;
+  }, [refuelOdometerDeltas]);
 
   const averageKmLMonth = useMemo(() => {
     const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
@@ -764,22 +780,21 @@ export default function DashboardOverview({
   }, [refuels, kmLPerRefuel, currentYear, currentMonth]);
 
   const kmLByVehicleChartData = useMemo(() => {
-    const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
-    return vehicles.map(v => {
-      const vValues = refuels
-        .filter(r => r.vehicleId === v.id && r.date.startsWith(targetYearMonth))
-        .map(r => kmLPerRefuel[r.id])
-        .filter((val): val is number => val !== undefined);
-      const kmL = vValues.length > 0
-        ? parseFloat((vValues.reduce((sum, val) => sum + val, 0) / vValues.length).toFixed(2))
-        : parseFloat(v.averageConsumption || "0");
-      return {
-        name: v.plate,
-        "KM/L": kmL,
-        model: v.model
-      };
-    }).filter(item => item["KM/L"] > 0).sort((a, b) => b["KM/L"] - a["KM/L"]);
-  }, [vehicles, refuels, kmLPerRefuel, currentYear, currentMonth]);
+    const map: Record<string, number[]> = {};
+    refuels.forEach(r => {
+      const ym = (r.date || "").slice(0, 7);
+      const val = kmLPerRefuel[r.id];
+      if (last6MonthKeys.includes(ym) && val !== undefined) {
+        map[ym] = map[ym] || [];
+        map[ym].push(val);
+      }
+    });
+    return last6MonthKeys.map(ym => {
+      const values = map[ym] || [];
+      const avg = values.length > 0 ? values.reduce((s, v) => s + v, 0) / values.length : 0;
+      return { name: monthShortLabel(ym), "KM/L": parseFloat(avg.toFixed(2)) };
+    });
+  }, [refuels, kmLPerRefuel, last6MonthKeys]);
 
   // Sparkline generator helper
   const renderSparkline = (points: number[], colorClass = "stroke-primary") => {
@@ -1182,7 +1197,7 @@ export default function DashboardOverview({
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               R$ {totalFuelSpendMonth.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
-            <span className="text-[9.5px] text-muted-foreground font-medium">Divisão de custos por placa</span>
+            <span className="text-[9.5px] text-muted-foreground font-medium">Tendência dos últimos 6 meses</span>
           </div>
           <div className="h-[55px] w-full mt-2">
             {fuelSpendByVehicleChartData.length === 0 ? (
@@ -1222,20 +1237,28 @@ export default function DashboardOverview({
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               {kmMonth.toLocaleString("pt-BR")} <span className="text-xs font-bold text-muted-foreground">km</span>
             </p>
-            <span className="text-[9.5px] text-muted-foreground">Quilômetros rodados por veículo</span>
+            <span className="text-[9.5px] text-muted-foreground">Tendência dos últimos 6 meses</span>
           </div>
           <div className="h-[55px] w-full mt-2">
             {kmByVehicleChartData.length === 0 ? (
               <div className="text-[10px] text-muted-foreground/60 h-full flex items-center justify-center font-medium">Nenhum dado</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={kmByVehicleChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                  <Bar dataKey="value" fill="#6366f1" radius={[3, 3, 0, 0]} />
+                <AreaChart data={kmByVehicleChartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="miniKmGrad2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.5} />
+                  <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={8} tickLine={false} axisLine={false} />
+                  <Area type="monotone" dataKey="value" stroke="#6366f1" strokeWidth={2} fill="url(#miniKmGrad2)" dot={{ r: 2.5, fill: "#6366f1" }} activeDot={{ r: 4 }} />
                   <Tooltip
                     formatter={(value: any) => [`${Number(value).toLocaleString("pt-BR")} KM`, "Distância"]}
                     contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "9px" }}
                   />
-                </BarChart>
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </div>
@@ -1254,7 +1277,7 @@ export default function DashboardOverview({
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               {totalLitersMonth.toLocaleString("pt-BR")} <span className="text-xs font-bold text-muted-foreground">L</span>
             </p>
-            <span className="text-[9.5px] text-muted-foreground">Litros abastecidos por veículo</span>
+            <span className="text-[9.5px] text-muted-foreground">Tendência dos últimos 6 meses</span>
           </div>
           <div className="h-[55px] w-full mt-2">
             {litersByVehicleChartData.length === 0 ? (
@@ -1294,7 +1317,7 @@ export default function DashboardOverview({
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               {averageKmLMonth > 0 ? averageKmLMonth.toFixed(2) : "0.00"} <span className="text-xs font-bold text-muted-foreground">km/L</span>
             </p>
-            <span className="text-[9.5px] text-muted-foreground">Eficiência de cada veículo</span>
+            <span className="text-[9.5px] text-muted-foreground">Tendência dos últimos 6 meses</span>
           </div>
           <div className="h-[55px] w-full mt-2">
             {kmLByVehicleChartData.length === 0 ? (
