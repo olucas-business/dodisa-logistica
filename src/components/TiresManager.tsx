@@ -19,13 +19,15 @@ import {
   Clock,
   Settings,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  Edit2
 } from "lucide-react";
 
 interface TiresManagerProps {
   tires: Tire[];
   vehicles: Vehicle[];
   onAddTire: (t: Partial<Tire>) => Promise<boolean>;
+  onUpdateTire: (id: string, t: Partial<Tire>) => Promise<boolean>;
   onDeleteTire: (id: string) => Promise<boolean>;
   onRecordChange: (id: string, payload: any) => Promise<boolean>;
   onRecordRotation: (id: string, payload: any) => Promise<boolean>;
@@ -56,7 +58,8 @@ const TIRE_BRANDS = [
   "Pirelli",
   "Firestone",
   "Continental",
-  "Linglong"
+  "Linglong",
+  "XBRI"
 ];
 
 const TIRE_SIZES = [
@@ -71,6 +74,7 @@ export default function TiresManager({
   tires,
   vehicles,
   onAddTire,
+  onUpdateTire,
   onDeleteTire,
   onRecordChange,
   onRecordRotation
@@ -87,6 +91,9 @@ export default function TiresManager({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
   const [isRotationModalOpen, setIsRotationModalOpen] = useState(false);
+
+  // Se preenchido, o modal de cadastro funciona em modo edição (atualiza em vez de criar)
+  const [editingTireId, setEditingTireId] = useState<string | null>(null);
 
   // New Tire Form state
   const [newSerialNumber, setNewSerialNumber] = useState("");
@@ -138,7 +145,18 @@ export default function TiresManager({
     (t) => t.status === "Em uso" && t.currentMileage >= t.estimatedLife * 0.85
   ).length;
 
+  // Resumo: quantidade de pneus por marca + modelo (categoria)
+  const tiresByBrandModel = Object.values(
+    tires.reduce((acc: Record<string, { brand: string; model: string; quantity: number }>, t) => {
+      const key = `${t.brand}__${t.model}`;
+      acc[key] = acc[key] || { brand: t.brand, model: t.model, quantity: 0 };
+      acc[key].quantity += 1;
+      return acc;
+    }, {})
+  ).sort((a, b) => b.quantity - a.quantity);
+
   const handleOpenAdd = () => {
+    setEditingTireId(null);
     setNewSerialNumber("");
     setNewModel("");
     setNewBrand("Michelin");
@@ -151,6 +169,20 @@ export default function TiresManager({
     setIsAddModalOpen(true);
   };
 
+  const handleOpenEdit = (tire: Tire) => {
+    setEditingTireId(tire.id);
+    setNewSerialNumber(tire.serialNumber);
+    setNewModel(tire.model);
+    setNewBrand(tire.brand);
+    setNewSize(tire.size);
+    setNewStatus(tire.status);
+    setNewVehicleId(tire.vehicleId || vehicles[0]?.id || "");
+    setNewPosition(tire.position || "Dianteiro Esquerdo");
+    setNewMileage(String(tire.currentMileage || ""));
+    setNewEstimatedLife(String(tire.estimatedLife || "100000"));
+    setIsAddModalOpen(true);
+  };
+
   const handleAddSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSerialNumber || !newModel || !newEstimatedLife) {
@@ -159,7 +191,7 @@ export default function TiresManager({
     }
 
     const normalizedSerial = newSerialNumber.trim().toUpperCase();
-    const duplicate = tires.find(t => t.serialNumber.toUpperCase() === normalizedSerial);
+    const duplicate = tires.find(t => t.serialNumber.toUpperCase() === normalizedSerial && t.id !== editingTireId);
     if (duplicate) {
       alert(`Já existe um pneu cadastrado com o código de controle "${normalizedSerial}" (${duplicate.brand} ${duplicate.model}). Cada pneu deve ter um código único — não é permitido reutilizar o código de outro pneu.`);
       return;
@@ -172,9 +204,7 @@ export default function TiresManager({
       size: newSize,
       status: newStatus,
       currentMileage: Number(newMileage) || 0,
-      estimatedLife: Number(newEstimatedLife) || 100000,
-      changesHistory: [],
-      rotationsHistory: []
+      estimatedLife: Number(newEstimatedLife) || 100000
     };
 
     if (newStatus === "Em uso") {
@@ -182,9 +212,13 @@ export default function TiresManager({
       payload.position = newPosition;
     }
 
-    const ok = await onAddTire(payload);
+    const ok = editingTireId
+      ? await onUpdateTire(editingTireId, payload)
+      : await onAddTire({ ...payload, changesHistory: [], rotationsHistory: [] });
+
     if (ok) {
       setIsAddModalOpen(false);
+      setEditingTireId(null);
     }
   };
 
@@ -309,6 +343,26 @@ export default function TiresManager({
           <span className="text-[9px] text-gray-500 font-medium">Vida útil acima de 85%</span>
         </div>
       </div>
+
+      {/* Resumo por Marca / Modelo (Categoria) */}
+      {tiresByBrandModel.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-4 shadow-sm">
+          <span className="text-[10px] font-mono font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-3">
+            Quantidade por Marca / Modelo
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {tiresByBrandModel.map((item) => (
+              <div
+                key={`${item.brand}-${item.model}`}
+                className="flex items-center gap-2 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg pl-3 pr-2 py-1.5"
+              >
+                <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">{item.brand} {item.model}</span>
+                <span className="text-[11px] font-black font-mono bg-blue-600 text-white rounded px-1.5 py-0.5">{item.quantity}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Control Search & Filter Panel */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 border border-gray-200 rounded-xl shadow-sm">
@@ -479,18 +533,27 @@ export default function TiresManager({
                   <h3 className="text-base font-black text-gray-900 mt-0.5">{selectedTire.brand} {selectedTire.model}</h3>
                   <span className="text-xs font-mono font-bold text-blue-600">{selectedTire.serialNumber}</span>
                 </div>
-                <button
-                  onClick={() => handleDeleteTire(selectedTire.id)}
-                  className={`p-1.5 transition-all duration-300 rounded border flex items-center gap-1 text-xs font-semibold ${
-                    confirmDeleteId === selectedTire.id
-                      ? "bg-amber-500 text-white border-amber-600 px-2.5 animate-pulse"
-                      : "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-                  }`}
-                  title={confirmDeleteId === selectedTire.id ? "Confirmar exclusão" : "Excluir cadastro"}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  {confirmDeleteId === selectedTire.id && "Confirmar?"}
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleOpenEdit(selectedTire)}
+                    className="p-1.5 transition-all duration-300 rounded border flex items-center gap-1 text-xs font-semibold bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
+                    title="Editar cadastro"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteTire(selectedTire.id)}
+                    className={`p-1.5 transition-all duration-300 rounded border flex items-center gap-1 text-xs font-semibold ${
+                      confirmDeleteId === selectedTire.id
+                        ? "bg-amber-500 text-white border-amber-600 px-2.5 animate-pulse"
+                        : "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                    }`}
+                    title={confirmDeleteId === selectedTire.id ? "Confirmar exclusão" : "Excluir cadastro"}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {confirmDeleteId === selectedTire.id && "Confirmar?"}
+                  </button>
+                </div>
               </div>
 
               {/* Stats Panel */}
@@ -592,7 +655,7 @@ export default function TiresManager({
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in">
           <div className="bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-2xl w-full max-w-md border border-gray-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 relative animate-scale-in max-h-[calc(100vh-2rem)] my-auto flex flex-col">
             <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-slate-850 pb-3 mb-4 flex-shrink-0">
-              Cadastrar Novo Pneu Individual
+              {editingTireId ? "Editar Pneu" : "Cadastrar Novo Pneu Individual"}
             </h3>
 
             <form onSubmit={handleAddSubmit} className="space-y-4 overflow-y-auto pr-1 flex-1 min-h-0 scrollbar-thin">
@@ -721,7 +784,7 @@ export default function TiresManager({
               <div className="flex gap-3 justify-end pt-4 border-t border-gray-150 dark:border-slate-800 flex-shrink-0">
                 <button
                   type="button"
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={() => { setIsAddModalOpen(false); setEditingTireId(null); }}
                   className="px-4 py-2 border border-gray-250 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-all cursor-pointer"
                 >
                   Cancelar
@@ -730,7 +793,7 @@ export default function TiresManager({
                   type="submit"
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
                 >
-                  Cadastrar Pneu
+                  {editingTireId ? "Salvar Alterações" : "Cadastrar Pneu"}
                 </button>
               </div>
             </form>

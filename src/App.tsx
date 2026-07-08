@@ -417,6 +417,25 @@ export default function App() {
     }
   };
 
+  const handleUpdateTire = async (id: string, payload: Partial<Tire>) => {
+    try {
+      const res = await fetch(`/api/tires/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchAllData();
+        return true;
+      }
+      alert(data.message || "Erro ao atualizar pneu");
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
   const handleDeleteTire = async (id: string) => {
     try {
       const res = await fetch(`/api/tires/${id}`, { method: "DELETE" });
@@ -950,6 +969,7 @@ export default function App() {
                   tires={tires}
                   vehicles={vehicles}
                   onAddTire={handleAddTire}
+                  onUpdateTire={handleUpdateTire}
                   onDeleteTire={handleDeleteTire}
                   onRecordChange={handleRecordChange}
                   onRecordRotation={handleRecordRotation}
