@@ -870,7 +870,7 @@ export default function App() {
       {/* Main Container Layer */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Header toolbar */}
-        <header className="bg-card border-b border-border h-14 flex items-center justify-between px-6 z-20 text-card-foreground">
+        <header className="bg-card border-b border-border h-14 flex items-center justify-between px-3 sm:px-6 z-20 text-card-foreground gap-2">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -925,14 +925,14 @@ export default function App() {
               <span className="hidden md:inline">Zerar Painel</span>
             </button>
 
-            <div className="h-4 w-px bg-border mx-1" />
+            <div className="h-4 w-px bg-border mx-1 hidden sm:block" />
 
             <div className="flex items-center gap-1.5">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
               </span>
-              <span className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider whitespace-nowrap">
+              <span className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider whitespace-nowrap hidden sm:inline">
                 Banco Ativo
               </span>
             </div>
@@ -940,7 +940,7 @@ export default function App() {
         </header>
 
         {/* Core Workspace content with scrollbars */}
-        <main className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-200">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-200">
           {errorMsg && (
             <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-2">

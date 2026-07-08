@@ -309,7 +309,7 @@ export default function TiresManager({
   return (
     <div id="modulo-pneus-container" className="space-y-6">
       {/* KPI Cards Header */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
           <span className="text-[10px] font-mono font-bold text-gray-400 uppercase tracking-wider block">Total de Pneus</span>
           <p className="text-xl font-black text-gray-900 mt-1">{totalTires}</p>

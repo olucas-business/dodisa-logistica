@@ -1551,7 +1551,7 @@ export default function ImageAnalysisManager() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="text-[10px] font-bold text-muted-foreground block mb-1">Litros:</label>
                         <input
@@ -1662,7 +1662,7 @@ export default function ImageAnalysisManager() {
                       🛣️ Lançar Contrato de Frete / Manifesto de Viagem
                     </h4>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="text-[10px] font-bold text-muted-foreground block mb-1">Data de Emissão:</label>
                         <input
@@ -1700,7 +1700,7 @@ export default function ImageAnalysisManager() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="p-3 bg-muted/20 border border-border rounded-xl space-y-2">
                         <span className="text-[8px] uppercase tracking-wider font-bold block text-muted-foreground font-mono">PONTO DE ORIGEM</span>
                         <div className="grid grid-cols-3 gap-2">
@@ -1750,7 +1750,7 @@ export default function ImageAnalysisManager() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="text-[10px] font-bold text-muted-foreground block mb-1">Tipo de Carga:</label>
                         <input
@@ -1962,7 +1962,7 @@ export default function ImageAnalysisManager() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <label className="text-[10px] font-bold text-muted-foreground block mb-1">Capac. Tanque (L):</label>
                         <input

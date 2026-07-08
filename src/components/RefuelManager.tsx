@@ -210,7 +210,7 @@ export default function RefuelManager({
 
       {/* KPI Summary Row - Diesel is the company's largest expense, deserves top-level visibility */}
       {refuels.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
             <span className="text-[9.5px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1"><Wallet className="w-3 h-3" />Gasto Total</span>
             <p className="text-lg font-black font-mono text-gray-900 dark:text-emerald-400 mt-1">R$ {totalValueAll.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</p>

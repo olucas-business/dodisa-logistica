@@ -496,7 +496,7 @@ Aqui está o resumo operacional de hoje:
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] font-sans text-left">
+    <div className="fixed inset-x-4 bottom-4 sm:inset-x-auto sm:right-6 sm:bottom-6 z-[9999] font-sans text-left flex flex-col items-end">
       {/* 1. FLOATING ACTION TRIGGER TRIGGER */}
       {!isOpen && (
         <button
@@ -517,7 +517,7 @@ Aqui está o resumo operacional de hoje:
 
       {/* 2. CHAT DRAWER BOARD */}
       {isOpen && (
-        <div className="w-[360px] sm:w-[420px] h-[550px] bg-slate-950/95 backdrop-blur-xl border border-slate-850 rounded-2xl shadow-2xl flex flex-col justify-between overflow-hidden animate-fade-in">
+        <div className="w-full sm:w-[420px] h-[550px] max-h-[calc(100vh-6rem)] bg-slate-950/95 backdrop-blur-xl border border-slate-850 rounded-2xl shadow-2xl flex flex-col justify-between overflow-hidden animate-fade-in">
           {/* Header */}
           <div className="p-4 border-b border-slate-850 bg-slate-900/40 flex items-center justify-between">
             <div className="flex items-center gap-2.5">

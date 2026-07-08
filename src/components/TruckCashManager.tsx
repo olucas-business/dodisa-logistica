@@ -996,7 +996,7 @@ export default function TruckCashManager({
                   <label className="text-[11px] font-black uppercase text-muted-foreground block">
                     Moeda do Gasto
                   </label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {CURRENCIES.map(cur => (
                       <button
                         key={cur.code}
