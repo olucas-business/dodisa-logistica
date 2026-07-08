@@ -1189,13 +1189,21 @@ export default function DashboardOverview({
               <div className="text-[10px] text-muted-foreground/60 h-full flex items-center justify-center font-medium">Nenhum dado</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={fuelSpendByVehicleChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                  <Bar dataKey="value" fill="#ef4444" radius={[3, 3, 0, 0]} />
+                <AreaChart data={fuelSpendByVehicleChartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="miniFuelGrad2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.5} />
+                  <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={8} tickLine={false} axisLine={false} />
+                  <Area type="monotone" dataKey="value" stroke="#ef4444" strokeWidth={2} fill="url(#miniFuelGrad2)" dot={{ r: 2.5, fill: "#ef4444" }} activeDot={{ r: 4 }} />
                   <Tooltip
                     formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, "Combustível"]}
                     contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "9px" }}
                   />
-                </BarChart>
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </div>
@@ -1253,13 +1261,21 @@ export default function DashboardOverview({
               <div className="text-[10px] text-muted-foreground/60 h-full flex items-center justify-center font-medium">Nenhum dado</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={litersByVehicleChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                  <Bar dataKey="value" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+                <AreaChart data={litersByVehicleChartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="miniLitersGrad2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.5} />
+                  <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={8} tickLine={false} axisLine={false} />
+                  <Area type="monotone" dataKey="value" stroke="#f59e0b" strokeWidth={2} fill="url(#miniLitersGrad2)" dot={{ r: 2.5, fill: "#f59e0b" }} activeDot={{ r: 4 }} />
                   <Tooltip
                     formatter={(value: any) => [`${Number(value).toLocaleString("pt-BR")} Litros`, "Consumo"]}
                     contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "9px" }}
                   />
-                </BarChart>
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </div>
@@ -1285,13 +1301,21 @@ export default function DashboardOverview({
               <div className="text-[10px] text-muted-foreground/60 h-full flex items-center justify-center font-medium">Nenhum dado</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={kmLByVehicleChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                  <Bar dataKey="KM/L" fill="#14b8a6" radius={[3, 3, 0, 0]} />
+                <AreaChart data={kmLByVehicleChartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="miniKmLGrad2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.5} />
+                  <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={8} tickLine={false} axisLine={false} />
+                  <Area type="monotone" dataKey="KM/L" stroke="#14b8a6" strokeWidth={2} fill="url(#miniKmLGrad2)" dot={{ r: 2.5, fill: "#14b8a6" }} activeDot={{ r: 4 }} />
                   <Tooltip
                     formatter={(value: any) => [`${value} km/L`, "KM/L"]}
                     contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "9px" }}
                   />
-                </BarChart>
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </div>
