@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Refuel, Driver, Vehicle } from "../types";
 import SessionAnnotations from "./SessionAnnotations";
+import MonthYearPicker from "./MonthYearPicker";
 import { ResponsiveContainer, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Line, ComposedChart, AreaChart, Area } from "recharts";
 import { Plus, Search, Calendar, MapPin, Trash2, Edit2, CheckCircle, Fuel, Gauge, Route, Wallet, Droplets } from "lucide-react";
 
@@ -24,6 +25,13 @@ export default function RefuelManager({
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Filtro de mês/ano: mantém "Gasto Total" e demais KPIs consistentes com o Dashboard
+  const today = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(today.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState<number>(today.getFullYear());
+  const selectedYearMonth = `${selectedYear}-${selectedMonth < 10 ? "0" + selectedMonth : selectedMonth}`;
+  const refuelsInSelectedMonth = refuels.filter(r => (r.date || "").startsWith(selectedYearMonth));
 
   // Form states
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
@@ -118,9 +126,9 @@ export default function RefuelManager({
       r.gasStation.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // Chart data: spend by vehicle plate, and spend by month
+  // Chart data: spend by vehicle plate (mês selecionado), and spend by month (histórico completo)
   const vehicleTotals = Object.values(
-    refuels.reduce((acc: Record<string, { plate: string; value: number }>, r) => {
+    refuelsInSelectedMonth.reduce((acc: Record<string, { plate: string; value: number }>, r) => {
       const plate = vehicles.find(v => v.id === r.vehicleId)?.plate || "N/A";
       acc[plate] = acc[plate] || { plate, value: 0 };
       acc[plate].value += r.totalValue || 0;
@@ -138,9 +146,9 @@ export default function RefuelManager({
     }, {})
   ).sort((a: any, b: any) => a.month.localeCompare(b.month));
 
-  // Spend/count by gas station ("onde abasteceu")
+  // Spend/count by gas station ("onde abasteceu", mês selecionado)
   const stationTotals = Object.values(
-    refuels.reduce((acc: Record<string, { station: string; value: number; count: number }>, r) => {
+    refuelsInSelectedMonth.reduce((acc: Record<string, { station: string; value: number; count: number }>, r) => {
       const station = r.gasStation || "Não informado";
       acc[station] = acc[station] || { station, value: 0, count: 0 };
       acc[station].value += r.totalValue || 0;
@@ -182,12 +190,14 @@ export default function RefuelManager({
       liters: r.liters
     }));
 
-  // Summary KPIs
-  const totalLitersAll = refuels.reduce((sum, r) => sum + (r.liters || 0), 0);
-  const totalValueAll = refuels.reduce((sum, r) => sum + (r.totalValue || 0), 0);
-  const avgValuePerRefuel = refuels.length > 0 ? totalValueAll / refuels.length : 0;
-  const avgLitersPerRefuel = refuels.length > 0 ? totalLitersAll / refuels.length : 0;
-  const validEfficiencyEntries = Object.values(refuelsWithEfficiency).filter(e => e.kmPerLiter !== null) as { kmSinceLast: number; kmPerLiter: number }[];
+  // Summary KPIs (mês selecionado, consistente com o Dashboard)
+  const totalLitersAll = refuelsInSelectedMonth.reduce((sum, r) => sum + (r.liters || 0), 0);
+  const totalValueAll = refuelsInSelectedMonth.reduce((sum, r) => sum + (r.totalValue || 0), 0);
+  const avgValuePerRefuel = refuelsInSelectedMonth.length > 0 ? totalValueAll / refuelsInSelectedMonth.length : 0;
+  const avgLitersPerRefuel = refuelsInSelectedMonth.length > 0 ? totalLitersAll / refuelsInSelectedMonth.length : 0;
+  const validEfficiencyEntries = refuelsInSelectedMonth
+    .map(r => refuelsWithEfficiency[r.id])
+    .filter((e): e is { kmSinceLast: number; kmPerLiter: number } => !!e && e.kmPerLiter !== null);
   const avgKmPerLiter = validEfficiencyEntries.length > 0
     ? validEfficiencyEntries.reduce((sum, e) => sum + e.kmPerLiter, 0) / validEfficiencyEntries.length
     : null;
@@ -195,6 +205,11 @@ export default function RefuelManager({
 
   return (
     <div id="modulo-abastecimento-container" className="space-y-6">
+      {/* Filtro de mês/ano */}
+      <div className="flex justify-end">
+        <MonthYearPicker month={selectedMonth} year={selectedYear} onChange={(m, y) => { setSelectedMonth(m); setSelectedYear(y); }} />
+      </div>
+
       {/* KPI Summary Row - Diesel is the company's largest expense, deserves top-level visibility */}
       {refuels.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
