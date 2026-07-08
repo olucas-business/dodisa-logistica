@@ -965,10 +965,10 @@ export default function DashboardOverview({
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <RadialGauge label="Impostos" value={impostosPercentage} displayValue={`R$ ${(billingMonth * (impostosPercentage / 100)).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} editable onEdit={(v) => saveCompanyField("taxRate", v)} />
         <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalFuelSpendMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} / ${fuelSpendRingPercentage.toFixed(0)}%`} />
-        <RadialGauge label="Comissão" value={comissaoPercentage} displayValue={`R$ ${totalCommissionMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} / ${comissaoPercentage.toFixed(0)}%`} />
+        <RadialGauge label="Comissão" value={comissaoPercentage} displayValue={`R$ ${totalCommissionMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmLMonth.toFixed(2)}`} />
         <RadialGauge label="Margem Lucro" value={marginPercentage} displayValue={`R$ ${estimatedProfitMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} / ${marginPercentage}%`} />
-        <RadialGauge label="% Gasto c/ Combustível" value={fuelSpendPercentageOfExpenses} />
+        <RadialGauge label="% Combustível" value={fuelSpendPercentageOfExpenses} />
       </div>
 
       {/* 1c. HERO CHART: Faturamento vs Custos ao longo do ano (destaque visual principal) */}
@@ -1034,24 +1034,30 @@ export default function DashboardOverview({
               <span className="flex items-center gap-0.5"><span className="w-1 h-1 rounded-full bg-amber-500" /> Saldo</span>
             </div>
           </div>
-          <div className="h-[55px] w-full mt-2">
+          <div className="w-full mt-2">
             {(() => {
               const recent = recentFreightsChartData.slice(-6);
-              const hasData = recent.some((f: any) => (f["Pago (Adiantamento)"] || 0) > 0 || (f["Não Pago (Saldo)"] || 0) > 0);
-              if (!hasData) {
-                return <div className="text-[10px] text-muted-foreground/60 h-full flex items-center justify-center font-medium">Nenhum dado</div>;
+              const totalAdiantamento = recent.reduce((sum: number, f: any) => sum + (f["Pago (Adiantamento)"] || 0), 0);
+              const totalSaldo = recent.reduce((sum: number, f: any) => sum + (f["Não Pago (Saldo)"] || 0), 0);
+              const total = totalAdiantamento + totalSaldo;
+              const pctAdiantamento = total > 0 ? (totalAdiantamento / total) * 100 : 0;
+              const pctSaldo = total > 0 ? 100 - pctAdiantamento : 0;
+
+              if (total === 0) {
+                return <div className="text-[10px] text-muted-foreground/60 h-[24px] flex items-center justify-center font-medium">Nenhum dado</div>;
               }
+
               return (
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={recent} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                    <Bar dataKey="Pago (Adiantamento)" fill="#10b981" radius={[3, 3, 0, 0]} barSize={8} />
-                    <Line type="monotone" dataKey="Não Pago (Saldo)" stroke="#f59e0b" strokeWidth={2} dot={{ r: 2 }} />
-                    <Tooltip
-                      formatter={(value: any, name: any) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, name]}
-                      contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "9px" }}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
+                <div className="space-y-1.5">
+                  <div className="w-full h-2 rounded-full bg-muted flex overflow-hidden border border-border/40">
+                    <div className="bg-emerald-500 h-full" style={{ width: `${pctAdiantamento}%` }} />
+                    <div className="bg-amber-500 h-full" style={{ width: `${pctSaldo}%` }} />
+                  </div>
+                  <div className="flex justify-between text-[8.5px] font-mono font-medium text-muted-foreground">
+                    <span>R$ {totalAdiantamento.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                    <span>R$ {totalSaldo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                  </div>
+                </div>
               );
             })()}
           </div>
@@ -1150,26 +1156,23 @@ export default function DashboardOverview({
             </p>
             <span className="text-[9.5px] text-muted-foreground">Distribuição por motorista</span>
           </div>
-          <div className="h-[55px] w-full mt-2">
+          <div className="w-full mt-2 space-y-1.5 max-h-[55px] overflow-y-auto pr-0.5">
             {commissionByDriverChartData.length === 0 ? (
-              <div className="text-[10px] text-muted-foreground/60 h-full flex items-center justify-center font-medium">Nenhum dado</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={commissionByDriverChartData} margin={{ top: 2, right: 2, left: 2, bottom: 2 }}>
-                  <defs>
-                    <linearGradient id="miniCommissionGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.35} />
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="value" stroke="#8b5cf6" strokeWidth={2} fill="url(#miniCommissionGrad)" dot={{ r: 2 }} />
-                  <Tooltip
-                    formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR")}`, "Comissão"]}
-                    contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "8px", fontSize: "9px" }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
+              <div className="text-[10px] text-muted-foreground/60 h-[24px] flex items-center justify-center font-medium">Nenhum dado</div>
+            ) : (() => {
+              const maxVal = Math.max(...commissionByDriverChartData.map((d: any) => d.value), 1);
+              return commissionByDriverChartData.slice(0, 3).map((d: any) => (
+                <div key={d.name} className="space-y-0.5">
+                  <div className="flex items-center justify-between text-[8.5px] font-mono font-medium text-muted-foreground">
+                    <span className="truncate">{d.name}</span>
+                    <span>R$ {Number(d.value).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full bg-purple-500 rounded-full" style={{ width: `${(d.value / maxVal) * 100}%` }} />
+                  </div>
+                </div>
+              ));
+            })()}
           </div>
         </div>
 
@@ -1450,7 +1453,7 @@ export default function DashboardOverview({
                 <Coins className="w-4 h-4" />
               </span>
               <div>
-                <h3 className="text-sm font-bold text-foreground font-sans">Balanço Geral de Dívidas & Obrigações</h3>
+                <h3 className="text-sm font-bold text-foreground font-sans">Dívida de Alavancagem</h3>
                 <p className="text-[11px] text-muted-foreground">Classificação de contas por prioridade de quitação.</p>
               </div>
             </div>
