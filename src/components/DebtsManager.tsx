@@ -71,6 +71,11 @@ export default function DebtsManager({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
 
+  // Pagamento (total ou parcial) de uma dívida específica
+  const [payingDebt, setPayingDebt] = useState<Debt | null>(null);
+  const [payAmount, setPayAmount] = useState("");
+  const [payingSubmitting, setPayingSubmitting] = useState(false);
+
   // Form states
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Outros");
@@ -154,6 +159,32 @@ export default function DebtsManager({
   const handleDeleteClick = async (id: string) => {
     if (confirm("Tem certeza que deseja excluir esta dívida?")) {
       await onDeleteDebt(id);
+    }
+  };
+
+  const handleOpenPay = (debt: Debt) => {
+    setPayingDebt(debt);
+    setPayAmount(debt.value.toFixed(2));
+  };
+
+  const handlePaySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!payingDebt) return;
+    const parsed = Number(payAmount.replace(",", "."));
+    if (!parsed || parsed <= 0) {
+      alert("Informe um valor de pagamento válido.");
+      return;
+    }
+    setPayingSubmitting(true);
+    const remaining = Math.max(0, payingDebt.value - parsed);
+    const payload: Partial<Debt> = remaining <= 0.01
+      ? { value: 0, status: "Pago" }
+      : { value: Number(remaining.toFixed(2)) };
+    const ok = await onUpdateDebt(payingDebt.id, payload);
+    setPayingSubmitting(false);
+    if (ok) {
+      setPayingDebt(null);
+      setPayAmount("");
     }
   };
 
@@ -435,6 +466,15 @@ export default function DebtsManager({
                         <div className="flex items-start justify-between gap-2">
                           <span className="text-xs font-bold text-foreground leading-tight">{debt.description}</span>
                           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            {debt.status !== "Pago" && (
+                              <button
+                                onClick={() => handleOpenPay(debt)}
+                                className="p-1 hover:bg-emerald-500/10 rounded text-muted-foreground hover:text-emerald-500 transition-all cursor-pointer"
+                                title="Pagar Dívida"
+                              >
+                                <DollarSign className="w-3 h-3" />
+                              </button>
+                            )}
                             <button
                               onClick={() => handleOpenEditModal(debt)}
                               className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-all cursor-pointer"
@@ -693,6 +733,58 @@ export default function DebtsManager({
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
                 >
                   Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* PAY DEBT MODAL (pagamento total ou parcial) */}
+      {payingDebt && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-2xl w-full max-w-sm border border-gray-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 relative animate-scale-in">
+            <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-slate-800 pb-3 mb-4">
+              Pagar Dívida
+            </h3>
+            <div className="space-y-1 mb-4">
+              <p className="text-xs font-bold text-foreground">{payingDebt.description}</p>
+              <p className="text-[11px] text-muted-foreground">
+                Valor pendente: <span className="font-mono font-bold text-foreground">R$ {payingDebt.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+              </p>
+            </div>
+            <form onSubmit={handlePaySubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Valor a Pagar (R$) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max={payingDebt.value}
+                  required
+                  autoFocus
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Pode ser um pagamento parcial — o saldo restante continua como "Falta Pagar".
+                </p>
+              </div>
+              <div className="flex gap-3 justify-end pt-2 border-t border-gray-150 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setPayingDebt(null)}
+                  className="px-4 py-2 border border-gray-250 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={payingSubmitting}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {payingSubmitting ? "Salvando..." : "Confirmar Pagamento"}
                 </button>
               </div>
             </form>
