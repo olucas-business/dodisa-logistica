@@ -163,6 +163,7 @@ export interface Expense {
   value: number;
   description: string;
   receipt?: string;
+  status?: "Pendente" | "Pago";
 }
 
 export interface TireChange {

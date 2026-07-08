@@ -40,12 +40,14 @@ const CATEGORY_BADGE_STYLES: Record<string, string> = {
 interface ExpensesManagerProps {
   expenses: Expense[];
   onAddExpense: (e: Partial<Expense>) => Promise<boolean>;
+  onUpdateExpense: (id: string, e: Partial<Expense>) => Promise<boolean>;
   onDeleteExpense: (id: string) => Promise<boolean>;
 }
 
 export default function ExpensesManager({
   expenses,
   onAddExpense,
+  onUpdateExpense,
   onDeleteExpense
 }: ExpensesManagerProps) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -155,13 +157,19 @@ export default function ExpensesManager({
       category,
       value: Number(value),
       description,
-      receipt: ""
+      receipt: "",
+      status: "Pendente"
     };
 
     const ok = await onAddExpense(payload);
     if (ok) {
       setIsFormOpen(false);
     }
+  };
+
+  const handleTogglePaid = async (exp: Expense) => {
+    const newStatus = exp.status === "Pago" ? "Pendente" : "Pago";
+    await onUpdateExpense(exp.id, { status: newStatus });
   };
 
   const handleDelete = async (id: string) => {
@@ -388,12 +396,15 @@ export default function ExpensesManager({
                 <th className="p-3 pl-5">Data</th>
                 <th className="p-3">Categoria</th>
                 <th className="p-3">Descrição da Despesa</th>
-                <th className="p-3 text-right pr-5">Valor Pago</th>
-                <th className="p-3 text-center">Ação</th>
+                <th className="p-3 text-right">Valor Pago</th>
+                <th className="p-3 text-center">Status</th>
+                <th className="p-3 text-center pr-5">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-800 font-mono">
-              {filteredExpenses.map((e) => (
+              {filteredExpenses.map((e) => {
+                const isPaid = e.status === "Pago";
+                return (
                 <tr key={e.id} className="hover:bg-gray-50/70 dark:hover:bg-slate-800/40 text-gray-900 dark:text-gray-100 transition-all font-sans">
                   <td className="p-3 pl-5 font-mono text-gray-500 dark:text-gray-400">{e.date}</td>
                   <td className="p-3 font-semibold">
@@ -402,11 +413,25 @@ export default function ExpensesManager({
                     </span>
                   </td>
                   <td className="p-3 text-gray-800 dark:text-gray-200 font-medium">{e.description}</td>
-                  <td className="p-3 text-right font-mono font-black text-red-600 dark:text-red-400 pr-5 flex items-center justify-end gap-1 pt-4">
+                  <td className="p-3 text-right font-mono font-black text-red-600 dark:text-red-400 flex items-center justify-end gap-1 pt-4">
                     <ArrowDown className="w-3.5 h-3.5 text-red-500" />
                     R$ {e.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </td>
                   <td className="p-3 text-center">
+                    <button
+                      onClick={() => handleTogglePaid(e)}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black border transition-all cursor-pointer inline-flex items-center gap-1 ${
+                        isPaid
+                          ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                          : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                      }`}
+                      title={isPaid ? "Marcar como pendente" : "Marcar como pago"}
+                    >
+                      {isPaid ? <CheckCircle className="w-3 h-3" /> : null}
+                      {isPaid ? "Pago" : "Pagar"}
+                    </button>
+                  </td>
+                  <td className="p-3 text-center pr-5">
                     <button
                       onClick={() => handleDelete(e.id)}
                       className={`p-1.5 transition-all duration-300 rounded inline-flex border items-center gap-1 text-xs font-semibold cursor-pointer ${
@@ -421,10 +446,11 @@ export default function ExpensesManager({
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
               {filteredExpenses.length === 0 && (
                 <tr className="font-sans">
-                  <td colSpan={5} className="text-center py-16 text-gray-400 dark:text-gray-550">Nenhum lançamento de despesa encontrado.</td>
+                  <td colSpan={6} className="text-center py-16 text-gray-400 dark:text-gray-550">Nenhum lançamento de despesa encontrado.</td>
                 </tr>
               )}
             </tbody>

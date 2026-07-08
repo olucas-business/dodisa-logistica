@@ -383,6 +383,25 @@ export default function App() {
     }
   };
 
+  const handleUpdateExpense = async (id: string, payload: Partial<Expense>) => {
+    try {
+      const res = await fetch(`/api/expenses/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchAllData();
+        return true;
+      }
+      alert(data.message || "Erro ao atualizar despesa");
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
   const handleDeleteExpense = async (id: string) => {
     try {
       const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
@@ -1010,6 +1029,7 @@ export default function App() {
                 <ExpensesManager
                   expenses={expenses}
                   onAddExpense={handleAddExpense}
+                  onUpdateExpense={handleUpdateExpense}
                   onDeleteExpense={handleDeleteExpense}
                 />
               )}
