@@ -5,8 +5,6 @@ import { Plus, Search, Calendar, DollarSign, Trash2, CheckCircle, ArrowDown, Pie
 import SessionAnnotations from "./SessionAnnotations";
 import MonthYearPicker from "./MonthYearPicker";
 
-const EXPENSE_CHART_COLORS = ["#ef4444", "#fb7185", "#dc2626", "#f43f5e", "#b91c1c", "#fca5a5", "#9f1239", "#7f1d1d", "#f87171", "#e11d48", "#991b1b", "#fda4af", "#be123c"];
-
 const DEFAULT_EXPENSE_CATEGORIES = [
   "Combustível",
   "Pedágio",
@@ -194,6 +192,15 @@ export default function ExpensesManager({
     }, {})
   ).sort((a, b) => b.value - a.value);
 
+  // Intensidade por valor: vermelho = mais grave, laranja = médio, amarelo = menor
+  const maxCategoryTotal = Math.max(...categoryTotals.map(c => c.value), 1);
+  const getExpenseIntensityColor = (value: number) => {
+    const ratio = value / maxCategoryTotal;
+    if (ratio >= 0.66) return "#ef4444";
+    if (ratio >= 0.33) return "#f97316";
+    return "#eab308";
+  };
+
   // Monthly totals for the bar chart (last 6 months of data present)
   const monthlyTotals = Object.values(
     expenses.reduce((acc: Record<string, { month: string; value: number }>, e) => {
@@ -228,8 +235,8 @@ export default function ExpensesManager({
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={categoryTotals} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
-                        {categoryTotals.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={EXPENSE_CHART_COLORS[index % EXPENSE_CHART_COLORS.length]} />
+                        {categoryTotals.map((item, index) => (
+                          <Cell key={`cell-${index}`} fill={getExpenseIntensityColor(item.value)} />
                         ))}
                       </Pie>
                       <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
@@ -237,9 +244,9 @@ export default function ExpensesManager({
                   </ResponsiveContainer>
                 </div>
                 <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 justify-center text-[10px] font-semibold text-gray-500 dark:text-gray-400">
-                  {categoryTotals.map((item, index) => (
+                  {categoryTotals.map((item) => (
                     <div key={item.category} className="flex items-center gap-1">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: EXPENSE_CHART_COLORS[index % EXPENSE_CHART_COLORS.length] }} />
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getExpenseIntensityColor(item.value) }} />
                       <span>{item.category}</span>
                     </div>
                   ))}

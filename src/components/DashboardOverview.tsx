@@ -1315,21 +1315,28 @@ export default function DashboardOverview({
             {expensesByCategoryMonth.length === 0 ? (
               <div className="h-[220px] flex items-center justify-center text-xs text-muted-foreground font-medium">Nenhuma despesa lançada neste mês.</div>
             ) : (() => {
-              const expenseColors = ["#ef4444", "#fb7185", "#dc2626", "#f43f5e", "#b91c1c", "#fca5a5", "#9f1239"];
+              // Intensidade por valor: vermelho = mais grave, laranja = médio, amarelo = menor
+              const maxExpenseValue = Math.max(...expensesByCategoryMonth.map(c => c.value), 1);
+              const getIntensityColor = (value: number) => {
+                const ratio = value / maxExpenseValue;
+                if (ratio >= 0.66) return "#ef4444"; // vermelho
+                if (ratio >= 0.33) return "#f97316"; // laranja
+                return "#eab308"; // amarelo
+              };
               const expensesTotal = expensesByCategoryMonth.reduce((sum, c) => sum + c.value, 0);
               return (
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
                   {/* Category Cards Column (Left - 5 cols), mesmo padrão do Balanço de Dívidas */}
                   <div className="xl:col-span-5 space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                    {expensesByCategoryMonth.map((d, index) => {
-                      const color = expenseColors[index % expenseColors.length];
+                    {expensesByCategoryMonth.map((d) => {
+                      const color = getIntensityColor(d.value);
                       return (
-                        <div key={d.category} className="flex items-center justify-between p-3 bg-red-500/5 border border-red-500/20 rounded-xl">
+                        <div key={d.category} className="flex items-center justify-between p-3 rounded-xl border" style={{ backgroundColor: `${color}0d`, borderColor: `${color}33` }}>
                           <div className="flex items-center gap-2.5 min-w-0">
                             <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
                             <span className="text-xs font-black text-foreground truncate">{d.category}</span>
                           </div>
-                          <span className="text-sm font-black font-mono text-red-600 dark:text-red-400 shrink-0 ml-2">
+                          <span className="text-sm font-black font-mono shrink-0 ml-2" style={{ color }}>
                             R$ {d.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                           </span>
                         </div>
@@ -1344,8 +1351,8 @@ export default function DashboardOverview({
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie data={expensesByCategoryMonth} cx="50%" cy="50%" innerRadius={65} outerRadius={95} paddingAngle={3} dataKey="value">
-                              {expensesByCategoryMonth.map((_, index) => (
-                                <Cell key={`cell-${index}`} fill={expenseColors[index % expenseColors.length]} />
+                              {expensesByCategoryMonth.map((d, index) => (
+                                <Cell key={`cell-${index}`} fill={getIntensityColor(d.value)} />
                               ))}
                             </Pie>
                             <Tooltip
@@ -1360,9 +1367,9 @@ export default function DashboardOverview({
                         </div>
                       </div>
                       <div className="space-y-2.5">
-                        {expensesByCategoryMonth.map((d, index) => (
+                        {expensesByCategoryMonth.map((d) => (
                           <div key={d.category} className="flex items-center gap-2 text-xs font-semibold">
-                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: expenseColors[index % expenseColors.length] }} />
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getIntensityColor(d.value) }} />
                             <span className="text-muted-foreground">{d.category}:</span>
                             <span className="text-foreground font-mono">{expensesTotal > 0 ? ((d.value / expensesTotal) * 100).toFixed(0) : 0}%</span>
                           </div>
@@ -1404,12 +1411,18 @@ export default function DashboardOverview({
                   <p className="text-xs text-muted-foreground font-medium">Nenhuma despesa lançada neste mês.</p>
                 </div>
               ) : (() => {
-                const expenseColors = ["#ef4444", "#fb7185", "#dc2626", "#f43f5e", "#b91c1c", "#fca5a5", "#9f1239"];
+                // Intensidade por valor: vermelho = mais grave, laranja = médio, amarelo = menor
                 const maxVal = Math.max(...expensesByCategoryMonth.map(c => c.value), 1);
+                const getIntensityColor = (value: number) => {
+                  const ratio = value / maxVal;
+                  if (ratio >= 0.66) return "#ef4444";
+                  if (ratio >= 0.33) return "#f97316";
+                  return "#eab308";
+                };
                 return (
                   <div className="space-y-3.5 overflow-y-auto h-full pr-1">
-                    {expensesByCategoryMonth.map((item, index) => {
-                      const color = expenseColors[index % expenseColors.length];
+                    {expensesByCategoryMonth.map((item) => {
+                      const color = getIntensityColor(item.value);
                       const pct = (item.value / maxVal) * 100;
                       return (
                         <div key={item.category} className="space-y-1">
