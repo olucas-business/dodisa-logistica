@@ -210,7 +210,7 @@ export default function DashboardOverview({
 
   // Metrics Calculations
   const freightsToday = useMemo(() => freights.filter(f => isToday(f.date) && f.status !== "Cancelado"), [freights]);
-  const freightsMonth = useMemo(() => freights.filter(f => isThisMonth(f.date) && f.status !== "Cancelado"), [freights]);
+  const freightsMonth = useMemo(() => freights.filter(f => isThisMonth(f.date) && f.status !== "Cancelado"), [freights, currentYear, currentMonth]);
   const billingMonth = useMemo(() => freightsMonth.reduce((sum, f) => sum + (f.financial?.value || 0), 0), [freightsMonth]);
 
   const totalKm = useMemo(() => freights.reduce((sum, f) => sum + (f.mileage?.total || 0), 0), [freights]);
@@ -227,7 +227,7 @@ export default function DashboardOverview({
       return sum + (fin.commission || 0) + (fin.toll || 0) + (fin.food || 0) + (fin.lodging || 0) + (fin.otherExpenses || 0);
     }, 0);
     return directExp + refuelExp + freightExp;
-  }, [expenses, refuels, freightsMonth]);
+  }, [expenses, refuels, freightsMonth, currentYear, currentMonth]);
 
   const estimatedProfitMonth = billingMonth - expensesMonth;
   const marginPercentage = billingMonth > 0 ? Math.round((estimatedProfitMonth / billingMonth) * 100) : 0;
@@ -289,7 +289,7 @@ export default function DashboardOverview({
   };
 
   // Previous month calculations
-  const freightsPrevMonth = useMemo(() => freights.filter(f => isPrevMonth(f.date) && f.status !== "Cancelado"), [freights]);
+  const freightsPrevMonth = useMemo(() => freights.filter(f => isPrevMonth(f.date) && f.status !== "Cancelado"), [freights, currentYear, currentMonth]);
   const billingPrevMonth = useMemo(() => freightsPrevMonth.reduce((sum, f) => sum + (f.financial?.value || 0), 0), [freightsPrevMonth]);
 
   const expensesPrevMonth = useMemo(() => {
@@ -305,7 +305,7 @@ export default function DashboardOverview({
       return sum + (fin.commission || 0) + (fin.toll || 0) + (fin.food || 0) + (fin.lodging || 0) + (fin.otherExpenses || 0);
     }, 0);
     return directExp + refuelExp + freightExp;
-  }, [expenses, refuels, freightsPrevMonth]);
+  }, [expenses, refuels, freightsPrevMonth, currentYear, currentMonth]);
 
   const estimatedProfitPrevMonth = billingPrevMonth - expensesPrevMonth;
 
@@ -381,7 +381,7 @@ export default function DashboardOverview({
       const monthFreights = freights.filter(f => f.date.startsWith(yearMonth) && f.status !== "Cancelado");
       return monthFreights.reduce((sum, f) => sum + (f.mileage?.total || 0), 0);
     });
-  }, [freights]);
+  }, [freights, currentYear]);
 
   // Dynamic Month-over-Month dataset for the chart
   const dynamicMonthlyData = useMemo(() => {
@@ -425,7 +425,7 @@ export default function DashboardOverview({
     }, 5);
     
     return data.slice(0, maxMonthIdx + 1);
-  }, [freights, expenses, refuels]);
+  }, [freights, expenses, refuels, currentYear]);
 
   const faturamentoPoints = useMemo(() => {
     const pts = dynamicMonthlyData.map(d => d.Faturamento);
@@ -579,7 +579,7 @@ export default function DashboardOverview({
       .map(([name, value]) => ({ name, value }))
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [expenses, refuels, freightsMonth]);
+  }, [expenses, refuels, freightsMonth, currentYear, currentMonth]);
 
   // Aggregate current month's faturamento (revenue) by cargo type
   const cargoRevenueData = useMemo(() => {
@@ -712,7 +712,7 @@ export default function DashboardOverview({
   const totalFuelSpendMonth = useMemo(() => {
     const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
     return refuels.filter(r => r.date.startsWith(targetYearMonth)).reduce((sum, r) => sum + (r.totalValue || 0), 0);
-  }, [refuels]);
+  }, [refuels, currentYear, currentMonth]);
 
   // Tendência mensal (histórico completo, últimos 6 meses) para os mini-gráficos de onda —
   // agrupar por veículo deixava só 1 ponto (frota com 1 veículo), impossível desenhar uma curva.
@@ -754,7 +754,7 @@ export default function DashboardOverview({
   const totalLitersMonth = useMemo(() => {
     const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
     return refuels.filter(r => r.date.startsWith(targetYearMonth)).reduce((sum, r) => sum + (r.liters || 0), 0);
-  }, [refuels]);
+  }, [refuels, currentYear, currentMonth]);
 
   const litersByVehicleChartData = useMemo(() => {
     const map: Record<string, number> = {};
