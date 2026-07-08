@@ -1606,12 +1606,18 @@ export default function DashboardOverview({
                 );
               }
 
-              const debtColors = ["#ef4444", "#fb7185", "#dc2626", "#f43f5e", "#b91c1c", "#fca5a5", "#9f1239", "#7f1d1d"];
+              // Intensidade por valor: vermelho = mais grave, laranja = médio, amarelo = menor
               const maxVal = Math.max(...debtCategoryTotals.map((c: any) => c.value), 1);
+              const getIntensityColor = (value: number) => {
+                const ratio = value / maxVal;
+                if (ratio >= 0.66) return "#ef4444";
+                if (ratio >= 0.33) return "#f97316";
+                return "#eab308";
+              };
               return (
                 <div className="space-y-3.5 overflow-y-auto h-full pr-1">
-                  {debtCategoryTotals.map((item: any, index: number) => {
-                    const color = debtColors[index % debtColors.length];
+                  {debtCategoryTotals.map((item: any) => {
+                    const color = getIntensityColor(item.value);
                     const pct = (item.value / maxVal) * 100;
                     return (
                       <div key={item.category} className="space-y-1">
