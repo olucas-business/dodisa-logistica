@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Expense } from "../types";
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area } from "recharts";
-import { Plus, Search, Calendar, DollarSign, Trash2, CheckCircle, ArrowDown, PieChart as PieChartIcon, X, Settings } from "lucide-react";
+import { Plus, Search, Calendar, DollarSign, Trash2, CheckCircle, ArrowDown, PieChart as PieChartIcon, X, Settings, ChevronDown } from "lucide-react";
 import SessionAnnotations from "./SessionAnnotations";
 import MonthYearPicker from "./MonthYearPicker";
 
@@ -61,6 +61,7 @@ export default function ExpensesManager({
   const [addingCategory, setAddingCategory] = useState(false);
   const [confirmDeleteCategory, setConfirmDeleteCategory] = useState<string | null>(null);
   const [categoriesPanelOpen, setCategoriesPanelOpen] = useState(false);
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
 
   const fetchCategories = () => {
     fetch("/api/expense-categories")
@@ -306,16 +307,46 @@ export default function ExpensesManager({
             />
           </div>
 
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-gray-300 rounded-lg px-3 py-2 text-xs font-semibold outline-none focus:border-red-500 cursor-pointer"
-          >
-            <option value="TODOS">Todas as categorias</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setCategoryDropdownOpen(v => !v)}
+              className="bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-700 dark:text-gray-300 rounded-lg px-3 py-2 text-xs font-semibold outline-none focus:border-red-500 cursor-pointer flex items-center gap-2 min-w-[160px] justify-between"
+            >
+              <span className="truncate">{categoryFilter === "TODOS" ? "Todas as categorias" : categoryFilter}</span>
+              <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${categoryDropdownOpen ? "rotate-180" : ""}`} />
+            </button>
+            {categoryDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setCategoryDropdownOpen(false)} />
+                <div className="absolute top-full mt-1.5 left-0 z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl shadow-2xl w-56 max-h-72 overflow-y-auto py-1.5 animate-scale-in">
+                  <button
+                    onClick={() => { setCategoryFilter("TODOS"); setCategoryDropdownOpen(false); }}
+                    className={`w-full text-left px-3 py-2 text-xs font-semibold transition-all cursor-pointer ${
+                      categoryFilter === "TODOS"
+                        ? "bg-red-600 text-white"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    Todas as categorias
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => { setCategoryFilter(cat); setCategoryDropdownOpen(false); }}
+                      className={`w-full text-left px-3 py-2 text-xs font-semibold transition-all cursor-pointer ${
+                        categoryFilter === cat
+                          ? "bg-red-600 text-white"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           <button
             onClick={() => setCategoriesPanelOpen(v => !v)}

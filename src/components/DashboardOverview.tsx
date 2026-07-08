@@ -1691,7 +1691,6 @@ export default function DashboardOverview({
           </div>
 
           {(() => {
-            const freightCostColors = ["#ef4444", "#fb7185", "#dc2626", "#f43f5e", "#b91c1c"];
             const activeFreightsForCost = freights.filter(f => f.status !== "Cancelado");
             const freightCostBreakdown = [
               { name: "Pedágio", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.toll || 0), 0) },
@@ -1710,14 +1709,23 @@ export default function DashboardOverview({
               );
             }
 
+            // Intensidade por valor: vermelho = mais grave, laranja = médio, amarelo = menor
+            const maxFreightCost = Math.max(...freightCostBreakdown.map(c => c.value), 1);
+            const getIntensityColor = (value: number) => {
+              const ratio = value / maxFreightCost;
+              if (ratio >= 0.66) return "#ef4444";
+              if (ratio >= 0.33) return "#f97316";
+              return "#eab308";
+            };
+
             return (
               <div className="flex flex-col sm:flex-row items-center gap-6">
                 <div className="h-[200px] w-full sm:w-[220px] flex-shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={freightCostBreakdown} cx="50%" cy="50%" innerRadius={50} outerRadius={72} paddingAngle={3} dataKey="value">
-                        {freightCostBreakdown.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={freightCostColors[index % freightCostColors.length]} />
+                        {freightCostBreakdown.map((item, index) => (
+                          <Cell key={`cell-${index}`} fill={getIntensityColor(item.value)} />
                         ))}
                       </Pie>
                       <Tooltip
@@ -1728,9 +1736,9 @@ export default function DashboardOverview({
                   </ResponsiveContainer>
                 </div>
                 <div className="flex flex-wrap gap-3 text-[11px] font-semibold text-muted-foreground">
-                  {freightCostBreakdown.map((item, index) => (
+                  {freightCostBreakdown.map((item) => (
                     <div key={item.name} className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: freightCostColors[index % freightCostColors.length] }} />
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getIntensityColor(item.value) }} />
                       <span>{item.name}: <strong className="text-foreground">R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong></span>
                     </div>
                   ))}

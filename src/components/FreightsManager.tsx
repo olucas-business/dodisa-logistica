@@ -4,10 +4,6 @@ import SessionAnnotations from "./SessionAnnotations";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { Truck, Plus, Search, Calendar, MapPin, Navigation, Coins, Trash2, Edit2, CheckCircle, Clock, PieChart as PieChartIcon } from "lucide-react";
 
-// Custos são despesas: paleta vermelha (nunca azul/verde, reservados a receita/operação),
-// com tons intercalados para garantir contraste entre categorias adjacentes.
-const FREIGHT_COST_COLORS = ["#ef4444", "#fb7185", "#dc2626", "#f43f5e", "#b91c1c"];
-
 interface FreightsManagerProps {
   freights: Freight[];
   drivers: Driver[];
@@ -264,6 +260,15 @@ export default function FreightsManager({
     { name: "Outros", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.otherExpenses || 0), 0) }
   ].filter(c => c.value > 0);
 
+  // Intensidade por valor: vermelho = mais grave, laranja = médio, amarelo = menor
+  const maxCostBreakdown = Math.max(...costBreakdown.map(c => c.value), 1);
+  const getCostIntensityColor = (value: number) => {
+    const ratio = value / maxCostBreakdown;
+    if (ratio >= 0.66) return "#ef4444";
+    if (ratio >= 0.33) return "#f97316";
+    return "#eab308";
+  };
+
   return (
     <div id="modulo-fretes-container" className="space-y-6">
       {/* Cost Breakdown Chart */}
@@ -278,8 +283,8 @@ export default function FreightsManager({
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={costBreakdown} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={3} dataKey="value">
-                    {costBreakdown.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={FREIGHT_COST_COLORS[index % FREIGHT_COST_COLORS.length]} />
+                    {costBreakdown.map((item, index) => (
+                      <Cell key={`cell-${index}`} fill={getCostIntensityColor(item.value)} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
@@ -287,9 +292,9 @@ export default function FreightsManager({
               </ResponsiveContainer>
             </div>
             <div className="flex flex-wrap gap-3 text-[11px] font-semibold text-gray-600 dark:text-gray-400">
-              {costBreakdown.map((item, index) => (
+              {costBreakdown.map((item) => (
                 <div key={item.name} className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: FREIGHT_COST_COLORS[index % FREIGHT_COST_COLORS.length] }} />
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getCostIntensityColor(item.value) }} />
                   <span>{item.name}: R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
                 </div>
               ))}
