@@ -1392,14 +1392,18 @@ export default function DashboardOverview({
                             </span>
                           </div>
                           <div className="flex items-center gap-3 text-[10px] font-mono font-semibold pl-5">
-                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              Pago: R$ {d.paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                            <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                              Pendente: R$ {d.pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
+                            {d.paid > 0 && (
+                              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                Pago: R$ {d.paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            )}
+                            {d.pending > 0 && (
+                              <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                Pendente: R$ {d.pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                            )}
                           </div>
                         </div>
                       );
@@ -1501,14 +1505,18 @@ export default function DashboardOverview({
                             <div className="h-full rounded-full transition-all duration-300" style={{ backgroundColor: color, width: `${pct}%` }} />
                           </div>
                           <div className="flex items-center gap-3 text-[10px] font-mono font-semibold pt-0.5">
+                            {item.paid > 0 && (
                             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                               Pago: R$ {item.paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
+                            )}
+                            {item.pending > 0 && (
                             <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
                               <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
                               Pendente: R$ {item.pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
+                            )}
                           </div>
                         </div>
                       );
