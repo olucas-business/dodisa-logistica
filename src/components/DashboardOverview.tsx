@@ -1395,13 +1395,13 @@ export default function DashboardOverview({
                             {d.paid > 0 && (
                               <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                Pago: R$ {d.paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                R$ {d.paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             )}
                             {d.pending > 0 && (
                               <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
                                 <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                                Pendente: R$ {d.pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                R$ {d.pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             )}
                           </div>
@@ -1508,13 +1508,13 @@ export default function DashboardOverview({
                             {item.paid > 0 && (
                             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                              Pago: R$ {item.paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              R$ {item.paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                             )}
                             {item.pending > 0 && (
                             <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
                               <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                              Pendente: R$ {item.pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              R$ {item.pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                             )}
                           </div>
