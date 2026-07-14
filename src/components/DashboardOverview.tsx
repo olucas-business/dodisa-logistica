@@ -2250,7 +2250,12 @@ export default function DashboardOverview({
 
                 return rows.map(({ expense: e, paidAmt, pendingAmt }) => (
                   <div key={e.id} className="flex flex-row items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
-                    <span className="text-[10px] text-muted-foreground font-mono shrink-0 w-14">{e.date.slice(5)}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono shrink-0 w-16">
+                      {(() => {
+                        const [y, m, d] = e.date.split("-");
+                        return d && m ? `${d}/${m}` : e.date;
+                      })()}
+                    </span>
                     <div className="min-w-0 flex-1">
                       <span className="text-xs font-black text-foreground block truncate">{e.description}</span>
                       <span className="text-[10px] text-muted-foreground block truncate">
