@@ -2249,16 +2249,16 @@ export default function DashboardOverview({
                 }
 
                 return rows.map(({ expense: e, paidAmt, pendingAmt }) => (
-                  <div key={e.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-xl border border-border bg-muted/30">
-                    <span className="text-[10px] text-muted-foreground font-mono shrink-0 sm:w-20">{e.date}</span>
+                  <div key={e.id} className="flex flex-row items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
+                    <span className="text-[10px] text-muted-foreground font-mono shrink-0 w-14">{e.date.slice(5)}</span>
                     <div className="min-w-0 flex-1">
                       <span className="text-xs font-black text-foreground block truncate">{e.description}</span>
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-[10px] text-muted-foreground block truncate">
                         {e.category}
                         {(e.installments || 1) > 1 && ` · Parcelado ${e.installments}x (total R$ ${e.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
                       </span>
                     </div>
-                    <span className={`text-sm font-black font-mono shrink-0 sm:w-32 sm:text-right ${expensesStatusModalFilter === "paid" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                    <span className={`text-sm font-black font-mono shrink-0 text-right ${expensesStatusModalFilter === "paid" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
                       R$ {(expensesStatusModalFilter === "paid" ? paidAmt : pendingAmt).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                     {expensesStatusModalFilter === "pending" && onUpdateExpense && (

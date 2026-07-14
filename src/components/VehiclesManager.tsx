@@ -522,7 +522,7 @@ export default function VehiclesManager({
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <h4 className="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Documentos do Caminhão</h4>
-                  <label className="px-2.5 py-1 bg-gray-900 hover:bg-gray-850 text-white font-mono text-[10px] rounded transition-all flex items-center gap-1 cursor-pointer">
+                  <label className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-mono text-[10px] rounded transition-all flex items-center gap-1 cursor-pointer">
                     <Upload className="w-3.5 h-3.5" /> {docUploading ? "Enviando..." : "Enviar Documento"}
                     <input type="file" accept="application/pdf,image/*" className="hidden" onChange={handleDocUpload} disabled={docUploading} />
                   </label>
