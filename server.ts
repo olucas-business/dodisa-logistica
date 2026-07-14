@@ -1727,7 +1727,7 @@ app.post("/api/freights", async (req, res) => {
     if (vehicle) {
       const deltaKm = Number(newFreight.mileage.total) || (Number(newFreight.mileage.end) - Number(newFreight.mileage.start)) || 0;
       vehicle.currentMileage = Math.max(vehicle.currentMileage, Number(newFreight.mileage.end));
-      
+
       // Update tires mileage
       if (deltaKm > 0) {
         db.tires.forEach(t => {
@@ -1740,6 +1740,22 @@ app.post("/api/freights", async (req, res) => {
   }
 
   db.freights.push(newFreight);
+
+  // Atividade do motorista: registro do novo frete atribuído
+  const assignedDriver = db.drivers.find(d => d.id === newFreight.driverId);
+  if (assignedDriver) {
+    db.notifications = db.notifications || [];
+    db.notifications.push({
+      id: `ntf_${Date.now()}`,
+      message: `📋 Frete ${newFreight.freightNumber} atribuído a ${assignedDriver.fullName} (${newFreight.origin?.city || "?"} → ${newFreight.destination?.city || "?"})`,
+      date: newFreight.date || new Date().toISOString().split("T")[0],
+      time: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+      read: false,
+      driverName: assignedDriver.fullName,
+      freightId: newFreight.id
+    });
+  }
+
   await saveDB(db);
   res.json({ success: true, freight: newFreight });
 });
@@ -1771,6 +1787,41 @@ app.put("/api/freights/:id", async (req, res) => {
             });
           }
         }
+      }
+    }
+
+    // Atividade do motorista: status alterado ou comissão paga
+    const freightDriver = db.drivers.find(d => d.id === updated.driverId);
+    if (freightDriver) {
+      db.notifications = db.notifications || [];
+      const nowTime = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const today = new Date().toISOString().split("T")[0];
+
+      if (oldFreight.status !== updated.status) {
+        db.notifications.push({
+          id: `ntf_${Date.now()}_status`,
+          message: `🚚 Frete ${updated.freightNumber} de ${freightDriver.fullName} mudou para "${updated.status}"`,
+          date: today,
+          time: nowTime,
+          read: false,
+          driverName: freightDriver.fullName,
+          freightId: updated.id
+        });
+      }
+
+      const oldCommissionPaid = oldFreight.financial?.commissionPaid || 0;
+      const newCommissionPaid = updated.financial?.commissionPaid || 0;
+      if (newCommissionPaid > oldCommissionPaid) {
+        const paidNow = newCommissionPaid - oldCommissionPaid;
+        db.notifications.push({
+          id: `ntf_${Date.now()}_commission`,
+          message: `💰 Comissão de R$ ${paidNow.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} paga a ${freightDriver.fullName} (Frete ${updated.freightNumber})`,
+          date: today,
+          time: nowTime,
+          read: false,
+          driverName: freightDriver.fullName,
+          freightId: updated.id
+        });
       }
     }
 
