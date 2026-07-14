@@ -11,6 +11,7 @@ interface DriversManagerProps {
   onAddDriver: (d: Partial<Driver>) => Promise<boolean>;
   onUpdateDriver: (id: string, d: Partial<Driver>) => Promise<boolean>;
   onDeleteDriver: (id: string) => Promise<boolean>;
+  onUpdateFreight?: (id: string, f: Partial<Freight>) => Promise<boolean>;
 }
 
 export default function DriversManager({
@@ -19,7 +20,8 @@ export default function DriversManager({
   refuels,
   onAddDriver,
   onUpdateDriver,
-  onDeleteDriver
+  onDeleteDriver,
+  onUpdateFreight
 }: DriversManagerProps) {
   const [selectedDriverId, setSelectedDriverId] = useState<string | null>(drivers[0]?.id || null);
   const selectedDriver = drivers.find(d => d.id === selectedDriverId) || drivers[0] || null;
@@ -301,6 +303,57 @@ export default function DriversManager({
     };
   };
 
+  const getDriverCommissions = (drvId: string) => {
+    const driverFreights = freights.filter(f => f.driverId === drvId && f.status !== "Cancelado");
+    const rows = driverFreights.map(f => {
+      const commission = f.financial?.commission || 0;
+      const paid = Math.min(commission, f.financial?.commissionPaid !== undefined ? f.financial.commissionPaid : 0);
+      const pending = commission - paid;
+      return { freight: f, commission, paid, pending };
+    }).sort((a, b) => b.freight.date.localeCompare(a.freight.date));
+    const totalPaid = rows.reduce((s, r) => s + r.paid, 0);
+    const totalPending = rows.reduce((s, r) => s + r.pending, 0);
+    return { rows, totalPaid, totalPending };
+  };
+
+  // Pagamento de comissao direto pela ficha do motorista
+  const [payingCommissionFreight, setPayingCommissionFreight] = useState<Freight | null>(null);
+  const [commissionPayAmount, setCommissionPayAmount] = useState("");
+  const [commissionPaySubmitting, setCommissionPaySubmitting] = useState(false);
+
+  const handleOpenPayCommission = (freight: Freight) => {
+    setPayingCommissionFreight(freight);
+    const commission = freight.financial?.commission || 0;
+    const paid = freight.financial?.commissionPaid !== undefined ? freight.financial.commissionPaid : 0;
+    setCommissionPayAmount((commission - paid).toFixed(2));
+  };
+
+  const handleSubmitCommissionPay = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!payingCommissionFreight || !onUpdateFreight) return;
+    const parsed = Number(commissionPayAmount.replace(",", "."));
+    if (!parsed || parsed <= 0) {
+      alert("Informe um valor de pagamento válido.");
+      return;
+    }
+    const commission = payingCommissionFreight.financial?.commission || 0;
+    const currentPaid = payingCommissionFreight.financial?.commissionPaid !== undefined ? payingCommissionFreight.financial.commissionPaid : 0;
+    const newPaid = Math.min(commission, currentPaid + parsed);
+    setCommissionPaySubmitting(true);
+    const ok = await onUpdateFreight(payingCommissionFreight.id, {
+      financial: {
+        ...payingCommissionFreight.financial,
+        commissionPaid: Number(newPaid.toFixed(2)),
+        commissionPending: Number((commission - newPaid).toFixed(2))
+      }
+    });
+    setCommissionPaySubmitting(false);
+    if (ok) {
+      setPayingCommissionFreight(null);
+      setCommissionPayAmount("");
+    }
+  };
+
   const filteredDrivers = drivers.filter(d =>
     d.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.cpf.includes(searchTerm) ||
@@ -461,6 +514,48 @@ export default function DriversManager({
                   </p>
                 </div>
               </div>
+
+              {/* Comissões de Viagens: valores comissionados, pago vs pendente */}
+              {(() => {
+                const { rows, totalPaid, totalPending } = getDriverCommissions(selectedDriver.id);
+                if (rows.length === 0) return null;
+                return (
+                  <div className="bg-gray-50 border border-gray-150 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                      <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Comissões de Viagens</h4>
+                      <div className="flex items-center gap-3 text-[10px] font-mono font-bold">
+                        <span className="text-emerald-600">🟢 Pago: R$ {totalPaid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="text-orange-600">🟠 Pendente: R$ {totalPending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
+                      {rows.map(({ freight: f, commission, paid, pending }) => (
+                        <div key={f.id} className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-gray-200 bg-white text-xs">
+                          <div className="min-w-0">
+                            <span className="font-bold text-gray-800 block truncate">{f.freightNumber} · {f.date}</span>
+                            <span className="text-[10px] text-gray-500">
+                              Comissão: R$ {commission.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${pending <= 0.01 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-orange-50 text-orange-700 border border-orange-200"}`}>
+                              {pending <= 0.01 ? "Pago" : `Pendente: R$ ${pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                            </span>
+                            {pending > 0.01 && onUpdateFreight && (
+                              <button
+                                onClick={() => handleOpenPayCommission(f)}
+                                className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded text-[10px] transition-all"
+                              >
+                                Pagar
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Personal Data File */}
               <div className="bg-gray-50 border border-gray-150 rounded-xl p-4 space-y-4">
@@ -1028,6 +1123,56 @@ export default function DriversManager({
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* PAGAR COMISSÃO DE VIAGEM */}
+      {payingCommissionFreight && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-sm border border-gray-200 shadow-2xl p-4 sm:p-6 relative animate-scale-in my-auto">
+            <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3 mb-4">
+              Pagar Comissão — {payingCommissionFreight.freightNumber}
+            </h3>
+            <div className="mb-4 space-y-1">
+              <p className="text-lg font-black font-mono text-orange-600">
+                R$ {((payingCommissionFreight.financial?.commission || 0) - (payingCommissionFreight.financial?.commissionPaid !== undefined ? payingCommissionFreight.financial.commissionPaid : 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <span className="text-[10px] font-semibold text-gray-400 ml-1">pendente</span>
+              </p>
+              <p className="text-[10px] font-semibold text-gray-500">
+                Comissão total: R$ {(payingCommissionFreight.financial?.commission || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+            <form onSubmit={handleSubmitCommissionPay} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 tracking-wider">Valor a Pagar (R$)</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  required
+                  value={commissionPayAmount}
+                  onChange={(e) => setCommissionPayAmount(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-lg p-2 text-xs outline-none font-mono font-bold"
+                />
+                <p className="text-[10px] text-gray-400">Pode ser um pagamento parcial ou o valor total pendente.</p>
+              </div>
+              <div className="flex gap-3 justify-end pt-3 border-t border-gray-150">
+                <button
+                  type="button"
+                  onClick={() => { setPayingCommissionFreight(null); setCommissionPayAmount(""); }}
+                  className="px-4 py-2 border border-gray-250 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={commissionPaySubmitting}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                >
+                  Confirmar Pagamento
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

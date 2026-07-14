@@ -169,7 +169,9 @@ export interface Expense {
   receipt?: string;
   status?: "Pendente" | "Pago";
   installments?: number;  // Número total de parcelas (padrão 1 = à vista)
-  paidAmount?: number;    // Valor já pago (acumulado) desta despesa
+  paidAmount?: number;    // Valor já pago (acumulado, em R$) desta despesa
+  lastPaymentCurrency?: string;      // Moeda usada no último pagamento (BRL, USD, ARS, CLP)
+  lastPaymentExchangeRate?: number;  // Cotação usada no último pagamento
 }
 
 export interface TireChange {

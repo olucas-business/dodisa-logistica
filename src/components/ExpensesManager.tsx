@@ -182,27 +182,38 @@ export default function ExpensesManager({
     }
   };
 
-  // Pagamento (total, parcial ou por parcela) de uma despesa
+  // Pagamento (total, parcial ou por parcela) de uma despesa, com opção de moeda
+  const PAY_CURRENCIES = [
+    { code: "BRL", label: "Real", flag: "🇧🇷" },
+    { code: "USD", label: "Dólar", flag: "🇺🇸" },
+    { code: "ARS", label: "Peso Argentino", flag: "🇦🇷" },
+    { code: "CLP", label: "Peso Chileno", flag: "🇨🇱" }
+  ];
   const [payingExpense, setPayingExpense] = useState<Expense | null>(null);
   const [payAmount, setPayAmount] = useState("");
+  const [payCurrency, setPayCurrency] = useState("BRL");
+  const [payExchangeRate, setPayExchangeRate] = useState("1");
   const [payingSubmitting, setPayingSubmitting] = useState(false);
 
   const handleOpenPay = (exp: Expense) => {
     setPayingExpense(exp);
     const remaining = exp.value - (exp.paidAmount || 0);
     setPayAmount(remaining.toFixed(2));
+    setPayCurrency("BRL");
+    setPayExchangeRate("1");
   };
 
   const handleQuickPayInstallment = () => {
     if (!payingExpense) return;
     const total = payingExpense.installments && payingExpense.installments > 0 ? payingExpense.installments : 1;
-    setPayAmount((payingExpense.value / total).toFixed(2));
+    const amountBRL = payingExpense.value / total;
+    setPayAmount((payCurrency === "BRL" ? amountBRL : amountBRL / (Number(payExchangeRate) || 1)).toFixed(2));
   };
 
   const handleQuickPayTotal = () => {
     if (!payingExpense) return;
     const remaining = payingExpense.value - (payingExpense.paidAmount || 0);
-    setPayAmount(remaining.toFixed(2));
+    setPayAmount((payCurrency === "BRL" ? remaining : remaining / (Number(payExchangeRate) || 1)).toFixed(2));
   };
 
   const handlePaySubmit = async (e: React.FormEvent) => {
@@ -213,11 +224,15 @@ export default function ExpensesManager({
       alert("Informe um valor de pagamento válido.");
       return;
     }
+    const rate = payCurrency === "BRL" ? 1 : (Number(payExchangeRate) || 1);
+    const amountInBRL = parsed * rate;
     setPayingSubmitting(true);
-    const newPaidAmount = Math.min(payingExpense.value, (payingExpense.paidAmount || 0) + parsed);
+    const newPaidAmount = Math.min(payingExpense.value, (payingExpense.paidAmount || 0) + amountInBRL);
     const payload: Partial<Expense> = {
       paidAmount: Number(newPaidAmount.toFixed(2)),
-      status: newPaidAmount >= payingExpense.value - 0.01 ? "Pago" : "Pendente"
+      status: newPaidAmount >= payingExpense.value - 0.01 ? "Pago" : "Pendente",
+      lastPaymentCurrency: payCurrency,
+      lastPaymentExchangeRate: rate
     };
     const ok = await onUpdateExpense(payingExpense.id, payload);
     setPayingSubmitting(false);
@@ -718,9 +733,51 @@ export default function ExpensesManager({
               </button>
             </div>
 
+            <div className="space-y-1 mb-3">
+              <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Moeda do Pagamento</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {PAY_CURRENCIES.map(cur => (
+                  <button
+                    key={cur.code}
+                    type="button"
+                    onClick={() => {
+                      setPayCurrency(cur.code);
+                      if (cur.code === "BRL") setPayExchangeRate("1");
+                    }}
+                    className={`flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg border text-[10px] font-bold transition-all cursor-pointer ${
+                      payCurrency === cur.code
+                        ? "bg-blue-600/15 border-blue-500/60 text-blue-600 dark:text-blue-400"
+                        : "bg-gray-50 dark:bg-slate-950 border-gray-200 dark:border-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-900"
+                    }`}
+                    title={cur.label}
+                  >
+                    <span>{cur.flag}</span>
+                    <span>{cur.code}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {payCurrency !== "BRL" && (
+              <div className="space-y-1 mb-3">
+                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Cotação (1 {payCurrency} = R$)</label>
+                <input
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  value={payExchangeRate}
+                  onChange={(e) => setPayExchangeRate(e.target.value)}
+                  placeholder="Ex: 5.20"
+                  className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono font-bold"
+                />
+              </div>
+            )}
+
             <form onSubmit={handlePaySubmit} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Pagar Parcialmente (R$)</label>
+                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">
+                  Pagar Parcialmente ({payCurrency})
+                </label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -729,7 +786,13 @@ export default function ExpensesManager({
                   onChange={(e) => setPayAmount(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono font-bold"
                 />
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">Ajuste o valor acima para um pagamento parcial personalizado.</p>
+                {payCurrency === "BRL" ? (
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">Ajuste o valor acima para um pagamento parcial personalizado.</p>
+                ) : (
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                    Equivalente: R$ {((Number(payAmount.replace(",", ".")) || 0) * (Number(payExchangeRate) || 1)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                )}
               </div>
               <div className="flex gap-3 justify-end pt-3 border-t border-gray-150 dark:border-slate-800">
                 <button

@@ -1113,6 +1113,7 @@ export default function App() {
                   onAddDriver={handleAddDriver}
                   onUpdateDriver={handleUpdateDriver}
                   onDeleteDriver={handleDeleteDriver}
+                  onUpdateFreight={handleUpdateFreight}
                 />
               )}
 
