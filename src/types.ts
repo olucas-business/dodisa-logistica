@@ -162,7 +162,8 @@ export interface Refuel {
 
 export interface Expense {
   id: string;
-  date: string;
+  date: string;       // Data de lançamento (quando a despesa/compra aconteceu)
+  dueDate?: string;    // Data de vencimento (quando deve/deveria ser paga)
   category: "Combustível" | "Alimentação" | "Hospedagem" | "Pedágio" | "Oficina" | "Pneus" | "Seguro" | "Outros";
   value: number;
   description: string;

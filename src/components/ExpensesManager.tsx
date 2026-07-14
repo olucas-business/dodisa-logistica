@@ -131,6 +131,7 @@ export default function ExpensesManager({
 
   // Form states
   const [date, setDate] = useState(todayLocalISO());
+  const [dueDate, setDueDate] = useState("");
   const [category, setCategory] = useState("Oficina");
   const [value, setValue] = useState("");
   const [description, setDescription] = useState("");
@@ -140,6 +141,7 @@ export default function ExpensesManager({
 
   const resetForm = () => {
     setDate(todayLocalISO());
+    setDueDate("");
     setCategory(categories[0] || "Outros");
     setValue("");
     setDescription("");
@@ -167,6 +169,7 @@ export default function ExpensesManager({
 
     const payload: Partial<Expense> = {
       date,
+      dueDate: dueDate || undefined,
       category,
       value: totalValue,
       description,
@@ -506,7 +509,12 @@ export default function ExpensesManager({
                 const isPaid = e.status === "Pago";
                 return (
                 <tr key={e.id} className="hover:bg-gray-50/70 dark:hover:bg-slate-800/40 text-gray-900 dark:text-gray-100 transition-all font-sans">
-                  <td className="p-3 pl-5 font-mono text-gray-500 dark:text-gray-400">{e.date}</td>
+                  <td className="p-3 pl-5 font-mono text-gray-500 dark:text-gray-400">
+                    {e.date}
+                    {e.dueDate && (
+                      <span className="block text-[9px] text-amber-600 dark:text-amber-400 font-semibold normal-case">Venc: {e.dueDate.split("-").reverse().join("/")}</span>
+                    )}
+                  </td>
                   <td className="p-3 font-semibold">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${CATEGORY_BADGE_STYLES[e.category] || CATEGORY_BADGE_STYLES["Outros"]}`}>
                       {e.category}
@@ -584,7 +592,7 @@ export default function ExpensesManager({
             <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto pr-1 flex-1 min-h-0 scrollbar-thin">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Data *</label>
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Data Lançamento *</label>
                   <input
                     type="date"
                     required
@@ -594,17 +602,27 @@ export default function ExpensesManager({
                   />
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Categoria *</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none"
-                  >
-                    {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Data Vencimento</label>
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
                 </div>
+              </div>
+
+              <div className="space-y-1 min-w-0">
+                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Categoria *</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none"
+                >
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-1">
