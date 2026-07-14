@@ -354,6 +354,38 @@ export default function DriversManager({
     }
   };
 
+  // Edição direta dos valores de comissão (corrigir total ou valor já pago, sem passar pelo fluxo de "Pagar")
+  const [editingCommissionFreight, setEditingCommissionFreight] = useState<Freight | null>(null);
+  const [editCommissionTotal, setEditCommissionTotal] = useState("");
+  const [editCommissionPaid, setEditCommissionPaid] = useState("");
+  const [editCommissionSubmitting, setEditCommissionSubmitting] = useState(false);
+
+  const handleOpenEditCommission = (freight: Freight) => {
+    setEditingCommissionFreight(freight);
+    setEditCommissionTotal(String(freight.financial?.commission || 0));
+    setEditCommissionPaid(String(freight.financial?.commissionPaid !== undefined ? freight.financial.commissionPaid : 0));
+  };
+
+  const handleSubmitEditCommission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCommissionFreight || !onUpdateFreight) return;
+    const total = Number(editCommissionTotal.replace(",", ".")) || 0;
+    const paid = Math.min(total, Number(editCommissionPaid.replace(",", ".")) || 0);
+    setEditCommissionSubmitting(true);
+    const ok = await onUpdateFreight(editingCommissionFreight.id, {
+      financial: {
+        ...editingCommissionFreight.financial,
+        commission: Number(total.toFixed(2)),
+        commissionPaid: Number(paid.toFixed(2)),
+        commissionPending: Number((total - paid).toFixed(2))
+      }
+    });
+    setEditCommissionSubmitting(false);
+    if (ok) {
+      setEditingCommissionFreight(null);
+    }
+  };
+
   const filteredDrivers = drivers.filter(d =>
     d.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.cpf.includes(searchTerm) ||
@@ -518,7 +550,6 @@ export default function DriversManager({
               {/* Comissões de Viagens: valores comissionados, pago vs pendente */}
               {(() => {
                 const { rows, totalPaid, totalPending } = getDriverCommissions(selectedDriver.id);
-                if (rows.length === 0) return null;
                 return (
                   <div className="bg-gray-50 border border-gray-150 rounded-xl p-4 space-y-3">
                     <div className="flex items-center justify-between border-b border-gray-200 pb-2">
@@ -528,6 +559,9 @@ export default function DriversManager({
                         <span className="text-orange-600">🟠 Pendente: R$ {totalPending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
+                    {rows.length === 0 && (
+                      <p className="text-xs text-gray-400 text-center py-3">Nenhuma viagem com comissão lançada para este motorista ainda.</p>
+                    )}
                     <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
                       {rows.map(({ freight: f, commission, paid, pending }) => (
                         <div key={f.id} className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-gray-200 bg-white text-xs">
@@ -541,6 +575,14 @@ export default function DriversManager({
                             <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${pending <= 0.01 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-orange-50 text-orange-700 border border-orange-200"}`}>
                               {pending <= 0.01 ? "Pago" : `Pendente: R$ ${pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                             </span>
+                            {onUpdateFreight && (
+                              <button
+                                onClick={() => handleOpenEditCommission(f)}
+                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded text-[10px] transition-all"
+                              >
+                                Editar
+                              </button>
+                            )}
                             {pending > 0.01 && onUpdateFreight && (
                               <button
                                 onClick={() => handleOpenPayCommission(f)}
@@ -1170,6 +1212,60 @@ export default function DriversManager({
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50"
                 >
                   Confirmar Pagamento
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDITAR COMISSÃO DE VIAGEM (valor total e valor já pago) */}
+      {editingCommissionFreight && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-sm border border-gray-200 shadow-2xl p-4 sm:p-6 relative animate-scale-in my-auto">
+            <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3 mb-4">
+              Editar Comissão — {editingCommissionFreight.freightNumber}
+            </h3>
+            <form onSubmit={handleSubmitEditCommission} className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 tracking-wider whitespace-nowrap">Comissão Total (R$)</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    required
+                    value={editCommissionTotal}
+                    onChange={(e) => setEditCommissionTotal(e.target.value)}
+                    className="w-full min-w-0 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg p-2 text-xs outline-none font-mono font-bold"
+                  />
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 tracking-wider whitespace-nowrap">Já Pago (R$)</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    required
+                    value={editCommissionPaid}
+                    onChange={(e) => setEditCommissionPaid(e.target.value)}
+                    className="w-full min-w-0 bg-gray-50 border border-gray-200 text-emerald-600 rounded-lg p-2 text-xs outline-none font-mono font-bold"
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-400">Corrige diretamente o valor total da comissão e quanto já foi pago, sem depender do fluxo de pagamento.</p>
+              <div className="flex gap-3 justify-end pt-3 border-t border-gray-150">
+                <button
+                  type="button"
+                  onClick={() => setEditingCommissionFreight(null)}
+                  className="px-4 py-2 border border-gray-250 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={editCommissionSubmitting}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                >
+                  Salvar Alterações
                 </button>
               </div>
             </form>

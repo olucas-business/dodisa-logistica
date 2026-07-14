@@ -153,26 +153,37 @@ export default function DashboardOverview({
   const [expensesStatusModalFilter, setExpensesStatusModalFilter] = useState<"paid" | "pending" | null>(null);
 
   // Pagamento (total, parcial ou por parcela) diretamente do popup de Despesas do Mês
+  const PAY_MODAL_CURRENCIES = [
+    { code: "BRL", label: "Real", flag: "🇧🇷" },
+    { code: "USD", label: "Dólar", flag: "🇺🇸" },
+    { code: "ARS", label: "Peso Argentino", flag: "🇦🇷" },
+    { code: "CLP", label: "Peso Chileno", flag: "🇨🇱" }
+  ];
   const [payingExpenseModal, setPayingExpenseModal] = useState<Expense | null>(null);
   const [payModalAmount, setPayModalAmount] = useState("");
+  const [payModalCurrency, setPayModalCurrency] = useState("BRL");
+  const [payModalExchangeRate, setPayModalExchangeRate] = useState("1");
   const [payModalSubmitting, setPayModalSubmitting] = useState(false);
 
   const handleOpenPayFromModal = (exp: Expense) => {
     setPayingExpenseModal(exp);
     const remaining = exp.value - (exp.paidAmount || 0);
     setPayModalAmount(remaining.toFixed(2));
+    setPayModalCurrency("BRL");
+    setPayModalExchangeRate("1");
   };
 
   const handleQuickPayModalInstallment = () => {
     if (!payingExpenseModal) return;
     const total = payingExpenseModal.installments && payingExpenseModal.installments > 0 ? payingExpenseModal.installments : 1;
-    setPayModalAmount((payingExpenseModal.value / total).toFixed(2));
+    const amountBRL = payingExpenseModal.value / total;
+    setPayModalAmount((payModalCurrency === "BRL" ? amountBRL : amountBRL / (Number(payModalExchangeRate) || 1)).toFixed(2));
   };
 
   const handleQuickPayModalTotal = () => {
     if (!payingExpenseModal) return;
     const remaining = payingExpenseModal.value - (payingExpenseModal.paidAmount || 0);
-    setPayModalAmount(remaining.toFixed(2));
+    setPayModalAmount((payModalCurrency === "BRL" ? remaining : remaining / (Number(payModalExchangeRate) || 1)).toFixed(2));
   };
 
   const handlePayModalSubmit = async (e: FormEvent) => {
@@ -183,11 +194,15 @@ export default function DashboardOverview({
       alert("Informe um valor de pagamento válido.");
       return;
     }
+    const rate = payModalCurrency === "BRL" ? 1 : (Number(payModalExchangeRate) || 1);
+    const amountInBRL = parsed * rate;
     setPayModalSubmitting(true);
-    const newPaidAmount = Math.min(payingExpenseModal.value, (payingExpenseModal.paidAmount || 0) + parsed);
+    const newPaidAmount = Math.min(payingExpenseModal.value, (payingExpenseModal.paidAmount || 0) + amountInBRL);
     const ok = await onUpdateExpense(payingExpenseModal.id, {
       paidAmount: Number(newPaidAmount.toFixed(2)),
-      status: newPaidAmount >= payingExpenseModal.value - 0.01 ? "Pago" : "Pendente"
+      status: newPaidAmount >= payingExpenseModal.value - 0.01 ? "Pago" : "Pendente",
+      lastPaymentCurrency: payModalCurrency,
+      lastPaymentExchangeRate: rate
     });
     setPayModalSubmitting(false);
     if (ok) {
@@ -2273,8 +2288,8 @@ export default function DashboardOverview({
 
       {/* SUB-MODAL: Pagar despesa (a partir do popup Pago/Pendente) */}
       {payingExpenseModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-[60] animate-fade-in overflow-y-auto">
-          <div className="bg-card text-foreground rounded-2xl w-full max-w-sm border border-border shadow-2xl p-4 sm:p-6 relative animate-scale-in my-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-4 z-[60] animate-fade-in overflow-y-auto">
+          <div className="bg-card text-foreground rounded-2xl w-full max-w-md border border-border shadow-2xl p-5 sm:p-6 relative animate-scale-in my-4 sm:my-auto">
             <h3 className="text-sm font-bold text-foreground border-b border-border pb-3 mb-4">Registrar Pagamento</h3>
             <div className="mb-4 space-y-1">
               <p className="text-xs text-muted-foreground">{payingExpenseModal.description}</p>
@@ -2308,9 +2323,51 @@ export default function DashboardOverview({
               </button>
             </div>
 
+            <div className="space-y-1 mb-3">
+              <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Moeda do Pagamento</label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {PAY_MODAL_CURRENCIES.map(cur => (
+                  <button
+                    key={cur.code}
+                    type="button"
+                    onClick={() => {
+                      setPayModalCurrency(cur.code);
+                      if (cur.code === "BRL") setPayModalExchangeRate("1");
+                    }}
+                    className={`flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-lg border text-[10px] font-bold transition-all ${
+                      payModalCurrency === cur.code
+                        ? "bg-blue-600/15 border-blue-500/60 text-blue-600 dark:text-blue-400"
+                        : "bg-muted/30 border-border text-muted-foreground hover:bg-muted"
+                    }`}
+                    title={cur.label}
+                  >
+                    <span>{cur.flag}</span>
+                    <span>{cur.code}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {payModalCurrency !== "BRL" && (
+              <div className="space-y-1 mb-3">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Cotação (1 {payModalCurrency} = R$)</label>
+                <input
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  value={payModalExchangeRate}
+                  onChange={(e) => setPayModalExchangeRate(e.target.value)}
+                  placeholder="Ex: 5.20"
+                  className="w-full bg-muted/30 border border-border rounded-lg p-2 text-xs outline-none font-mono font-bold"
+                />
+              </div>
+            )}
+
             <form onSubmit={handlePayModalSubmit} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Pagar Parcialmente (R$)</label>
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">
+                  Pagar Parcialmente ({payModalCurrency})
+                </label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -2319,7 +2376,13 @@ export default function DashboardOverview({
                   onChange={(e) => setPayModalAmount(e.target.value)}
                   className="w-full bg-muted/30 border border-border rounded-lg p-2 text-xs outline-none font-mono font-bold"
                 />
-                <p className="text-[10px] text-muted-foreground">Ajuste o valor acima para um pagamento parcial personalizado.</p>
+                {payModalCurrency === "BRL" ? (
+                  <p className="text-[10px] text-muted-foreground">Ajuste o valor acima para um pagamento parcial personalizado.</p>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground">
+                    Equivalente: R$ {((Number(payModalAmount.replace(",", ".")) || 0) * (Number(payModalExchangeRate) || 1)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                )}
               </div>
               <div className="flex gap-3 justify-end pt-3 border-t border-border">
                 <button
