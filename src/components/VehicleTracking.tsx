@@ -72,7 +72,7 @@ export default function VehicleTracking() {
       zoom: 5,
       zoomControl: false
     });
-    L.control.zoom({ position: "topright" }).addTo(map);
+    L.control.zoom({ position: "bottomright" }).addTo(map);
     mapRef.current = map;
     return () => {
       map.remove();
