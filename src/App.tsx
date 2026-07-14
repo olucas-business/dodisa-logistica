@@ -1101,6 +1101,7 @@ export default function App() {
                   onUpdateInternationalCost={handleUpdateInternationalCost}
                   onDeleteInternationalCost={handleDeleteInternationalCost}
                   onUpdateExpense={handleUpdateExpense}
+                  onUpdateDebt={handleUpdateDebt}
                   onNavigateTo={setTab}
                 />
               )}

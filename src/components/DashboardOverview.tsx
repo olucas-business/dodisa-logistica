@@ -69,6 +69,7 @@ interface DashboardOverviewProps {
   onUpdateInternationalCost?: (id: string, payload: Partial<InternationalCost>) => Promise<boolean>;
   onDeleteInternationalCost?: (id: string) => Promise<boolean>;
   onUpdateExpense?: (id: string, payload: Partial<Expense>) => Promise<boolean>;
+  onUpdateDebt?: (id: string, payload: Partial<Debt>) => Promise<boolean>;
   onNavigateTo: (tab: string) => void;
 }
 
@@ -101,6 +102,7 @@ export default function DashboardOverview({
   onUpdateInternationalCost,
   onDeleteInternationalCost,
   onUpdateExpense,
+  onUpdateDebt,
   onNavigateTo
 }: DashboardOverviewProps) {
   // Constants
@@ -151,6 +153,38 @@ export default function DashboardOverview({
   // Custos Operacionais por País: lançamento manual (Brasil/Argentina/Chile), com status Pago/Pagar
   const [intCostModalOpen, setIntCostModalOpen] = useState(false);
   const [expensesStatusModalFilter, setExpensesStatusModalFilter] = useState<"paid" | "pending" | null>(null);
+
+  // Popup "Checar Pendências/Pagamentos" da Dívida de Alavancagem
+  const [debtsStatusModalFilter, setDebtsStatusModalFilter] = useState<"paid" | "pending" | null>(null);
+  const [payingDebtModal, setPayingDebtModal] = useState<Debt | null>(null);
+  const [payDebtModalAmount, setPayDebtModalAmount] = useState("");
+  const [payDebtModalSubmitting, setPayDebtModalSubmitting] = useState(false);
+
+  const handleOpenPayDebtFromModal = (debt: Debt) => {
+    setPayingDebtModal(debt);
+    setPayDebtModalAmount(debt.value.toFixed(2));
+  };
+
+  const handlePayDebtModalSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!payingDebtModal || !onUpdateDebt) return;
+    const parsed = Number(payDebtModalAmount.replace(",", "."));
+    if (!parsed || parsed <= 0) {
+      alert("Informe um valor de pagamento válido.");
+      return;
+    }
+    setPayDebtModalSubmitting(true);
+    const remaining = Math.max(0, payingDebtModal.value - parsed);
+    const payload: Partial<Debt> = remaining <= 0.01
+      ? { value: 0, status: "Pago" }
+      : { value: Number(remaining.toFixed(2)) };
+    const ok = await onUpdateDebt(payingDebtModal.id, payload);
+    setPayDebtModalSubmitting(false);
+    if (ok) {
+      setPayingDebtModal(null);
+      setPayDebtModalAmount("");
+    }
+  };
 
   // Pagamento (total, parcial ou por parcela) diretamente do popup de Despesas do Mês
   const PAY_MODAL_CURRENCIES = [
@@ -917,6 +951,23 @@ export default function DashboardOverview({
     const [, m] = yearMonth.split("-");
     return ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"][Number(m) - 1];
   };
+
+  // Faturamento gerado x Comissão dos motoristas, tendência últimos 6 meses (gráfico de onda)
+  const driverRevenueCommissionTrend = useMemo(() => {
+    const map: Record<string, { revenue: number; commission: number }> = {};
+    freights.filter(f => f.status !== "Cancelado").forEach(f => {
+      const ym = (f.date || "").slice(0, 7);
+      if (!last6MonthKeys.includes(ym)) return;
+      map[ym] = map[ym] || { revenue: 0, commission: 0 };
+      map[ym].revenue += f.financial?.value || 0;
+      map[ym].commission += f.financial?.commission || 0;
+    });
+    return last6MonthKeys.map(ym => ({
+      name: monthShortLabel(ym),
+      "Faturamento Gerado": map[ym]?.revenue || 0,
+      "Comissão": map[ym]?.commission || 0
+    }));
+  }, [freights, last6MonthKeys]);
 
   const fuelSpendByVehicleChartData = useMemo(() => {
     const map: Record<string, number> = {};
@@ -1745,12 +1796,26 @@ export default function DashboardOverview({
               </div>
             </div>
 
-            <button
-              onClick={() => onNavigateTo("debts")}
-              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 bg-blue-500/5 hover:bg-blue-500/10 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
-            >
-              Ir para Sessão de Dívidas ➔
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setDebtsStatusModalFilter("pending")}
+                className="px-3 py-1.5 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 font-semibold rounded-xl text-[11px] transition-all"
+              >
+                Checar Pendências
+              </button>
+              <button
+                onClick={() => setDebtsStatusModalFilter("paid")}
+                className="px-3 py-1.5 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold rounded-xl text-[11px] transition-all"
+              >
+                Checar Pagamentos
+              </button>
+              <button
+                onClick={() => onNavigateTo("debts")}
+                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 bg-blue-500/5 hover:bg-blue-500/10 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+              >
+                Ir para Sessão de Dívidas ➔
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
@@ -2026,6 +2091,40 @@ export default function DashboardOverview({
                   </div>
                 );
               })()}
+            </div>
+          </div>
+
+          {/* Faturamento Gerado x Comissão: tendência dos últimos 6 meses (gráfico de onda) */}
+          <div className="border-t border-border pt-4 mt-2">
+            <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground block mb-2">Faturamento Gerado x Comissão — Últimos 6 Meses</span>
+            <div className="h-[200px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={driverRevenueCommissionTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="driverRevenueGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="driverCommissionGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" opacity={0.5} />
+                  <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={9} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--color-muted-foreground)" fontSize={9} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                  <Tooltip
+                    formatter={(value: any, name: any) => [`R$ ${Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, name]}
+                    contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
+                  />
+                  <Area type="monotone" dataKey="Faturamento Gerado" stroke="#3b82f6" strokeWidth={2.5} fill="url(#driverRevenueGrad)" dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  <Area type="monotone" dataKey="Comissão" stroke="#10b981" strokeWidth={2.5} fill="url(#driverCommissionGrad)" dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex items-center gap-4 justify-center mt-1 text-[10px] font-semibold text-muted-foreground">
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" />Faturamento Gerado</span>
+              <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />Comissão</span>
             </div>
           </div>
         </div>
@@ -2400,6 +2499,121 @@ export default function DashboardOverview({
                 <button
                   type="submit"
                   disabled={payModalSubmitting}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
+                >
+                  Confirmar Pagamento
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Dívida de Alavancagem - Checar Pagamentos / Pendências */}
+      {debtsStatusModalFilter && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-card text-foreground rounded-2xl w-full max-w-3xl border border-border shadow-2xl p-4 sm:p-6 relative animate-scale-in max-h-[calc(100vh-2rem)] my-4 sm:my-auto flex flex-col">
+            <div className="flex items-start justify-between gap-3 border-b border-border pb-3 mb-4 flex-shrink-0">
+              <h3 className={`text-sm font-bold flex items-center gap-2 min-w-0 ${debtsStatusModalFilter === "paid" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${debtsStatusModalFilter === "paid" ? "bg-emerald-500" : "bg-red-500"}`} />
+                <span className="truncate">{debtsStatusModalFilter === "paid" ? "Dívidas Pagas" : "Dívidas Pendentes"}</span>
+              </h3>
+              <button onClick={() => setDebtsStatusModalFilter(null)} className="text-muted-foreground hover:text-foreground shrink-0">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2 overflow-y-auto pr-1 flex-1 min-h-0">
+              {(() => {
+                const rows = debts
+                  .filter(d => debtsStatusModalFilter === "paid" ? d.status === "Pago" : d.status !== "Pago")
+                  .sort((a, b) => b.dueDate.localeCompare(a.dueDate));
+
+                if (rows.length === 0) {
+                  return (
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {debtsStatusModalFilter === "paid" ? "Nenhuma dívida paga ainda." : "Nenhuma dívida pendente."}
+                      </p>
+                    </div>
+                  );
+                }
+
+                return rows.map((d) => {
+                  const [y, m, dd] = d.dueDate.split("-");
+                  const formattedDate = dd && m ? `${dd}/${m}` : d.dueDate;
+                  return (
+                    <div key={d.id} className="flex flex-row items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
+                      <span className="text-[10px] text-muted-foreground font-mono shrink-0 w-14">{formattedDate}</span>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-black text-foreground block truncate">{d.description}</span>
+                        <span className="text-[10px] text-muted-foreground block truncate">{d.category}</span>
+                      </div>
+                      <span className={`text-sm font-black font-mono shrink-0 text-right ${debtsStatusModalFilter === "paid" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        R$ {d.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                      {debtsStatusModalFilter === "pending" && onUpdateDebt && (
+                        <button
+                          onClick={() => handleOpenPayDebtFromModal(d)}
+                          className="shrink-0 px-3 py-1.5 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 font-bold rounded-lg text-[11px] transition-all"
+                        >
+                          Pagar
+                        </button>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            <div className="flex justify-end pt-4 mt-2 border-t border-border flex-shrink-0">
+              <button
+                onClick={() => onNavigateTo("debts")}
+                className="px-4 py-2 bg-card hover:bg-muted border border-border text-foreground font-semibold rounded-lg text-xs transition-all"
+              >
+                Ir para Gestão de Dívidas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUB-MODAL: Pagar dívida (a partir do popup Pago/Pendente) */}
+      {payingDebtModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-[60] animate-fade-in overflow-y-auto">
+          <div className="bg-card text-foreground rounded-2xl w-full max-w-md border border-border shadow-2xl p-5 sm:p-6 relative animate-scale-in my-auto">
+            <h3 className="text-sm font-bold text-foreground border-b border-border pb-3 mb-4">Registrar Pagamento</h3>
+            <div className="mb-4 space-y-1">
+              <p className="text-xs text-muted-foreground">{payingDebtModal.description}</p>
+              <p className="text-lg font-black font-mono text-red-600 dark:text-red-400">
+                R$ {payingDebtModal.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <span className="text-[10px] font-semibold text-muted-foreground ml-1">pendente</span>
+              </p>
+            </div>
+            <form onSubmit={handlePayDebtModalSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Valor a Pagar (R$)</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  required
+                  value={payDebtModalAmount}
+                  onChange={(e) => setPayDebtModalAmount(e.target.value)}
+                  className="w-full bg-muted/30 border border-border rounded-lg p-2 text-xs outline-none font-mono font-bold"
+                />
+                <p className="text-[10px] text-muted-foreground">Pode ser um pagamento parcial ou o valor total pendente.</p>
+              </div>
+              <div className="flex gap-3 justify-end pt-3 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => { setPayingDebtModal(null); setPayDebtModalAmount(""); }}
+                  className="px-4 py-2 border border-border hover:bg-muted text-foreground text-xs font-semibold rounded-lg transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={payDebtModalSubmitting}
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
                 >
                   Confirmar Pagamento
