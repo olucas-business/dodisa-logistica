@@ -185,16 +185,24 @@ export default function VehicleTracking() {
           <button onClick={fetchLive} className="p-2 rounded-lg border border-border hover:bg-muted transition-colors" title="Atualizar agora">
             <RefreshCw className="w-4 h-4 text-muted-foreground" />
           </button>
-          <a
-            href="https://rotasbrasil.com.br/"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={() => {
+              const width = 1200;
+              const height = 800;
+              const left = window.screenX + (window.outerWidth - width) / 2;
+              const top = window.screenY + (window.outerHeight - height) / 2;
+              window.open(
+                "https://rotasbrasil.com.br/",
+                "RotasBrasil",
+                `width=${width},height=${height},left=${left},top=${top},noopener,noreferrer`
+              );
+            }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors text-xs font-bold text-foreground"
-            title="Abrir Rotas Brasil em uma nova aba"
+            title="Abrir Rotas Brasil em um popup"
           >
             <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
             Rotas Brasil
-          </a>
+          </button>
         </div>
       </div>
 
