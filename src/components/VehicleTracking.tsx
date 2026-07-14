@@ -61,8 +61,28 @@ export default function VehicleTracking() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [mapStyle, setMapStyle] = useState<"satellite" | "street">("satellite");
   const [showVehicleList, setShowVehicleList] = useState(false);
+  const rotasBrasilWindowRef = useRef<Window | null>(null);
 
   const selectedVehicle = vehicles.find(v => v.vehicleId === selectedId) || vehicles[0];
+
+  const openRotasBrasil = () => {
+    const existing = rotasBrasilWindowRef.current;
+    if (existing && !existing.closed) {
+      existing.focus();
+      return;
+    }
+    const width = Math.min(1400, Math.round(window.screen.availWidth * 0.9));
+    const height = Math.min(900, Math.round(window.screen.availHeight * 0.9));
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    const win = window.open(
+      "https://rotasbrasil.com.br/",
+      "RotasBrasil",
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+    if (win) win.opener = null;
+    rotasBrasilWindowRef.current = win;
+  };
 
   // Init map once
   useEffect(() => {
@@ -221,22 +241,13 @@ export default function VehicleTracking() {
             <RefreshCw className="w-4 h-4 text-muted-foreground" />
           </button>
           <button
-            onClick={() => {
-              const width = 1200;
-              const height = 800;
-              const left = window.screenX + (window.outerWidth - width) / 2;
-              const top = window.screenY + (window.outerHeight - height) / 2;
-              window.open(
-                "https://rotasbrasil.com.br/",
-                "RotasBrasil",
-                `width=${width},height=${height},left=${left},top=${top},noopener,noreferrer`
-              );
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted transition-colors text-xs font-bold text-foreground"
+            onClick={openRotasBrasil}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 transition-all text-xs font-bold text-white shadow-md shadow-blue-600/20"
             title="Abrir Rotas Brasil em um popup"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
+            <Route className="w-4 h-4" />
             Rotas Brasil
+            <ExternalLink className="w-3 h-3 opacity-70" />
           </button>
         </div>
       </div>
