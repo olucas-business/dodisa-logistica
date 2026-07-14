@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CompanyContact } from "../types";
 import {
   Contact,
@@ -13,7 +13,8 @@ import {
   FileText,
   Upload,
   Paperclip,
-  StickyNote
+  StickyNote,
+  NotebookPen
 } from "lucide-react";
 
 interface ContactsManagerProps {
@@ -130,6 +131,69 @@ export default function ContactsManager({
     setConfirmDeleteId(null);
   };
 
+  // Bloco de notas do contato: histórico de anotações com upload de arquivo, uma vez que o contato já existe
+  const [viewingContactId, setViewingContactId] = useState<string | null>(null);
+  const viewingContact = contacts.find(c => c.id === viewingContactId) || null;
+  const [notepadText, setNotepadText] = useState("");
+  const [notepadFile, setNotepadFile] = useState<{ url: string; name: string } | null>(null);
+  const [uploadingNotepadFile, setUploadingNotepadFile] = useState(false);
+  const [savingNotepadEntry, setSavingNotepadEntry] = useState(false);
+
+  const handleOpenNotepad = (contact: CompanyContact) => {
+    setViewingContactId(contact.id);
+    setNotepadText("");
+    setNotepadFile(null);
+  };
+
+  const handleUploadNotepadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingNotepadFile(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
+        const res = await fetch("/api/upload-document", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ file: dataUrl, fileName: file.name, folder: "company-contacts" })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setNotepadFile({ url: data.url, name: file.name });
+        } else {
+          alert(data.message || "Erro ao enviar arquivo.");
+        }
+        setUploadingNotepadFile(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      alert("Erro ao enviar arquivo.");
+      setUploadingNotepadFile(false);
+    }
+    e.target.value = "";
+  };
+
+  const handleAddNotepadEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!viewingContact || (!notepadText.trim() && !notepadFile)) return;
+    setSavingNotepadEntry(true);
+    const newEntry = {
+      id: `note_${Date.now()}`,
+      text: notepadText.trim(),
+      fileUrl: notepadFile?.url,
+      fileName: notepadFile?.name,
+      createdAt: new Date().toISOString()
+    };
+    const updatedEntries = [...(viewingContact.notepadEntries || []), newEntry];
+    const ok = await onUpdateContact(viewingContact.id, { notepadEntries: updatedEntries });
+    setSavingNotepadEntry(false);
+    if (ok) {
+      setNotepadText("");
+      setNotepadFile(null);
+    }
+  };
+
   const filteredContacts = contacts.filter(c =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -181,18 +245,22 @@ export default function ContactsManager({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredContacts.map(contact => (
-            <div key={contact.id} className="bg-card border border-border rounded-2xl p-5 space-y-3 group">
+            <div
+              key={contact.id}
+              onClick={() => handleOpenNotepad(contact)}
+              className="bg-card border border-border rounded-2xl p-5 space-y-3 group cursor-pointer hover:border-blue-500/40 transition-all"
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h3 className="text-sm font-black text-foreground truncate">{contact.name}</h3>
                   {contact.role && <p className="text-[11px] text-muted-foreground truncate">{contact.role}</p>}
                 </div>
                 <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                  <button onClick={() => handleOpenEdit(contact)} className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-all">
+                  <button onClick={(e) => { e.stopPropagation(); handleOpenEdit(contact); }} className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-all">
                     <Edit3 className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => handleDelete(contact.id)}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(contact.id); }}
                     className={`p-1.5 rounded-lg transition-all ${confirmDeleteId === contact.id ? "bg-amber-500 text-white" : "bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20"}`}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -224,22 +292,20 @@ export default function ContactsManager({
                   <span className="line-clamp-3">{contact.notes}</span>
                 </div>
               )}
-              {contact.files && contact.files.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border">
-                  {contact.files.map(f => (
-                    <a
-                      key={f.id}
-                      href={f.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg px-2 py-1 transition-all truncate max-w-full"
-                    >
-                      <Paperclip className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{f.name}</span>
-                    </a>
-                  ))}
-                </div>
-              )}
+              <div className="flex items-center justify-between gap-2 pt-1 border-t border-border">
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">
+                  <NotebookPen className="w-3 h-3" />
+                  {(contact.notepadEntries?.length || 0) > 0
+                    ? `${contact.notepadEntries!.length} anotação${contact.notepadEntries!.length > 1 ? "ões" : ""}`
+                    : "Abrir bloco de notas"}
+                </span>
+                {contact.files && contact.files.length > 0 && (
+                  <span className="flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+                    <Paperclip className="w-3 h-3" />
+                    {contact.files.length}
+                  </span>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -354,6 +420,118 @@ export default function ContactsManager({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* BLOCO DE NOTAS DO CONTATO */}
+      {viewingContact && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-4 z-50 overflow-y-auto animate-fade-in">
+          <div className="bg-card text-foreground rounded-2xl w-full max-w-xl border border-border shadow-2xl p-4 sm:p-6 relative animate-scale-in max-h-[calc(100vh-2rem)] my-4 sm:my-auto flex flex-col">
+            <div className="flex items-start justify-between gap-3 border-b border-border pb-3 mb-4 flex-shrink-0">
+              <div className="min-w-0 flex items-center gap-2.5">
+                <span className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl shrink-0">
+                  <NotebookPen className="w-4 h-4" />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-black text-foreground truncate">{viewingContact.name}</h3>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {[viewingContact.company, viewingContact.role].filter(Boolean).join(" · ") || "Bloco de notas"}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setViewingContactId(null)} className="text-muted-foreground hover:text-foreground shrink-0">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {(viewingContact.phone || viewingContact.email) && (
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mb-4 flex-shrink-0">
+                {viewingContact.phone && (
+                  <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />{viewingContact.phone}</span>
+                )}
+                {viewingContact.email && (
+                  <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" />{viewingContact.email}</span>
+                )}
+              </div>
+            )}
+
+            {/* Nova anotação */}
+            <form onSubmit={handleAddNotepadEntry} className="space-y-2 mb-4 flex-shrink-0">
+              <textarea
+                value={notepadText}
+                onChange={(e) => setNotepadText(e.target.value)}
+                rows={3}
+                placeholder="Escreva uma anotação sobre este contato..."
+                className="w-full bg-muted/30 border border-border rounded-lg p-2.5 text-xs outline-none resize-none"
+              />
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <label className="flex items-center gap-1.5 bg-muted/30 border border-dashed border-border text-muted-foreground rounded-lg px-2.5 py-1.5 text-[10px] font-semibold cursor-pointer hover:border-blue-500 transition-all shrink-0">
+                    <Upload className="w-3 h-3" />
+                    {uploadingNotepadFile ? "Enviando..." : "Anexar arquivo"}
+                    <input type="file" className="hidden" onChange={handleUploadNotepadFile} disabled={uploadingNotepadFile} />
+                  </label>
+                  {notepadFile && (
+                    <span className="flex items-center gap-1 text-[10px] font-semibold text-foreground bg-muted rounded-lg pl-2 pr-1 py-1 truncate">
+                      <FileText className="w-3 h-3 shrink-0" />
+                      <span className="truncate max-w-[100px]">{notepadFile.name}</span>
+                      <button type="button" onClick={() => setNotepadFile(null)} className="text-muted-foreground hover:text-red-500 p-0.5 shrink-0">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  disabled={savingNotepadEntry || (!notepadText.trim() && !notepadFile)}
+                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50 shrink-0"
+                >
+                  Adicionar
+                </button>
+              </div>
+            </form>
+
+            {/* Histórico de anotações */}
+            <div className="space-y-2 overflow-y-auto pr-1 flex-1 min-h-0 border-t border-border pt-3">
+              {(!viewingContact.notepadEntries || viewingContact.notepadEntries.length === 0) ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <StickyNote className="w-7 h-7 text-muted-foreground/40 mb-2" />
+                  <p className="text-xs text-muted-foreground font-medium">Nenhuma anotação ainda. Escreva a primeira acima.</p>
+                </div>
+              ) : (
+                [...viewingContact.notepadEntries].reverse().map(entry => (
+                  <div key={entry.id} className="p-3 rounded-xl border border-border bg-muted/30 space-y-1.5">
+                    {entry.text && <p className="text-xs text-foreground whitespace-pre-wrap">{entry.text}</p>}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        {new Date(entry.createdAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      {entry.fileUrl && (
+                        <a
+                          href={entry.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg px-2 py-1 transition-all truncate max-w-[160px]"
+                        >
+                          <Paperclip className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{entry.fileName || "Arquivo"}</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-end pt-3 mt-2 border-t border-border flex-shrink-0">
+              <button
+                onClick={() => { setViewingContactId(null); handleOpenEdit(viewingContact); }}
+                className="px-4 py-2 bg-card hover:bg-muted border border-border text-foreground font-semibold rounded-lg text-xs transition-all"
+              >
+                Editar Dados do Contato
+              </button>
+            </div>
           </div>
         </div>
       )}

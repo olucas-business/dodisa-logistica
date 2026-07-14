@@ -244,6 +244,14 @@ export interface CompanyContactFile {
   uploadedAt: string;
 }
 
+export interface ContactNotepadEntry {
+  id: string;
+  text: string;
+  fileUrl?: string;
+  fileName?: string;
+  createdAt: string;
+}
+
 export interface CompanyContact {
   id: string;
   name: string;
@@ -253,6 +261,7 @@ export interface CompanyContact {
   email: string;
   notes?: string;
   files: CompanyContactFile[];
+  notepadEntries?: ContactNotepadEntry[];
   createdAt: string;
 }
 

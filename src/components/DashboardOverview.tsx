@@ -68,6 +68,7 @@ interface DashboardOverviewProps {
   onAddInternationalCost?: (payload: Partial<InternationalCost>) => Promise<boolean>;
   onUpdateInternationalCost?: (id: string, payload: Partial<InternationalCost>) => Promise<boolean>;
   onDeleteInternationalCost?: (id: string) => Promise<boolean>;
+  onUpdateExpense?: (id: string, payload: Partial<Expense>) => Promise<boolean>;
   onNavigateTo: (tab: string) => void;
 }
 
@@ -99,6 +100,7 @@ export default function DashboardOverview({
   onAddInternationalCost,
   onUpdateInternationalCost,
   onDeleteInternationalCost,
+  onUpdateExpense,
   onNavigateTo
 }: DashboardOverviewProps) {
   // Constants
@@ -149,6 +151,50 @@ export default function DashboardOverview({
   // Custos Operacionais por País: lançamento manual (Brasil/Argentina/Chile), com status Pago/Pagar
   const [intCostModalOpen, setIntCostModalOpen] = useState(false);
   const [expensesStatusModalFilter, setExpensesStatusModalFilter] = useState<"paid" | "pending" | null>(null);
+
+  // Pagamento (total, parcial ou por parcela) diretamente do popup de Despesas do Mês
+  const [payingExpenseModal, setPayingExpenseModal] = useState<Expense | null>(null);
+  const [payModalAmount, setPayModalAmount] = useState("");
+  const [payModalSubmitting, setPayModalSubmitting] = useState(false);
+
+  const handleOpenPayFromModal = (exp: Expense) => {
+    setPayingExpenseModal(exp);
+    const remaining = exp.value - (exp.paidAmount || 0);
+    setPayModalAmount(remaining.toFixed(2));
+  };
+
+  const handleQuickPayModalInstallment = () => {
+    if (!payingExpenseModal) return;
+    const total = payingExpenseModal.installments && payingExpenseModal.installments > 0 ? payingExpenseModal.installments : 1;
+    setPayModalAmount((payingExpenseModal.value / total).toFixed(2));
+  };
+
+  const handleQuickPayModalTotal = () => {
+    if (!payingExpenseModal) return;
+    const remaining = payingExpenseModal.value - (payingExpenseModal.paidAmount || 0);
+    setPayModalAmount(remaining.toFixed(2));
+  };
+
+  const handlePayModalSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!payingExpenseModal || !onUpdateExpense) return;
+    const parsed = Number(payModalAmount.replace(",", "."));
+    if (!parsed || parsed <= 0) {
+      alert("Informe um valor de pagamento válido.");
+      return;
+    }
+    setPayModalSubmitting(true);
+    const newPaidAmount = Math.min(payingExpenseModal.value, (payingExpenseModal.paidAmount || 0) + parsed);
+    const ok = await onUpdateExpense(payingExpenseModal.id, {
+      paidAmount: Number(newPaidAmount.toFixed(2)),
+      status: newPaidAmount >= payingExpenseModal.value - 0.01 ? "Pago" : "Pendente"
+    });
+    setPayModalSubmitting(false);
+    if (ok) {
+      setPayingExpenseModal(null);
+      setPayModalAmount("");
+    }
+  };
   const [editingIntCostId, setEditingIntCostId] = useState<string | null>(null);
   const [intCostCountry, setIntCostCountry] = useState<"Brasil" | "Argentina" | "Chile">("Brasil");
   const [intCostValue, setIntCostValue] = useState("");
@@ -2154,14 +2200,14 @@ export default function DashboardOverview({
 
       {/* MODAL: Despesas do Mês - Checar Pagamentos / Pendências */}
       {expensesStatusModalFilter && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
-          <div className="bg-card text-foreground rounded-2xl w-full max-w-lg border border-border shadow-2xl p-4 sm:p-6 relative animate-scale-in max-h-[calc(100vh-2rem)] my-auto flex flex-col">
-            <div className="flex items-center justify-between border-b border-border pb-3 mb-4 flex-shrink-0">
-              <h3 className={`text-sm font-bold flex items-center gap-2 ${expensesStatusModalFilter === "paid" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                <span className={`w-2.5 h-2.5 rounded-full ${expensesStatusModalFilter === "paid" ? "bg-emerald-500" : "bg-red-500"}`} />
-                {expensesStatusModalFilter === "paid" ? "Despesas Pagas" : "Despesas Pendentes"} — {currentMonthName} de {currentYear}
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-card text-foreground rounded-2xl w-full max-w-3xl border border-border shadow-2xl p-4 sm:p-6 relative animate-scale-in max-h-[calc(100vh-2rem)] my-4 sm:my-auto flex flex-col">
+            <div className="flex items-start justify-between gap-3 border-b border-border pb-3 mb-4 flex-shrink-0">
+              <h3 className={`text-sm font-bold flex items-center gap-2 min-w-0 ${expensesStatusModalFilter === "paid" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${expensesStatusModalFilter === "paid" ? "bg-emerald-500" : "bg-red-500"}`} />
+                <span className="truncate">{expensesStatusModalFilter === "paid" ? "Despesas Pagas" : "Despesas Pendentes"} — {currentMonthName} de {currentYear}</span>
               </h3>
-              <button onClick={() => setExpensesStatusModalFilter(null)} className="text-muted-foreground hover:text-foreground">
+              <button onClick={() => setExpensesStatusModalFilter(null)} className="text-muted-foreground hover:text-foreground shrink-0">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -2188,20 +2234,25 @@ export default function DashboardOverview({
                 }
 
                 return rows.map(({ expense: e, paidAmt, pendingAmt }) => (
-                  <div key={e.id} className="p-3 rounded-xl border border-border bg-muted/30 space-y-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <span className="text-xs font-black text-foreground block truncate">{e.description}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">{e.date} · {e.category}</span>
-                      </div>
-                      <span className={`text-sm font-black font-mono shrink-0 ${expensesStatusModalFilter === "paid" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                        R$ {(expensesStatusModalFilter === "paid" ? paidAmt : pendingAmt).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <div key={e.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-xl border border-border bg-muted/30">
+                    <span className="text-[10px] text-muted-foreground font-mono shrink-0 sm:w-20">{e.date}</span>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs font-black text-foreground block truncate">{e.description}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {e.category}
+                        {(e.installments || 1) > 1 && ` · Parcelado ${e.installments}x (total R$ ${e.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`}
                       </span>
                     </div>
-                    {(e.installments || 1) > 1 && (
-                      <span className="text-[10px] font-semibold text-muted-foreground">
-                        Parcelado em {e.installments}x · Valor total: R$ {e.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
+                    <span className={`text-sm font-black font-mono shrink-0 sm:w-32 sm:text-right ${expensesStatusModalFilter === "paid" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                      R$ {(expensesStatusModalFilter === "paid" ? paidAmt : pendingAmt).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    {expensesStatusModalFilter === "pending" && onUpdateExpense && (
+                      <button
+                        onClick={() => handleOpenPayFromModal(e)}
+                        className="shrink-0 px-3 py-1.5 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 font-bold rounded-lg text-[11px] transition-all"
+                      >
+                        Pagar
+                      </button>
                     )}
                   </div>
                 ));
@@ -2216,6 +2267,77 @@ export default function DashboardOverview({
                 Ir para Gestão de Despesas
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SUB-MODAL: Pagar despesa (a partir do popup Pago/Pendente) */}
+      {payingExpenseModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-[60] animate-fade-in overflow-y-auto">
+          <div className="bg-card text-foreground rounded-2xl w-full max-w-sm border border-border shadow-2xl p-4 sm:p-6 relative animate-scale-in my-auto">
+            <h3 className="text-sm font-bold text-foreground border-b border-border pb-3 mb-4">Registrar Pagamento</h3>
+            <div className="mb-4 space-y-1">
+              <p className="text-xs text-muted-foreground">{payingExpenseModal.description}</p>
+              <p className="text-lg font-black font-mono text-red-600 dark:text-red-400">
+                R$ {(payingExpenseModal.value - (payingExpenseModal.paidAmount || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <span className="text-[10px] font-semibold text-muted-foreground ml-1">pendente</span>
+              </p>
+              {(payingExpenseModal.installments || 1) > 1 && (
+                <p className="text-[10px] font-semibold text-muted-foreground">
+                  Parcelado em {payingExpenseModal.installments}x de R$ {(payingExpenseModal.value / (payingExpenseModal.installments || 1)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+              {(payingExpenseModal.installments || 1) > 1 && (
+                <button
+                  type="button"
+                  onClick={handleQuickPayModalInstallment}
+                  className="px-3 py-2 border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[11px] font-bold rounded-lg transition-all"
+                >
+                  Pagar 1 Parcela
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleQuickPayModalTotal}
+                className="px-3 py-2 border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold rounded-lg transition-all"
+              >
+                Pagar Valor Total
+              </button>
+            </div>
+
+            <form onSubmit={handlePayModalSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Pagar Parcialmente (R$)</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  required
+                  value={payModalAmount}
+                  onChange={(e) => setPayModalAmount(e.target.value)}
+                  className="w-full bg-muted/30 border border-border rounded-lg p-2 text-xs outline-none font-mono font-bold"
+                />
+                <p className="text-[10px] text-muted-foreground">Ajuste o valor acima para um pagamento parcial personalizado.</p>
+              </div>
+              <div className="flex gap-3 justify-end pt-3 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => { setPayingExpenseModal(null); setPayModalAmount(""); }}
+                  className="px-4 py-2 border border-border hover:bg-muted text-foreground text-xs font-semibold rounded-lg transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={payModalSubmitting}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-all disabled:opacity-50"
+                >
+                  Confirmar Pagamento
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

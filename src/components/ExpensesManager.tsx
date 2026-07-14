@@ -134,14 +134,18 @@ export default function ExpensesManager({
   const [category, setCategory] = useState("Oficina");
   const [value, setValue] = useState("");
   const [description, setDescription] = useState("");
-  const [installments, setInstallments] = useState("1");
+  const [isInstallmentPlan, setIsInstallmentPlan] = useState(false);
+  const [installments, setInstallments] = useState("2");
+  const [installmentsPaidCount, setInstallmentsPaidCount] = useState("0");
 
   const resetForm = () => {
     setDate(todayLocalISO());
     setCategory(categories[0] || "Outros");
     setValue("");
     setDescription("");
-    setInstallments("1");
+    setIsInstallmentPlan(false);
+    setInstallments("2");
+    setInstallmentsPaidCount("0");
   };
 
   const handleOpenAdd = () => {
@@ -156,15 +160,20 @@ export default function ExpensesManager({
       return;
     }
 
+    const totalValue = Number(value);
+    const totalInstallments = isInstallmentPlan ? (Number(installments) || 1) : 1;
+    const paidInstallments = isInstallmentPlan ? Math.min(totalInstallments, Number(installmentsPaidCount) || 0) : 0;
+    const paidAmount = paidInstallments > 0 ? (totalValue / totalInstallments) * paidInstallments : 0;
+
     const payload: Partial<Expense> = {
       date,
       category,
-      value: Number(value),
+      value: totalValue,
       description,
       receipt: "",
-      status: "Pendente",
-      installments: Number(installments) || 1,
-      paidAmount: 0
+      status: paidAmount >= totalValue - 0.01 && totalValue > 0 ? "Pago" : "Pendente",
+      installments: totalInstallments,
+      paidAmount: Number(paidAmount.toFixed(2))
     };
 
     const ok = await onAddExpense(payload);
@@ -235,7 +244,7 @@ export default function ExpensesManager({
       exp.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "TODOS" || exp.category === categoryFilter;
     return matchesSearch && matchesCategory;
-  });
+  }).sort((a, b) => b.date.localeCompare(a.date));
 
   // Category totals for charts (mês selecionado)
   const categoryTotals = Object.values(
@@ -583,35 +592,60 @@ export default function ExpensesManager({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans">Valor Pago (R$) *</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2 text-gray-400 dark:text-gray-500 text-xs font-bold font-mono">R$</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      value={value}
-                      onChange={(e) => setValue(e.target.value)}
-                      placeholder="120.00"
-                      className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs outline-none font-mono font-bold text-red-600 dark:text-red-400"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans">Nº de Parcelas</label>
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans">Valor Total (R$) *</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2 text-gray-400 dark:text-gray-500 text-xs font-bold font-mono">R$</span>
                   <input
                     type="number"
-                    min="1"
-                    step="1"
-                    value={installments}
-                    onChange={(e) => setInstallments(e.target.value)}
-                    placeholder="1"
-                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs outline-none font-mono font-bold text-gray-700 dark:text-gray-300"
+                    step="0.01"
+                    required
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    placeholder="120.00"
+                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs outline-none font-mono font-bold text-red-600 dark:text-red-400"
                   />
                 </div>
               </div>
+
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isInstallmentPlan}
+                  onChange={(e) => setIsInstallmentPlan(e.target.checked)}
+                  className="w-3.5 h-3.5 accent-blue-600 cursor-pointer"
+                />
+                <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400">Esta despesa é parcelada (ex: dívida ou compra em várias vezes)</span>
+              </label>
+
+              {isInstallmentPlan && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-gray-50 dark:bg-slate-950/40 border border-gray-200 dark:border-slate-800 rounded-lg p-3">
+                  <div className="space-y-1 min-w-0">
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Nº de Parcelas</label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={installments}
+                      onChange={(e) => setInstallments(e.target.value)}
+                      placeholder="2"
+                      className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs outline-none font-mono font-bold text-gray-700 dark:text-gray-300"
+                    />
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Parcelas Já Pagas</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={installmentsPaidCount}
+                      onChange={(e) => setInstallmentsPaidCount(e.target.value)}
+                      placeholder="0"
+                      className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs outline-none font-mono font-bold text-emerald-600 dark:text-emerald-400"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Descrição Detalhada *</label>

@@ -101,6 +101,7 @@ export default function TiresManager({
 
   // New Tire Form state
   const [newSerialNumber, setNewSerialNumber] = useState("");
+  const [newQuantity, setNewQuantity] = useState("1");
   const [newBrand, setNewBrand] = useState("Michelin");
   const [newModel, setNewModel] = useState("");
   const [newSize, setNewSize] = useState("295/80 R22.5");
@@ -163,6 +164,7 @@ export default function TiresManager({
     setEditingTireId(null);
     setEditingOriginalBrandModel(null);
     setNewSerialNumber("");
+    setNewQuantity("1");
     setNewModel("");
     setNewBrand("Michelin");
     setNewSize("295/80 R22.5");
@@ -197,14 +199,23 @@ export default function TiresManager({
     }
 
     const normalizedSerial = newSerialNumber.trim().toUpperCase();
-    const duplicate = tires.find(t => t.serialNumber.toUpperCase() === normalizedSerial && t.id !== editingTireId);
-    if (duplicate) {
-      alert(`Já existe um pneu cadastrado com o código de controle "${normalizedSerial}" (${duplicate.brand} ${duplicate.model}). Cada pneu deve ter um código único — não é permitido reutilizar o código de outro pneu.`);
+    const quantity = editingTireId ? 1 : Math.max(1, Number(newQuantity) || 1);
+
+    // Gera os códigos de controle: 1 unidade usa o código exato digitado;
+    // mais de 1 unidade sufixa -1, -2, -3... para manter cada pneu com código único
+    const serialsToCreate = quantity === 1
+      ? [normalizedSerial]
+      : Array.from({ length: quantity }, (_, i) => `${normalizedSerial}-${i + 1}`);
+
+    const existingSerials = new Set(tires.filter(t => t.id !== editingTireId).map(t => t.serialNumber.toUpperCase()));
+    const conflicting = serialsToCreate.find(s => existingSerials.has(s));
+    if (conflicting) {
+      const duplicate = tires.find(t => t.serialNumber.toUpperCase() === conflicting);
+      alert(`Já existe um pneu cadastrado com o código de controle "${conflicting}" (${duplicate?.brand} ${duplicate?.model}). Cada pneu deve ter um código único — não é permitido reutilizar o código de outro pneu.`);
       return;
     }
 
-    const payload: Partial<Tire> = {
-      serialNumber: newSerialNumber.toUpperCase(),
+    const basePayload: Partial<Tire> = {
       brand: newBrand,
       model: newModel,
       size: newSize,
@@ -214,13 +225,19 @@ export default function TiresManager({
     };
 
     if (newStatus === "Em uso") {
-      payload.vehicleId = newVehicleId;
-      payload.position = newPosition;
+      basePayload.vehicleId = newVehicleId;
+      basePayload.position = newPosition;
     }
 
-    const ok = editingTireId
-      ? await onUpdateTire(editingTireId, payload)
-      : await onAddTire({ ...payload, changesHistory: [], rotationsHistory: [] });
+    let ok = true;
+    if (editingTireId) {
+      ok = await onUpdateTire(editingTireId, { ...basePayload, serialNumber: normalizedSerial });
+    } else {
+      for (const serial of serialsToCreate) {
+        const success = await onAddTire({ ...basePayload, serialNumber: serial, changesHistory: [], rotationsHistory: [] });
+        if (!success) { ok = false; break; }
+      }
+    }
 
     if (ok) {
       setIsAddModalOpen(false);
@@ -675,8 +692,29 @@ export default function TiresManager({
                   onChange={(e) => setNewSerialNumber(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none uppercase font-mono"
                 />
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">Código único de identificação do pneu — não pode ser reutilizado em outro pneu.</p>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                  {!editingTireId && Number(newQuantity) > 1
+                    ? `Código único por pneu — serão criados ${Number(newQuantity)} registros: ${newSerialNumber.trim().toUpperCase() || "CÓDIGO"}-1, -2, -3...`
+                    : "Código único de identificação do pneu — não pode ser reutilizado em outro pneu."}
+                </p>
               </div>
+
+              {!editingTireId && (
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Quantidade a Cadastrar *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                    value={newQuantity}
+                    onChange={(e) => setNewQuantity(e.target.value)}
+                    placeholder="1"
+                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">Registrar mais de um pneu idêntico de uma vez (mesma marca, modelo, dimensão e status).</p>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
@@ -817,7 +855,7 @@ export default function TiresManager({
                   type="submit"
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
                 >
-                  {editingTireId ? "Salvar Alterações" : "Cadastrar Pneu"}
+                  {editingTireId ? "Salvar Alterações" : Number(newQuantity) > 1 ? `Cadastrar ${Number(newQuantity)} Pneus` : "Cadastrar Pneu"}
                 </button>
               </div>
             </form>
