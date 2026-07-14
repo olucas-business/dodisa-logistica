@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Freight, Driver, Vehicle } from "../types";
+import { Freight, Driver, Vehicle, Refuel } from "../types";
 import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
-import { Truck, Plus, Search, Calendar, MapPin, Navigation, Coins, Trash2, Edit2, CheckCircle, Clock, PieChart as PieChartIcon, Upload } from "lucide-react";
+import { Truck, Plus, Search, Calendar, MapPin, Navigation, Coins, Trash2, Edit2, CheckCircle, Clock, PieChart as PieChartIcon, Upload, Fuel } from "lucide-react";
 
 const MERCOSUL_COUNTRIES = ["Brasil", "Argentina", "Chile", "Paraguai", "Peru", "Uruguai"];
 
@@ -14,6 +14,7 @@ interface FreightsManagerProps {
   onAddFreight: (f: Partial<Freight>) => Promise<boolean>;
   onUpdateFreight: (id: string, f: Partial<Freight>) => Promise<boolean>;
   onDeleteFreight: (id: string) => Promise<boolean>;
+  onAddRefuel?: (r: Partial<Refuel>) => Promise<boolean>;
 }
 
 export default function FreightsManager({
@@ -22,7 +23,8 @@ export default function FreightsManager({
   vehicles,
   onAddFreight,
   onUpdateFreight,
-  onDeleteFreight
+  onDeleteFreight,
+  onAddRefuel
 }: FreightsManagerProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("TODOS");
@@ -30,6 +32,48 @@ export default function FreightsManager({
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedFreightId, setSelectedFreightId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Abastecimento em rota: registrar reabastecimento no meio da viagem, direto pelo manifesto
+  const [refuelingFreight, setRefuelingFreight] = useState<Freight | null>(null);
+  const [routeRefuelLiters, setRouteRefuelLiters] = useState("");
+  const [routeRefuelPrice, setRouteRefuelPrice] = useState("");
+  const [routeRefuelStation, setRouteRefuelStation] = useState("");
+  const [routeRefuelDate, setRouteRefuelDate] = useState(todayLocalISO());
+  const [submittingRouteRefuel, setSubmittingRouteRefuel] = useState(false);
+
+  const handleOpenRouteRefuel = (f: Freight) => {
+    setRefuelingFreight(f);
+    setRouteRefuelLiters("");
+    setRouteRefuelPrice("");
+    setRouteRefuelStation("");
+    setRouteRefuelDate(todayLocalISO());
+  };
+
+  const handleSubmitRouteRefuel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!refuelingFreight || !onAddRefuel) return;
+    const litersNum = Number(routeRefuelLiters);
+    const priceNum = Number(routeRefuelPrice);
+    if (!litersNum || !priceNum || !routeRefuelStation) {
+      alert("Preencha litros, preço por litro e o posto.");
+      return;
+    }
+    setSubmittingRouteRefuel(true);
+    const ok = await onAddRefuel({
+      date: routeRefuelDate,
+      vehicleId: refuelingFreight.vehicleId,
+      driverId: refuelingFreight.driverId,
+      liters: litersNum,
+      pricePerLiter: priceNum,
+      totalValue: litersNum * priceNum,
+      gasStation: routeRefuelStation,
+      receipt: ""
+    });
+    setSubmittingRouteRefuel(false);
+    if (ok) {
+      setRefuelingFreight(null);
+    }
+  };
 
   // Form states
   const [date, setDate] = useState(todayLocalISO());
@@ -488,6 +532,15 @@ export default function FreightsManager({
                       </span>
                     </td>
                     <td className="p-3 text-right pr-5 space-x-1">
+                      {onAddRefuel && (
+                        <button
+                          onClick={() => handleOpenRouteRefuel(f)}
+                          className="p-1.5 border border-orange-200 dark:border-orange-900/40 bg-orange-50 dark:bg-orange-950/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded transition-all inline-flex"
+                          title="Registrar abastecimento em rota"
+                        >
+                          <Fuel className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       <button
                         onClick={() => handleOpenEdit(f)}
                         className="p-1.5 border border-gray-150 hover:bg-gray-100 text-gray-700 hover:text-black rounded transition-all inline-flex"
@@ -1004,6 +1057,94 @@ export default function FreightsManager({
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg shadow-md shadow-blue-500/10 transition-all cursor-pointer"
                 >
                   Salvar Frete
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ABASTECIMENTO EM ROTA (meio da viagem) */}
+      {refuelingFreight && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-2xl w-full max-w-sm border border-gray-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 relative animate-scale-in my-auto">
+            <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-slate-850 pb-3 mb-4 flex items-center gap-1.5">
+              <Fuel className="w-4 h-4 text-orange-500" />
+              Abastecimento em Rota
+            </h3>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-4">
+              Registro de reabastecimento no meio da viagem do frete <strong className="text-gray-800 dark:text-gray-200">{refuelingFreight.freightNumber}</strong>. Será somado ao módulo de Combustível normalmente.
+            </p>
+            <form onSubmit={handleSubmitRouteRefuel} className="space-y-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Data *</label>
+                  <input
+                    type="date"
+                    required
+                    value={routeRefuelDate}
+                    onChange={(e) => setRouteRefuelDate(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Posto *</label>
+                  <input
+                    type="text"
+                    required
+                    value={routeRefuelStation}
+                    onChange={(e) => setRouteRefuelStation(e.target.value)}
+                    placeholder="Posto Ipiranga"
+                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Litros *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={routeRefuelLiters}
+                    onChange={(e) => setRouteRefuelLiters(e.target.value)}
+                    placeholder="250"
+                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Preço/Litro (R$) *</label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    required
+                    value={routeRefuelPrice}
+                    onChange={(e) => setRouteRefuelPrice(e.target.value)}
+                    placeholder="5.89"
+                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+              </div>
+              {Number(routeRefuelLiters) > 0 && Number(routeRefuelPrice) > 0 && (
+                <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-900/40 p-3 rounded-lg text-xs font-semibold text-orange-800 dark:text-orange-400 text-center flex justify-between items-center">
+                  <span>Valor Calculado:</span>
+                  <strong className="text-sm font-black">R$ {(Number(routeRefuelLiters) * Number(routeRefuelPrice)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                </div>
+              )}
+              <div className="flex gap-3 justify-end pt-3 border-t border-gray-150 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setRefuelingFreight(null)}
+                  className="px-4 py-2 border border-gray-250 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingRouteRefuel}
+                  className="px-4 py-2 bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                >
+                  Registrar Abastecimento
                 </button>
               </div>
             </form>

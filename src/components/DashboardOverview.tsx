@@ -339,9 +339,11 @@ export default function DashboardOverview({
     const totals: Record<string, { value: number; paid: number; pending: number }> = {};
     expenses.filter(e => e.date.startsWith(targetYearMonth)).forEach(e => {
       totals[e.category] = totals[e.category] || { value: 0, paid: 0, pending: 0 };
-      totals[e.category].value += (e.value || 0);
-      if (e.status === "Pago") totals[e.category].paid += (e.value || 0);
-      else totals[e.category].pending += (e.value || 0);
+      const val = e.value || 0;
+      const paidAmt = Math.min(val, e.paidAmount || 0);
+      totals[e.category].value += val;
+      totals[e.category].paid += paidAmt;
+      totals[e.category].pending += (val - paidAmt);
     });
     return Object.entries(totals)
       .map(([category, t]) => ({ category, value: t.value, paid: t.paid, pending: t.pending }))

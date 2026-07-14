@@ -168,6 +168,8 @@ export interface Expense {
   description: string;
   receipt?: string;
   status?: "Pendente" | "Pago";
+  installments?: number;  // Número total de parcelas (padrão 1 = à vista)
+  paidAmount?: number;    // Valor já pago (acumulado) desta despesa
 }
 
 export interface TireChange {
@@ -232,6 +234,25 @@ export interface InternationalCost {
   status: "Pago" | "Pagar";
   description?: string;
   date: string;
+  createdAt: string;
+}
+
+export interface CompanyContactFile {
+  id: string;
+  name: string;
+  url: string;
+  uploadedAt: string;
+}
+
+export interface CompanyContact {
+  id: string;
+  name: string;
+  company: string;
+  role: string;
+  phone: string;
+  email: string;
+  notes?: string;
+  files: CompanyContactFile[];
   createdAt: string;
 }
 

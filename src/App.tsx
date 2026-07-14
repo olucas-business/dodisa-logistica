@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { User, Driver, Vehicle, Freight, Refuel, Expense, Tire, Debt, TruckCashTransaction, CaixaCaminhao, CaixaMovimentacao, MaintenanceLog, InternationalCost } from "./types";
+import { User, Driver, Vehicle, Freight, Refuel, Expense, Tire, Debt, TruckCashTransaction, CaixaCaminhao, CaixaMovimentacao, MaintenanceLog, InternationalCost, CompanyContact } from "./types";
 import LoginForm from "./components/LoginForm";
 import BrandMark from "./components/BrandMark";
 import VehicleTracking from "./components/VehicleTracking";
@@ -8,6 +8,7 @@ import CompanyProfile from "./components/CompanyProfile";
 import DriverWorkspace from "./components/DriverWorkspace";
 import DashboardOverview from "./components/DashboardOverview";
 import DriversManager from "./components/DriversManager";
+import ContactsManager from "./components/ContactsManager";
 import VehiclesManager from "./components/VehiclesManager";
 import FreightsManager from "./components/FreightsManager";
 import RefuelManager from "./components/RefuelManager";
@@ -49,7 +50,8 @@ import {
   MessageSquare,
   Satellite,
   Building2,
-  Wrench
+  Wrench,
+  Contact
 } from "lucide-react";
 
 export default function App() {
@@ -95,6 +97,7 @@ export default function App() {
   const [tires, setTires] = useState<Tire[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
   const [internationalCosts, setInternationalCosts] = useState<InternationalCost[]>([]);
+  const [companyContacts, setCompanyContacts] = useState<CompanyContact[]>([]);
   const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([]);
   const [caixasCaminhao, setCaixasCaminhao] = useState<CaixaCaminhao[]>([]);
   const [caixaMovimentacoes, setCaixaMovimentacoes] = useState<CaixaMovimentacao[]>([]);
@@ -124,7 +127,7 @@ export default function App() {
     setLoading(true);
     setErrorMsg("");
     try {
-      const [drvRes, vhcRes, frtRes, refRes, expRes, tirRes, debRes, tcRes, maintRes, intCostRes] = await Promise.all([
+      const [drvRes, vhcRes, frtRes, refRes, expRes, tirRes, debRes, tcRes, maintRes, intCostRes, contactRes] = await Promise.all([
         fetch("/api/drivers"),
         fetch("/api/vehicles"),
         fetch("/api/freights"),
@@ -134,10 +137,11 @@ export default function App() {
         fetch("/api/debts"),
         fetch("/api/caixa-caminhao"),
         fetch("/api/maintenance-logs"),
-        fetch("/api/international-costs")
+        fetch("/api/international-costs"),
+        fetch("/api/company-contacts")
       ]);
 
-      const [drvData, vhcData, frtData, refData, expData, tirData, debData, tcData, maintData, intCostData] = await Promise.all([
+      const [drvData, vhcData, frtData, refData, expData, tirData, debData, tcData, maintData, intCostData, contactData] = await Promise.all([
         drvRes.json(),
         vhcRes.json(),
         frtRes.json(),
@@ -147,7 +151,8 @@ export default function App() {
         debRes.json(),
         tcRes.json(),
         maintRes.json(),
-        intCostRes.json()
+        intCostRes.json(),
+        contactRes.json()
       ]);
 
       setDrivers(Array.isArray(drvData) ? drvData : (drvData.success ? drvData.drivers : []));
@@ -161,6 +166,7 @@ export default function App() {
       setCaixaMovimentacoes(tcData.success && tcData.movimentacoes ? tcData.movimentacoes : []);
       setMaintenanceLogs(maintData.success ? maintData.maintenanceLogs : (Array.isArray(maintData) ? maintData : []));
       setInternationalCosts(intCostData.success ? intCostData.costs : (Array.isArray(intCostData) ? intCostData : []));
+      setCompanyContacts(contactData.success ? contactData.contacts : (Array.isArray(contactData) ? contactData : []));
     } catch (err) {
       setErrorMsg("Erro de sincronização com o banco de dados. Tentando novamente.");
     } finally {
@@ -637,6 +643,59 @@ export default function App() {
     }
   };
 
+  const handleAddContact = async (payload: Partial<CompanyContact>) => {
+    try {
+      const res = await fetch("/api/company-contacts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchAllData();
+        return true;
+      }
+      alert(data.message || "Erro ao cadastrar contato");
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const handleUpdateContact = async (id: string, payload: Partial<CompanyContact>) => {
+    try {
+      const res = await fetch(`/api/company-contacts/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchAllData();
+        return true;
+      }
+      alert(data.message || "Erro ao atualizar contato");
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const handleDeleteContact = async (id: string) => {
+    try {
+      const res = await fetch(`/api/company-contacts/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        await fetchAllData();
+        return true;
+      }
+      alert(data.message || "Erro ao excluir contato");
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
   const handleAddMaintenanceLog = async (payload: Partial<MaintenanceLog>) => {
     try {
       const res = await fetch("/api/maintenance-logs", {
@@ -760,7 +819,8 @@ export default function App() {
     import: { label: "Histórico de Importação", key: "all" },
     image_reader: { label: "Histórico de Leitura de Imagens", key: "image-analyses" },
     ai_assistant: { label: "Dados e Memória IA", key: "all" },
-    reports: { label: "Relatórios de Auditoria", key: "all" }
+    reports: { label: "Relatórios de Auditoria", key: "all" },
+    contacts: { label: "Contatos & Anotações", key: "company-contacts" }
   };
 
   const handleTriggerResetModal = () => {
@@ -831,6 +891,7 @@ export default function App() {
     { id: "analytics", label: "BI Analítico", icon: TrendingUp },
     { id: "ai_hub", label: "Central Inteligência IA", icon: Sparkles },
     { id: "reports", label: "Relatórios & Auditoria", icon: FileText },
+    { id: "contacts", label: "Contatos & Anotações", icon: Contact },
     { id: "company", label: "Perfil da Empresa", icon: Building2 }
   ];
 
@@ -1092,6 +1153,7 @@ export default function App() {
                   onAddFreight={handleAddFreight}
                   onUpdateFreight={handleUpdateFreight}
                   onDeleteFreight={handleDeleteFreight}
+                  onAddRefuel={handleAddRefuel}
                 />
               )}
 
@@ -1238,6 +1300,15 @@ export default function App() {
                   vehicles={vehicles}
                   expenses={expenses}
                   refuels={refuels}
+                />
+              )}
+
+              {tab === "contacts" && (
+                <ContactsManager
+                  contacts={companyContacts}
+                  onAddContact={handleAddContact}
+                  onUpdateContact={handleUpdateContact}
+                  onDeleteContact={handleDeleteContact}
                 />
               )}
             </motion.div>

@@ -134,12 +134,14 @@ export default function ExpensesManager({
   const [category, setCategory] = useState("Oficina");
   const [value, setValue] = useState("");
   const [description, setDescription] = useState("");
+  const [installments, setInstallments] = useState("1");
 
   const resetForm = () => {
     setDate(todayLocalISO());
     setCategory(categories[0] || "Outros");
     setValue("");
     setDescription("");
+    setInstallments("1");
   };
 
   const handleOpenAdd = () => {
@@ -160,7 +162,9 @@ export default function ExpensesManager({
       value: Number(value),
       description,
       receipt: "",
-      status: "Pendente"
+      status: "Pendente",
+      installments: Number(installments) || 1,
+      paidAmount: 0
     };
 
     const ok = await onAddExpense(payload);
@@ -169,9 +173,49 @@ export default function ExpensesManager({
     }
   };
 
-  const handleTogglePaid = async (exp: Expense) => {
-    const newStatus = exp.status === "Pago" ? "Pendente" : "Pago";
-    await onUpdateExpense(exp.id, { status: newStatus });
+  // Pagamento (total, parcial ou por parcela) de uma despesa
+  const [payingExpense, setPayingExpense] = useState<Expense | null>(null);
+  const [payAmount, setPayAmount] = useState("");
+  const [payingSubmitting, setPayingSubmitting] = useState(false);
+
+  const handleOpenPay = (exp: Expense) => {
+    setPayingExpense(exp);
+    const remaining = exp.value - (exp.paidAmount || 0);
+    setPayAmount(remaining.toFixed(2));
+  };
+
+  const handleQuickPayInstallment = () => {
+    if (!payingExpense) return;
+    const total = payingExpense.installments && payingExpense.installments > 0 ? payingExpense.installments : 1;
+    setPayAmount((payingExpense.value / total).toFixed(2));
+  };
+
+  const handleQuickPayTotal = () => {
+    if (!payingExpense) return;
+    const remaining = payingExpense.value - (payingExpense.paidAmount || 0);
+    setPayAmount(remaining.toFixed(2));
+  };
+
+  const handlePaySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!payingExpense) return;
+    const parsed = Number(payAmount.replace(",", "."));
+    if (!parsed || parsed <= 0) {
+      alert("Informe um valor de pagamento válido.");
+      return;
+    }
+    setPayingSubmitting(true);
+    const newPaidAmount = Math.min(payingExpense.value, (payingExpense.paidAmount || 0) + parsed);
+    const payload: Partial<Expense> = {
+      paidAmount: Number(newPaidAmount.toFixed(2)),
+      status: newPaidAmount >= payingExpense.value - 0.01 ? "Pago" : "Pendente"
+    };
+    const ok = await onUpdateExpense(payingExpense.id, payload);
+    setPayingSubmitting(false);
+    if (ok) {
+      setPayingExpense(null);
+      setPayAmount("");
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -445,19 +489,32 @@ export default function ExpensesManager({
                     </span>
                   </td>
                   <td className="p-3 text-gray-800 dark:text-gray-200 font-medium">{e.description}</td>
-                  <td className="p-3 text-right font-mono font-black text-red-600 dark:text-red-400 flex items-center justify-end gap-1 pt-4">
-                    <ArrowDown className="w-3.5 h-3.5 text-red-500" />
-                    R$ {e.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  <td className="p-3 text-right font-mono font-black text-red-600 dark:text-red-400 pt-4">
+                    <div className="flex items-center justify-end gap-1">
+                      <ArrowDown className="w-3.5 h-3.5 text-red-500" />
+                      R$ {e.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    {(e.installments || 1) > 1 && (
+                      <span className="block text-[9px] font-semibold text-gray-400 dark:text-gray-500 normal-case">
+                        {e.installments}x de R$ {(e.value / (e.installments || 1)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                    {!isPaid && (e.paidAmount || 0) > 0 && (
+                      <span className="block text-[9px] font-semibold text-emerald-500 normal-case">
+                        Pago: R$ {(e.paidAmount || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
                   </td>
                   <td className="p-3 text-center">
                     <button
-                      onClick={() => handleTogglePaid(e)}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black border transition-all cursor-pointer inline-flex items-center gap-1 ${
+                      onClick={() => !isPaid && handleOpenPay(e)}
+                      disabled={isPaid}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black border transition-all inline-flex items-center gap-1 ${
                         isPaid
-                          ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
-                          : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                          ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-400 cursor-default"
+                          : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 cursor-pointer"
                       }`}
-                      title={isPaid ? "Marcar como pendente" : "Marcar como pago"}
+                      title={isPaid ? "Despesa quitada" : "Registrar pagamento"}
                     >
                       {isPaid ? <CheckCircle className="w-3 h-3" /> : null}
                       {isPaid ? "Pago" : "Pagar"}
@@ -526,18 +583,32 @@ export default function ExpensesManager({
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans">Valor Pago (R$) *</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-gray-400 dark:text-gray-500 text-xs font-bold font-mono">R$</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans">Valor Pago (R$) *</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-gray-400 dark:text-gray-500 text-xs font-bold font-mono">R$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={value}
+                      onChange={(e) => setValue(e.target.value)}
+                      placeholder="120.00"
+                      className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs outline-none font-mono font-bold text-red-600 dark:text-red-400"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans">Nº de Parcelas</label>
                   <input
                     type="number"
-                    step="0.01"
-                    required
-                    value={value}
-                    onChange={(e) => setValue(e.target.value)}
-                    placeholder="120.00"
-                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs outline-none font-mono font-bold text-red-600 dark:text-red-400"
+                    min="1"
+                    step="1"
+                    value={installments}
+                    onChange={(e) => setInstallments(e.target.value)}
+                    placeholder="1"
+                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs outline-none font-mono font-bold text-gray-700 dark:text-gray-300"
                   />
                 </div>
               </div>
@@ -567,6 +638,79 @@ export default function ExpensesManager({
                   className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
                 >
                   Confirmar Lançamento
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* PAY EXPENSE MODAL */}
+      {payingExpense && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-2xl w-full max-w-sm border border-gray-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 relative animate-scale-in my-auto">
+            <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-slate-850 pb-3 mb-4">
+              Registrar Pagamento
+            </h3>
+            <div className="mb-4 space-y-1">
+              <p className="text-xs text-gray-600 dark:text-gray-400">{payingExpense.description}</p>
+              <p className="text-lg font-black font-mono text-red-600 dark:text-red-400">
+                R$ {(payingExpense.value - (payingExpense.paidAmount || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <span className="text-[10px] font-semibold text-gray-400 ml-1">pendente</span>
+              </p>
+              {(payingExpense.installments || 1) > 1 && (
+                <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500">
+                  Parcelado em {payingExpense.installments}x de R$ {(payingExpense.value / (payingExpense.installments || 1)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+              {(payingExpense.installments || 1) > 1 && (
+                <button
+                  type="button"
+                  onClick={handleQuickPayInstallment}
+                  className="px-3 py-2 border border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[11px] font-bold rounded-lg transition-all cursor-pointer"
+                >
+                  Pagar 1 Parcela
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleQuickPayTotal}
+                className="px-3 py-2 border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[11px] font-bold rounded-lg transition-all cursor-pointer"
+              >
+                Pagar Valor Total
+              </button>
+            </div>
+
+            <form onSubmit={handlePaySubmit} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Pagar Parcialmente (R$)</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  required
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono font-bold"
+                />
+                <p className="text-[10px] text-gray-400 dark:text-gray-500">Ajuste o valor acima para um pagamento parcial personalizado.</p>
+              </div>
+              <div className="flex gap-3 justify-end pt-3 border-t border-gray-150 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => { setPayingExpense(null); setPayAmount(""); }}
+                  className="px-4 py-2 border border-gray-250 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={payingSubmitting}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                >
+                  Confirmar Pagamento
                 </button>
               </div>
             </form>

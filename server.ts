@@ -85,6 +85,7 @@ interface Database {
   notifications: any[];
   expenseCategories?: string[];
   internationalCosts?: any[];
+  companyContacts?: any[];
 }
 
 const DEFAULT_EXPENSE_CATEGORIES = [
@@ -155,6 +156,7 @@ const DEFAULT_DB: Database = {
   tires: [],
   debts: [],
   internationalCosts: [],
+  companyContacts: [],
   maintenance_logs: [],
   annotations: [],
   caixa_caminhao: [],
@@ -1406,6 +1408,47 @@ app.delete("/api/international-costs/:id", async (req, res) => {
   const { id } = req.params;
   const db = await loadDB();
   db.internationalCosts = (db.internationalCosts || []).filter((c: any) => c.id !== id);
+  await saveDB(db);
+  res.json({ success: true });
+});
+
+// Contatos & Anotações de empresas parceiras (despachantes, oficinas, fornecedores etc.)
+app.get("/api/company-contacts", async (req, res) => {
+  const db = await loadDB();
+  res.json({ success: true, contacts: db.companyContacts || [] });
+});
+
+app.post("/api/company-contacts", async (req, res) => {
+  const db = await loadDB();
+  const newContact = {
+    id: `contact_${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    files: [],
+    ...req.body
+  };
+  db.companyContacts = db.companyContacts || [];
+  db.companyContacts.push(newContact);
+  await saveDB(db);
+  res.json({ success: true, contact: newContact });
+});
+
+app.put("/api/company-contacts/:id", async (req, res) => {
+  const { id } = req.params;
+  const db = await loadDB();
+  db.companyContacts = db.companyContacts || [];
+  const idx = db.companyContacts.findIndex((c: any) => c.id === id);
+  if (idx === -1) {
+    return res.status(404).json({ success: false, message: "Contato não encontrado." });
+  }
+  db.companyContacts[idx] = { ...db.companyContacts[idx], ...req.body };
+  await saveDB(db);
+  res.json({ success: true, contact: db.companyContacts[idx] });
+});
+
+app.delete("/api/company-contacts/:id", async (req, res) => {
+  const { id } = req.params;
+  const db = await loadDB();
+  db.companyContacts = (db.companyContacts || []).filter((c: any) => c.id !== id);
   await saveDB(db);
   res.json({ success: true });
 });
@@ -2720,6 +2763,10 @@ app.post("/api/reset/:module", async (req, res) => {
     db.caixa_caminhao = [];
   } else if (module === "image-analyses") {
     db.image_analyses = [];
+  } else if (module === "international-costs") {
+    db.internationalCosts = [];
+  } else if (module === "company-contacts") {
+    db.companyContacts = [];
   } else if (module === "all") {
     db.drivers = [];
     db.vehicles = [];
