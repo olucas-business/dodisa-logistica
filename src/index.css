@@ -1138,5 +1138,18 @@ html:not(.dark) .leaflet-bar a:hover {
   filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.5));
 }
 
+/* Floating vehicle info card tooltip (strip Leaflet's default tooltip chrome) */
+.vehicle-info-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.vehicle-info-tooltip::before {
+  display: none !important;
+}
+
 
 

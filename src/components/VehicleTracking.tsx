@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Gauge, Navigation, Satellite, Power, RefreshCw, Clock, Route, ExternalLink } from "lucide-react";
+import { Gauge, Navigation, Satellite, Power, RefreshCw, Clock, Route, ExternalLink, Settings, LayoutGrid, Map as MapIcon } from "lucide-react";
 
 interface LiveVehicle {
   vehicleId: string;
@@ -33,6 +33,18 @@ const truckIcon = L.divIcon({
   iconAnchor: [17, 17]
 });
 
+function buildInfoCardHtml(v: LiveVehicle): string {
+  const rows = [
+    v.ignition ? "Ligado" : "Deslig.",
+    `${v.speed} km/h`,
+    v.plate,
+    v.model
+  ];
+  return `<div style="background:rgba(17,20,28,0.94);color:#fff;border-radius:10px;overflow:hidden;min-width:150px;box-shadow:0 6px 20px rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.08);">
+    ${rows.map((r, i) => `<div style="padding:6px 14px;text-align:center;font-size:12.5px;font-weight:${i === 0 || i === 2 ? 700 : 500};${i > 0 ? "border-top:1px solid rgba(255,255,255,0.12);" : ""}">${r}</div>`).join("")}
+  </div>`;
+}
+
 export default function VehicleTracking() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -47,6 +59,8 @@ export default function VehicleTracking() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [mapStyle, setMapStyle] = useState<"satellite" | "street">("satellite");
+  const [showVehicleList, setShowVehicleList] = useState(false);
 
   const selectedVehicle = vehicles.find(v => v.vehicleId === selectedId) || vehicles[0];
 
@@ -66,20 +80,27 @@ export default function VehicleTracking() {
     };
   }, []);
 
-  // Tile layer, theme-aware
+  // Tile layer, theme-aware + satellite/street toggle
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     if (tileLayerRef.current) map.removeLayer(tileLayerRef.current);
-    const isDark = document.documentElement.classList.contains("dark");
-    const tileUrl = isDark
-      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
-      : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png";
-    tileLayerRef.current = L.tileLayer(tileUrl, {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      maxZoom: 19
-    }).addTo(map);
-  }, [vehicles.length]);
+    let tileUrl: string;
+    let attribution: string;
+    let maxZoom = 19;
+    if (mapStyle === "satellite") {
+      tileUrl = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+      attribution = "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics";
+      maxZoom = 19;
+    } else {
+      const isDark = document.documentElement.classList.contains("dark");
+      tileUrl = isDark
+        ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
+        : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png";
+      attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    }
+    tileLayerRef.current = L.tileLayer(tileUrl, { attribution, maxZoom }).addTo(map);
+  }, [vehicles.length, mapStyle]);
 
   // Fetch live positions
   const fetchLive = async () => {
@@ -136,15 +157,29 @@ export default function VehicleTracking() {
 
     vehicles.forEach(v => {
       const existing = markersRef.current[v.vehicleId];
+      let marker = existing;
       if (existing) {
         existing.setLatLng([v.lat, v.lng]);
       } else {
-        const marker = L.marker([v.lat, v.lng], { icon: truckIcon })
+        marker = L.marker([v.lat, v.lng], { icon: truckIcon })
           .addTo(map)
           .on("click", () => setSelectedId(v.vehicleId));
         markersRef.current[v.vehicleId] = marker;
       }
-      markersRef.current[v.vehicleId].bindTooltip(`${v.plate} · ${v.speed} km/h`, { direction: "top", offset: [0, -18] });
+      if (!marker) return;
+      const isSelected = v.vehicleId === (selectedVehicle?.vehicleId ?? "");
+      marker.unbindTooltip();
+      if (isSelected) {
+        marker.bindTooltip(buildInfoCardHtml(v), {
+          direction: "top",
+          offset: [0, -20],
+          permanent: true,
+          interactive: false,
+          className: "vehicle-info-tooltip"
+        });
+      } else {
+        marker.bindTooltip(`${v.plate} · ${v.speed} km/h`, { direction: "top", offset: [0, -18] });
+      }
     });
 
     if (selectedVehicle && vehicles.length > 0) {
@@ -253,8 +288,47 @@ export default function VehicleTracking() {
       </div>
 
       {/* Map */}
-      <div className="bg-card border border-border rounded-xl p-2 shadow-sm">
+      <div className="bg-card border border-border rounded-xl p-2 shadow-sm relative">
         <div ref={containerRef} className="w-full h-[480px] rounded-lg overflow-hidden" />
+
+        {/* Floating circular action buttons */}
+        <div className="absolute top-6 right-6 z-[1000] flex flex-col gap-2.5">
+          <button
+            onClick={() => setMapStyle(s => (s === "satellite" ? "street" : "satellite"))}
+            className="w-11 h-11 rounded-2xl bg-[#111420]/90 hover:bg-[#1c2130] text-white flex items-center justify-center shadow-lg border border-white/10 transition-colors"
+            title={mapStyle === "satellite" ? "Ver mapa de ruas" : "Ver imagem de satélite"}
+          >
+            {mapStyle === "satellite" ? <Settings className="w-5 h-5" /> : <MapIcon className="w-5 h-5" />}
+          </button>
+          <button
+            onClick={() => setShowVehicleList(s => !s)}
+            className="w-11 h-11 rounded-2xl bg-[#111420]/90 hover:bg-[#1c2130] text-white flex items-center justify-center shadow-lg border border-white/10 transition-colors"
+            title="Lista de veículos"
+          >
+            <LayoutGrid className="w-5 h-5 text-red-400" />
+          </button>
+          <button
+            onClick={fetchLive}
+            className="w-11 h-11 rounded-2xl bg-[#111420]/90 hover:bg-[#1c2130] text-white flex items-center justify-center shadow-lg border border-white/10 transition-colors"
+            title="Atualizar agora"
+          >
+            <RefreshCw className="w-5 h-5" />
+          </button>
+        </div>
+
+        {showVehicleList && vehicles.length > 0 && (
+          <div className="absolute top-6 right-20 z-[1000] bg-[#111420]/95 border border-white/10 rounded-xl shadow-lg overflow-hidden min-w-[180px]">
+            {vehicles.map(v => (
+              <button
+                key={v.vehicleId}
+                onClick={() => { setSelectedId(v.vehicleId); setShowVehicleList(false); }}
+                className={`w-full text-left px-4 py-2.5 text-xs font-bold border-b border-white/10 last:border-b-0 transition-colors ${v.vehicleId === selectedId ? "bg-blue-600 text-white" : "text-white/80 hover:bg-white/10"}`}
+              >
+                {v.plate} <span className="font-normal opacity-70">· {v.model}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Status footer */}
