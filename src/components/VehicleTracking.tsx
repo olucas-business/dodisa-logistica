@@ -62,6 +62,7 @@ export default function VehicleTracking() {
   const [mapStyle, setMapStyle] = useState<"satellite" | "street">("satellite");
   const [showVehicleList, setShowVehicleList] = useState(false);
   const rotasBrasilWindowRef = useRef<Window | null>(null);
+  const [activeInfoId, setActiveInfoId] = useState<string | null>(null);
 
   const selectedVehicle = vehicles.find(v => v.vehicleId === selectedId) || vehicles[0];
 
@@ -93,6 +94,7 @@ export default function VehicleTracking() {
       zoomControl: false
     });
     L.control.zoom({ position: "bottomright" }).addTo(map);
+    map.on("click", () => setActiveInfoId(null));
     mapRef.current = map;
     return () => {
       map.remove();
@@ -183,13 +185,16 @@ export default function VehicleTracking() {
       } else {
         marker = L.marker([v.lat, v.lng], { icon: truckIcon })
           .addTo(map)
-          .on("click", () => setSelectedId(v.vehicleId));
+          .on("click", () => {
+            setSelectedId(v.vehicleId);
+            setActiveInfoId(prev => (prev === v.vehicleId ? null : v.vehicleId));
+          });
         markersRef.current[v.vehicleId] = marker;
       }
       if (!marker) return;
-      const isSelected = v.vehicleId === (selectedVehicle?.vehicleId ?? "");
+      const isOpen = v.vehicleId === activeInfoId;
       marker.unbindTooltip();
-      if (isSelected) {
+      if (isOpen) {
         marker.bindTooltip(buildInfoCardHtml(v), {
           direction: "top",
           offset: [0, -20],
@@ -206,7 +211,7 @@ export default function VehicleTracking() {
       map.setView([selectedVehicle.lat, selectedVehicle.lng], map.getZoom() < 6 ? 13 : map.getZoom());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vehicles]);
+  }, [vehicles, activeInfoId]);
 
   return (
     <div id="tracking-container" className="space-y-6">
@@ -306,21 +311,21 @@ export default function VehicleTracking() {
         <div className="absolute top-6 right-6 z-[1000] flex flex-col gap-2.5">
           <button
             onClick={() => setMapStyle(s => (s === "satellite" ? "street" : "satellite"))}
-            className="w-11 h-11 rounded-2xl bg-[#111420]/90 hover:bg-[#1c2130] text-white flex items-center justify-center shadow-lg border border-white/10 transition-colors"
+            className="map-round-btn w-11 h-11 bg-[#111420]/90 hover:bg-[#1c2130] text-white flex items-center justify-center shadow-lg border border-white/10 transition-colors"
             title={mapStyle === "satellite" ? "Ver mapa de ruas" : "Ver imagem de satélite"}
           >
             {mapStyle === "satellite" ? <Settings className="w-5 h-5" /> : <MapIcon className="w-5 h-5" />}
           </button>
           <button
             onClick={() => setShowVehicleList(s => !s)}
-            className="w-11 h-11 rounded-2xl bg-[#111420]/90 hover:bg-[#1c2130] text-white flex items-center justify-center shadow-lg border border-white/10 transition-colors"
+            className="map-round-btn w-11 h-11 bg-[#111420]/90 hover:bg-[#1c2130] text-white flex items-center justify-center shadow-lg border border-white/10 transition-colors"
             title="Lista de veículos"
           >
             <LayoutGrid className="w-5 h-5 text-red-400" />
           </button>
           <button
             onClick={fetchLive}
-            className="w-11 h-11 rounded-2xl bg-[#111420]/90 hover:bg-[#1c2130] text-white flex items-center justify-center shadow-lg border border-white/10 transition-colors"
+            className="map-round-btn w-11 h-11 bg-[#111420]/90 hover:bg-[#1c2130] text-white flex items-center justify-center shadow-lg border border-white/10 transition-colors"
             title="Atualizar agora"
           >
             <RefreshCw className="w-5 h-5" />

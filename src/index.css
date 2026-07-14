@@ -1151,5 +1151,13 @@ html:not(.dark) .leaflet-bar a:hover {
   display: none !important;
 }
 
+/* Fixed-size circular icon buttons (global button padding rule would otherwise
+   squeeze the icon into an unusable sliver) */
+.map-round-btn {
+  padding: 0 !important;
+  border-radius: 1rem !important;
+  font-weight: 400 !important;
+}
+
 
 
