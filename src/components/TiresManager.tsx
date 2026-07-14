@@ -705,14 +705,20 @@ export default function TiresManager({
                 </div>
               </div>
 
-              {newBrand && newModel && (
+              {newBrand && (
                 <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-lg px-3 py-2">
-                  <span className="text-[10px] font-mono font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Quantidade em estoque deste modelo</span>
+                  <span className="text-[10px] font-mono font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">
+                    Qtde. em estoque {newModel ? "deste modelo" : `da marca ${newBrand}`}
+                  </span>
                   <span className="text-xs font-black font-mono bg-blue-600 text-white rounded px-2 py-0.5">
-                    {tiresByBrandModel.find((i) =>
-                      i.brand === (editingOriginalBrandModel?.brand ?? newBrand) &&
-                      i.model === (editingOriginalBrandModel?.model ?? newModel)
-                    )?.quantity || 0} un.
+                    {(() => {
+                      const brand = editingOriginalBrandModel?.brand ?? newBrand;
+                      const model = editingOriginalBrandModel?.model ?? newModel;
+                      if (model) {
+                        return tiresByBrandModel.find((i) => i.brand === brand && i.model === model)?.quantity || 0;
+                      }
+                      return tiresByBrandModel.filter((i) => i.brand === brand).reduce((sum, i) => sum + i.quantity, 0);
+                    })()} un.
                   </span>
                 </div>
               )}
