@@ -1225,7 +1225,6 @@ export default function DashboardOverview({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <h3 className="text-sm font-bold text-foreground">Faturamento vs Custos</h3>
-            <p className="text-[11px] text-muted-foreground">Evolução mensal de receita e despesas operacionais em {currentYear}.</p>
           </div>
           <div className="flex items-center gap-4 text-[10.5px] font-semibold">
             <span className="flex items-center gap-1.5 text-muted-foreground"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />Faturamento</span>
@@ -1598,7 +1597,6 @@ export default function DashboardOverview({
                 </span>
                 <div>
                   <h3 className="text-sm font-bold text-foreground font-sans">Despesas do Mês</h3>
-                  <p className="text-[11px] text-muted-foreground">Total de despesas lançadas em {currentMonthName} de {currentYear}: pago vs pendente.</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -1710,7 +1708,6 @@ export default function DashboardOverview({
                 </span>
                 <div>
                   <h3 className="text-sm font-bold text-foreground font-sans">Despesas por Categoria</h3>
-                  <p className="text-[11px] text-muted-foreground">Ranking das categorias com maior gasto no mês selecionado.</p>
                 </div>
               </div>
               <button
@@ -1792,7 +1789,6 @@ export default function DashboardOverview({
               </span>
               <div>
                 <h3 className="text-sm font-bold text-foreground font-sans">Dívida de Alavancagem</h3>
-                <p className="text-[11px] text-muted-foreground">Classificação de contas por prioridade de quitação.</p>
               </div>
             </div>
 
@@ -1921,7 +1917,6 @@ export default function DashboardOverview({
               </span>
               <div>
                 <h3 className="text-sm font-bold text-foreground font-sans">Dívidas por Categoria</h3>
-                <p className="text-[11px] text-muted-foreground">Distribuição das contas e obrigações da transportadora por tipo de despesa.</p>
               </div>
             </div>
             <button
@@ -2000,7 +1995,6 @@ export default function DashboardOverview({
               </span>
               <div>
                 <h3 className="text-sm font-bold text-foreground font-sans">Comissões de Motoristas</h3>
-                <p className="text-[11px] text-muted-foreground">Pagamento de comissão por viagem: pago vs pendente.</p>
               </div>
             </div>
             <button
@@ -2015,16 +2009,16 @@ export default function DashboardOverview({
             {/* Direct Metrics Column (Left - 5 cols) */}
             <div className="xl:col-span-5 space-y-4">
               <div className="space-y-3">
-                {/* Orange Pending */}
-                <div className="flex items-center justify-between p-3 bg-orange-500/5 border border-orange-500/20 rounded-xl">
+                {/* Red Pending */}
+                <div className="flex items-center justify-between p-3 bg-red-500/5 border border-red-500/20 rounded-xl">
                   <div className="flex items-center gap-2.5">
-                    <span className="w-3 h-3 rounded-full bg-orange-500" />
+                    <span className="w-3 h-3 rounded-full bg-red-500" />
                     <div>
                       <span className="text-xs font-black text-foreground block">Pendente</span>
                       <span className="text-[10px] text-muted-foreground block">Comissão ainda não paga</span>
                     </div>
                   </div>
-                  <span className="text-sm font-black font-mono text-orange-600 dark:text-orange-400">
+                  <span className="text-sm font-black font-mono text-red-600 dark:text-red-400">
                     R$ {commissionPendingTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
@@ -2049,7 +2043,7 @@ export default function DashboardOverview({
             <div className="xl:col-span-7 h-[250px] w-full flex items-center justify-center">
               {(() => {
                 const donutData = [
-                  { name: "Pendente", value: commissionPendingTotal, color: "#f97316" },
+                  { name: "Pendente", value: commissionPendingTotal, color: "#ef4444" },
                   { name: "Pago", value: commissionPaidTotal, color: "#10b981" }
                 ].filter(d => d.value > 0);
                 const grandTotal = commissionPendingTotal + commissionPaidTotal;
@@ -2140,7 +2134,6 @@ export default function DashboardOverview({
               </span>
               <div>
                 <h3 className="text-sm font-bold text-foreground font-sans">Custos Operacionais dos Fretes</h3>
-                <p className="text-[11px] text-muted-foreground">Pedágio, alimentação, hospedagem, comissão e outros custos lançados nos manifestos.</p>
               </div>
             </div>
             <button
@@ -2217,7 +2210,6 @@ export default function DashboardOverview({
               </span>
               <div>
                 <h3 className="text-sm font-bold text-foreground font-sans">Custos Operacionais por País</h3>
-                <p className="text-[11px] text-muted-foreground">Lançamento manual de despesas internacionais (Brasil, Argentina, Chile).</p>
               </div>
             </div>
             <button
@@ -2725,7 +2717,6 @@ export default function DashboardOverview({
                 </span>
                 <div>
                   <h3 className="text-sm font-bold text-foreground">Status e Saúde da Frota</h3>
-                  <p className="text-[11px] text-muted-foreground">Distribuição operacional dos veículos e manutenção.</p>
                 </div>
               </div>
             </div>
@@ -2998,7 +2989,6 @@ export default function DashboardOverview({
                 </span>
                 <div>
                   <h3 className="text-sm font-bold text-foreground font-sans">Atividade de Motoristas</h3>
-                  <p className="text-[11px] text-muted-foreground font-sans">Monitoramento em tempo real.</p>
                 </div>
               </div>
 
