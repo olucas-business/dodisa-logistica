@@ -1916,6 +1916,71 @@ app.get("/api/notifications", async (req, res) => {
   res.json((await loadDB()).notifications || []);
 });
 
+// Preenche o feed de Atividade de Motoristas retroativamente, a partir dos
+// fretes e comissões já cadastrados (uso único, não duplica se rodado de novo)
+app.post("/api/notifications/backfill", async (req, res) => {
+  const db = await loadDB();
+  db.notifications = db.notifications || [];
+  const existingFreightRefs = new Set(db.notifications.map((n: any) => `${n.freightId}_${n.message}`));
+  let created = 0;
+
+  db.freights.forEach(f => {
+    const driver = db.drivers.find(d => d.id === f.driverId);
+    if (!driver) return;
+    const time = "12:00";
+
+    const assignMsg = `📋 Frete ${f.freightNumber} atribuído a ${driver.fullName} (${f.origin?.city || "?"} → ${f.destination?.city || "?"})`;
+    if (!existingFreightRefs.has(`${f.id}_${assignMsg}`)) {
+      db.notifications.push({
+        id: `ntf_bf_${f.id}_assign`,
+        message: assignMsg,
+        date: f.date || new Date().toISOString().split("T")[0],
+        time,
+        read: true,
+        driverName: driver.fullName,
+        freightId: f.id
+      });
+      created++;
+    }
+
+    if (f.status === "Finalizado") {
+      const statusMsg = `🚚 Frete ${f.freightNumber} de ${driver.fullName} mudou para "Finalizado"`;
+      if (!existingFreightRefs.has(`${f.id}_${statusMsg}`)) {
+        db.notifications.push({
+          id: `ntf_bf_${f.id}_status`,
+          message: statusMsg,
+          date: f.date || new Date().toISOString().split("T")[0],
+          time,
+          read: true,
+          driverName: driver.fullName,
+          freightId: f.id
+        });
+        created++;
+      }
+    }
+
+    const paidAmount = f.financial?.commissionPaid || 0;
+    if (paidAmount > 0) {
+      const commissionMsg = `💰 Comissão de R$ ${paidAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} paga a ${driver.fullName} (Frete ${f.freightNumber})`;
+      if (!existingFreightRefs.has(`${f.id}_${commissionMsg}`)) {
+        db.notifications.push({
+          id: `ntf_bf_${f.id}_commission`,
+          message: commissionMsg,
+          date: f.date || new Date().toISOString().split("T")[0],
+          time,
+          read: true,
+          driverName: driver.fullName,
+          freightId: f.id
+        });
+        created++;
+      }
+    }
+  });
+
+  await saveDB(db);
+  res.json({ success: true, created });
+});
+
 app.post("/api/notifications/read", async (req, res) => {
   const db = (await loadDB());
   if (db.notifications) {
