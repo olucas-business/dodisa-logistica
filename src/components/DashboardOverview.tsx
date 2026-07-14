@@ -148,6 +148,7 @@ export default function DashboardOverview({
 
   // Custos Operacionais por País: lançamento manual (Brasil/Argentina/Chile), com status Pago/Pagar
   const [intCostModalOpen, setIntCostModalOpen] = useState(false);
+  const [expensesStatusModalFilter, setExpensesStatusModalFilter] = useState<"paid" | "pending" | null>(null);
   const [editingIntCostId, setEditingIntCostId] = useState<string | null>(null);
   const [intCostCountry, setIntCostCountry] = useState<"Brasil" | "Argentina" | "Chile">("Brasil");
   const [intCostValue, setIntCostValue] = useState("");
@@ -332,6 +333,20 @@ export default function DashboardOverview({
     () => debts.filter(d => d.status === "Falta Pagar").reduce((sum, d) => sum + (d.value || 0), 0),
     [debts]
   );
+
+  // Lista de despesas do mês selecionado (para o popup de Pagamentos/Pendências)
+  const expensesListMonth = useMemo(() => {
+    const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
+    return expenses.filter(e => e.date.startsWith(targetYearMonth));
+  }, [expenses, currentYear, currentMonth]);
+
+  const expensesTotalPaid = useMemo(() => {
+    return expensesListMonth.reduce((sum, e) => sum + Math.min(e.value || 0, e.paidAmount || 0), 0);
+  }, [expensesListMonth]);
+
+  const expensesTotalPending = useMemo(() => {
+    return expensesListMonth.reduce((sum, e) => sum + ((e.value || 0) - Math.min(e.value || 0, e.paidAmount || 0)), 0);
+  }, [expensesListMonth]);
 
   // Despesas do mês por categoria (gráfico de colunas), com abertura de pago vs pendente
   const expensesByCategoryMonth = useMemo(() => {
@@ -1460,65 +1475,79 @@ export default function DashboardOverview({
 
       </div>
 
-      {/* 2b. DESPESAS DO MÊS: donut resumo + ranking por categoria, lado a lado (mesmo padrão do Balanço de Dívidas abaixo) */}
+      {/* 2b. DESPESAS DO MÊS: pago vs pendente, lado a lado com ranking por categoria */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="w-full">
           <div className="bg-card border border-border rounded-2xl p-5">
-            <div className="flex items-center gap-2.5 border-b border-border pb-4 mb-4">
-              <span className="p-2 bg-red-500/10 text-red-500 rounded-xl">
-                <BarChart3 className="w-4 h-4" />
-              </span>
-              <div>
-                <h3 className="text-sm font-bold text-foreground font-sans">Despesas do Mês</h3>
-                <p className="text-[11px] text-muted-foreground">Total de despesas lançadas em {currentMonthName} de {currentYear}, por categoria.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border pb-4 mb-4 gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 bg-red-500/10 text-red-500 rounded-xl">
+                  <BarChart3 className="w-4 h-4" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground font-sans">Despesas do Mês</h3>
+                  <p className="text-[11px] text-muted-foreground">Total de despesas lançadas em {currentMonthName} de {currentYear}: pago vs pendente.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setExpensesStatusModalFilter("pending")}
+                  className="px-3 py-1.5 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 font-semibold rounded-xl text-[11px] transition-all"
+                >
+                  Checar Pendências
+                </button>
+                <button
+                  onClick={() => setExpensesStatusModalFilter("paid")}
+                  className="px-3 py-1.5 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold rounded-xl text-[11px] transition-all"
+                >
+                  Checar Pagamentos
+                </button>
               </div>
             </div>
-            {expensesByCategoryMonth.length === 0 ? (
+            {expensesListMonth.length === 0 ? (
               <div className="h-[220px] flex items-center justify-center text-xs text-muted-foreground font-medium">Nenhuma despesa lançada neste mês.</div>
             ) : (() => {
-              // Intensidade por valor: vermelho = mais grave, laranja = médio, amarelo = menor
-              const maxExpenseValue = Math.max(...expensesByCategoryMonth.map(c => c.value), 1);
-              const getIntensityColor = (value: number) => {
-                const ratio = value / maxExpenseValue;
-                if (ratio >= 0.66) return "#ef4444"; // vermelho
-                if (ratio >= 0.33) return "#f97316"; // laranja
-                return "#eab308"; // amarelo
-              };
-              const expensesTotal = expensesByCategoryMonth.reduce((sum, c) => sum + c.value, 0);
+              const donutData = [
+                { name: "Pendente", value: expensesTotalPending, color: "#ef4444" },
+                { name: "Pago", value: expensesTotalPaid, color: "#10b981" }
+              ].filter(d => d.value > 0);
+              const expensesTotal = expensesTotalPaid + expensesTotalPending;
+
               return (
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
-                  {/* Category Cards Column (Left - 5 cols), mesmo padrão do Balanço de Dívidas */}
-                  <div className="xl:col-span-5 space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                    {expensesByCategoryMonth.map((d) => {
-                      const color = getIntensityColor(d.value);
-                      return (
-                        <div key={d.category} className="p-3 rounded-xl border space-y-1.5" style={{ backgroundColor: `${color}0d`, borderColor: `${color}33` }}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                              <span className="text-xs font-black text-foreground truncate">{d.category}</span>
-                            </div>
-                            <span className="text-sm font-black font-mono shrink-0 ml-2" style={{ color }}>
-                              R$ {d.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-3 text-[10px] font-mono font-semibold pl-5">
-                            {d.paid > 0 && (
-                              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                R$ {d.paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </span>
-                            )}
-                            {d.pending > 0 && (
-                              <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                                R$ {d.pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </span>
-                            )}
-                          </div>
+                  {/* Metrics Column (Left - 5 cols), mesmo padrão do Balanço de Dívidas */}
+                  <div className="xl:col-span-5 space-y-3">
+                    <button
+                      onClick={() => setExpensesStatusModalFilter("pending")}
+                      className="w-full flex items-center justify-between p-3 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 rounded-xl transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-3 h-3 rounded-full bg-red-500" />
+                        <div className="text-left">
+                          <span className="text-xs font-black text-foreground block">Pendente</span>
+                          <span className="text-[10px] text-muted-foreground block">Ainda não pago</span>
                         </div>
-                      );
-                    })}
+                      </div>
+                      <span className="text-sm font-black font-mono text-red-600 dark:text-red-400">
+                        R$ {expensesTotalPending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => setExpensesStatusModalFilter("paid")}
+                      className="w-full flex items-center justify-between p-3 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 rounded-xl transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                        <div className="text-left">
+                          <span className="text-xs font-black text-foreground block">Pago</span>
+                          <span className="text-[10px] text-muted-foreground block">Baixa efetuada</span>
+                        </div>
+                      </div>
+                      <span className="text-sm font-black font-mono text-emerald-600 dark:text-emerald-400">
+                        R$ {expensesTotalPaid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </button>
                   </div>
 
                   {/* Donut Column (Right - 7 cols) */}
@@ -1527,9 +1556,9 @@ export default function DashboardOverview({
                       <div className="h-[220px] w-[220px] relative shrink-0">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
-                            <Pie data={expensesByCategoryMonth} cx="50%" cy="50%" innerRadius={65} outerRadius={95} paddingAngle={3} dataKey="value">
-                              {expensesByCategoryMonth.map((d, index) => (
-                                <Cell key={`cell-${index}`} fill={getIntensityColor(d.value)} />
+                            <Pie data={donutData} cx="50%" cy="50%" innerRadius={65} outerRadius={95} paddingAngle={3} dataKey="value">
+                              {donutData.map((d, index) => (
+                                <Cell key={`cell-${index}`} fill={d.color} />
                               ))}
                             </Pie>
                             <Tooltip
@@ -1544,10 +1573,10 @@ export default function DashboardOverview({
                         </div>
                       </div>
                       <div className="space-y-2.5">
-                        {expensesByCategoryMonth.map((d) => (
-                          <div key={d.category} className="flex items-center gap-2 text-xs font-semibold">
-                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getIntensityColor(d.value) }} />
-                            <span className="text-muted-foreground">{d.category}:</span>
+                        {donutData.map(d => (
+                          <div key={d.name} className="flex items-center gap-2 text-xs font-semibold">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                            <span className="text-muted-foreground">{d.name}:</span>
                             <span className="text-foreground font-mono">{expensesTotal > 0 ? ((d.value / expensesTotal) * 100).toFixed(0) : 0}%</span>
                           </div>
                         ))}
@@ -2122,6 +2151,74 @@ export default function DashboardOverview({
           )}
         </div>
       </div>
+
+      {/* MODAL: Despesas do Mês - Checar Pagamentos / Pendências */}
+      {expensesStatusModalFilter && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-card text-foreground rounded-2xl w-full max-w-lg border border-border shadow-2xl p-4 sm:p-6 relative animate-scale-in max-h-[calc(100vh-2rem)] my-auto flex flex-col">
+            <div className="flex items-center justify-between border-b border-border pb-3 mb-4 flex-shrink-0">
+              <h3 className={`text-sm font-bold flex items-center gap-2 ${expensesStatusModalFilter === "paid" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                <span className={`w-2.5 h-2.5 rounded-full ${expensesStatusModalFilter === "paid" ? "bg-emerald-500" : "bg-red-500"}`} />
+                {expensesStatusModalFilter === "paid" ? "Despesas Pagas" : "Despesas Pendentes"} — {currentMonthName} de {currentYear}
+              </h3>
+              <button onClick={() => setExpensesStatusModalFilter(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2 overflow-y-auto pr-1 flex-1 min-h-0">
+              {(() => {
+                const rows = expensesListMonth
+                  .map(e => {
+                    const paidAmt = Math.min(e.value || 0, e.paidAmount || 0);
+                    const pendingAmt = (e.value || 0) - paidAmt;
+                    return { expense: e, paidAmt, pendingAmt };
+                  })
+                  .filter(r => expensesStatusModalFilter === "paid" ? r.paidAmt > 0 : r.pendingAmt > 0)
+                  .sort((a, b) => b.expense.date.localeCompare(a.expense.date));
+
+                if (rows.length === 0) {
+                  return (
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {expensesStatusModalFilter === "paid" ? "Nenhuma despesa paga neste mês." : "Nenhuma despesa pendente neste mês."}
+                      </p>
+                    </div>
+                  );
+                }
+
+                return rows.map(({ expense: e, paidAmt, pendingAmt }) => (
+                  <div key={e.id} className="p-3 rounded-xl border border-border bg-muted/30 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="text-xs font-black text-foreground block truncate">{e.description}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">{e.date} · {e.category}</span>
+                      </div>
+                      <span className={`text-sm font-black font-mono shrink-0 ${expensesStatusModalFilter === "paid" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                        R$ {(expensesStatusModalFilter === "paid" ? paidAmt : pendingAmt).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                    {(e.installments || 1) > 1 && (
+                      <span className="text-[10px] font-semibold text-muted-foreground">
+                        Parcelado em {e.installments}x · Valor total: R$ {e.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
+                ));
+              })()}
+            </div>
+
+            <div className="flex justify-end pt-4 mt-2 border-t border-border flex-shrink-0">
+              <button
+                onClick={() => onNavigateTo("expenses")}
+                className="px-4 py-2 bg-card hover:bg-muted border border-border text-foreground font-semibold rounded-lg text-xs transition-all"
+              >
+                Ir para Gestão de Despesas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL: Custos Operacionais por País */}
       {intCostModalOpen && (

@@ -1005,13 +1005,13 @@ export default function FreightsManager({
                 </div>
 
                 {/* KM */}
-                <div className="bg-gray-50 dark:bg-slate-950/40 border border-gray-200 dark:border-slate-800 rounded-xl p-4 space-y-3 flex flex-col justify-between">
+                <div className="bg-gray-50 dark:bg-slate-950/40 border border-gray-200 dark:border-slate-800 rounded-xl p-4 space-y-3 self-start">
                   <div>
                     <h4 className="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">Telemetria de Quilometragem</h4>
                     <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">Insira os odômetros inicial e final para o cálculo automático.</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 my-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">Odômetro Inicial</label>
                       <input
