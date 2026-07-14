@@ -119,6 +119,9 @@ export interface FinancialDetails {
   advance?: number;       // Adiantamento (Frete Pago)
   balance?: number;       // Saldo (Frete Não Pago)
   balanceStatus?: "Pendente" | "Pago"; // Status do Saldo
+  commissionPaid?: number;      // Comissão já paga ao motorista
+  commissionPending?: number;   // Comissão ainda pendente de pagamento ao motorista
+  commissionReceiptUrl?: string; // Comprovante de pagamento da comissão
 }
 
 export interface MileageDetails {
@@ -219,6 +222,16 @@ export interface Debt {
   dueDate: string;
   status: "Quitar Primeiro" | "Pago" | "Falta Pagar";
   notes?: string;
+  createdAt: string;
+}
+
+export interface InternationalCost {
+  id: string;
+  country: "Brasil" | "Argentina" | "Chile";
+  value: number;
+  status: "Pago" | "Pagar";
+  description?: string;
+  date: string;
   createdAt: string;
 }
 

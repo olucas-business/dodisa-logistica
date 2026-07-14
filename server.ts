@@ -84,6 +84,7 @@ interface Database {
   trip_photos: any[];
   notifications: any[];
   expenseCategories?: string[];
+  internationalCosts?: any[];
 }
 
 const DEFAULT_EXPENSE_CATEGORIES = [
@@ -99,7 +100,23 @@ const DEFAULT_EXPENSE_CATEGORIES = [
   "Cartão de Crédito",
   "Impostos",
   "Seguros",
-  "Outros"
+  "Outros",
+  "Despachante Argentina",
+  "Despachante Chile",
+  "Pedágio Argentina",
+  "Pedágio Chile",
+  "Pedágio Brasil",
+  "Imigração Argentina",
+  "Imigração Chile",
+  "Estacionamento Argentina",
+  "Estacionamento Chile",
+  "Estacionamento Brasil",
+  "Óleo Motor",
+  "Filtros",
+  "Diverso 1",
+  "Diverso 2",
+  "Assinatura 1",
+  "Assinatura 2"
 ];
 
 // Seed Initial Data
@@ -137,6 +154,7 @@ const DEFAULT_DB: Database = {
   expenseCategories: [...DEFAULT_EXPENSE_CATEGORIES],
   tires: [],
   debts: [],
+  internationalCosts: [],
   maintenance_logs: [],
   annotations: [],
   caixa_caminhao: [],
@@ -1156,9 +1174,21 @@ async function loadDB(): Promise<Database> {
       db.annotations = [];
       modified = true;
     }
+    if (!db.internationalCosts) {
+      db.internationalCosts = [];
+      modified = true;
+    }
     if (!db.expenseCategories || db.expenseCategories.length === 0) {
       db.expenseCategories = [...DEFAULT_EXPENSE_CATEGORIES];
       modified = true;
+    } else {
+      const missingCategories = DEFAULT_EXPENSE_CATEGORIES.filter(
+        c => !db.expenseCategories!.some(existing => existing.toLowerCase() === c.toLowerCase())
+      );
+      if (missingCategories.length > 0) {
+        db.expenseCategories = [...db.expenseCategories, ...missingCategories];
+        modified = true;
+      }
     }
     if (!db.caixa_caminhao) {
       db.caixa_caminhao = DEFAULT_DB.caixa_caminhao || [];
@@ -1338,6 +1368,46 @@ app.put("/api/company", async (req, res) => {
   db.company = { ...db.company, ...req.body };
   await saveDB(db);
   res.json({ success: true, company: db.company });
+});
+
+// Custos Operacionais por País (Brasil/Argentina/Chile) - lançamento manual
+app.get("/api/international-costs", async (req, res) => {
+  const db = await loadDB();
+  res.json({ success: true, costs: db.internationalCosts || [] });
+});
+
+app.post("/api/international-costs", async (req, res) => {
+  const db = await loadDB();
+  const newCost = {
+    id: `intcost_${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    ...req.body
+  };
+  db.internationalCosts = db.internationalCosts || [];
+  db.internationalCosts.push(newCost);
+  await saveDB(db);
+  res.json({ success: true, cost: newCost });
+});
+
+app.put("/api/international-costs/:id", async (req, res) => {
+  const { id } = req.params;
+  const db = await loadDB();
+  db.internationalCosts = db.internationalCosts || [];
+  const idx = db.internationalCosts.findIndex((c: any) => c.id === id);
+  if (idx === -1) {
+    return res.status(404).json({ success: false, message: "Custo não encontrado." });
+  }
+  db.internationalCosts[idx] = { ...db.internationalCosts[idx], ...req.body };
+  await saveDB(db);
+  res.json({ success: true, cost: db.internationalCosts[idx] });
+});
+
+app.delete("/api/international-costs/:id", async (req, res) => {
+  const { id } = req.params;
+  const db = await loadDB();
+  db.internationalCosts = (db.internationalCosts || []).filter((c: any) => c.id !== id);
+  await saveDB(db);
+  res.json({ success: true });
 });
 
 // Categorias de despesas (customizáveis pelo usuário em Controle de Despesas)

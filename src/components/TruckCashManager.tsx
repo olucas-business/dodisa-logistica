@@ -195,6 +195,26 @@ export default function TruckCashManager({
     });
   }, [vehicles, caixas, movimentacoes, drivers]);
 
+  // Total de gastos (em BRL) agrupado pela moeda original de lançamento, entre todos os veículos
+  const globalCurrencyBreakdown = useMemo(() => {
+    const totals: Record<string, number> = {};
+    movimentacoes.forEach(m => {
+      const code = m.moeda || "BRL";
+      totals[code] = (totals[code] || 0) + (m.valor || 0);
+    });
+    const colors: Record<string, string> = { BRL: "#10b981", USD: "#3b82f6", ARS: "#f97316", CLP: "#ef4444" };
+    return Object.entries(totals)
+      .map(([code, value]) => ({
+        code,
+        value,
+        flag: CURRENCIES.find(c => c.code === code)?.flag || "",
+        label: CURRENCIES.find(c => c.code === code)?.label || code,
+        color: colors[code] || "#8b5cf6"
+      }))
+      .filter(c => c.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [movimentacoes]);
+
   // Find currently active vehicle card info
   const activeCardInfo = useMemo(() => {
     if (!selectedVehicleId) return null;
@@ -424,6 +444,38 @@ export default function TruckCashManager({
               Criar Novo Caixa
             </button>
           </div>
+
+          {/* Detalhamento por Moeda */}
+          {globalCurrencyBreakdown.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-5 shadow-xs">
+              <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-1.5">
+                <Coins className="w-4 h-4 text-blue-500" />
+                Despesas por Moeda
+              </h4>
+              <div className="flex flex-col sm:flex-row items-center gap-6">
+                <div className="h-[180px] w-full sm:w-[200px] flex-shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={globalCurrencyBreakdown} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={3} dataKey="value">
+                        {globalCurrencyBreakdown.map((item, index) => (
+                          <Cell key={`cell-cur-${index}`} fill={item.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap gap-3 text-[11px] font-semibold text-muted-foreground">
+                  {globalCurrencyBreakdown.map(item => (
+                    <div key={item.code} className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <span>{item.flag} {item.label}: <strong className="text-foreground">R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

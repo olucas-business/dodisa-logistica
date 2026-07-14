@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { User, Driver, Vehicle, Freight, Refuel, Expense, Tire, Debt, TruckCashTransaction, CaixaCaminhao, CaixaMovimentacao, MaintenanceLog } from "./types";
+import { User, Driver, Vehicle, Freight, Refuel, Expense, Tire, Debt, TruckCashTransaction, CaixaCaminhao, CaixaMovimentacao, MaintenanceLog, InternationalCost } from "./types";
 import LoginForm from "./components/LoginForm";
 import BrandMark from "./components/BrandMark";
 import VehicleTracking from "./components/VehicleTracking";
@@ -94,6 +94,7 @@ export default function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [tires, setTires] = useState<Tire[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
+  const [internationalCosts, setInternationalCosts] = useState<InternationalCost[]>([]);
   const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([]);
   const [caixasCaminhao, setCaixasCaminhao] = useState<CaixaCaminhao[]>([]);
   const [caixaMovimentacoes, setCaixaMovimentacoes] = useState<CaixaMovimentacao[]>([]);
@@ -123,7 +124,7 @@ export default function App() {
     setLoading(true);
     setErrorMsg("");
     try {
-      const [drvRes, vhcRes, frtRes, refRes, expRes, tirRes, debRes, tcRes, maintRes] = await Promise.all([
+      const [drvRes, vhcRes, frtRes, refRes, expRes, tirRes, debRes, tcRes, maintRes, intCostRes] = await Promise.all([
         fetch("/api/drivers"),
         fetch("/api/vehicles"),
         fetch("/api/freights"),
@@ -132,10 +133,11 @@ export default function App() {
         fetch("/api/tires"),
         fetch("/api/debts"),
         fetch("/api/caixa-caminhao"),
-        fetch("/api/maintenance-logs")
+        fetch("/api/maintenance-logs"),
+        fetch("/api/international-costs")
       ]);
 
-      const [drvData, vhcData, frtData, refData, expData, tirData, debData, tcData, maintData] = await Promise.all([
+      const [drvData, vhcData, frtData, refData, expData, tirData, debData, tcData, maintData, intCostData] = await Promise.all([
         drvRes.json(),
         vhcRes.json(),
         frtRes.json(),
@@ -144,7 +146,8 @@ export default function App() {
         tirRes.json(),
         debRes.json(),
         tcRes.json(),
-        maintRes.json()
+        maintRes.json(),
+        intCostRes.json()
       ]);
 
       setDrivers(Array.isArray(drvData) ? drvData : (drvData.success ? drvData.drivers : []));
@@ -157,6 +160,7 @@ export default function App() {
       setCaixasCaminhao(tcData.success && tcData.caixas ? tcData.caixas : []);
       setCaixaMovimentacoes(tcData.success && tcData.movimentacoes ? tcData.movimentacoes : []);
       setMaintenanceLogs(maintData.success ? maintData.maintenanceLogs : (Array.isArray(maintData) ? maintData : []));
+      setInternationalCosts(intCostData.success ? intCostData.costs : (Array.isArray(intCostData) ? intCostData : []));
     } catch (err) {
       setErrorMsg("Erro de sincronização com o banco de dados. Tentando novamente.");
     } finally {
@@ -580,6 +584,59 @@ export default function App() {
     }
   };
 
+  const handleAddInternationalCost = async (payload: Partial<InternationalCost>) => {
+    try {
+      const res = await fetch("/api/international-costs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchAllData();
+        return true;
+      }
+      alert(data.message || "Erro ao cadastrar custo internacional");
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const handleUpdateInternationalCost = async (id: string, payload: Partial<InternationalCost>) => {
+    try {
+      const res = await fetch(`/api/international-costs/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.success) {
+        await fetchAllData();
+        return true;
+      }
+      alert(data.message || "Erro ao atualizar custo internacional");
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
+  const handleDeleteInternationalCost = async (id: string) => {
+    try {
+      const res = await fetch(`/api/international-costs/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        await fetchAllData();
+        return true;
+      }
+      alert(data.message || "Erro ao excluir custo internacional");
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
+
   const handleAddMaintenanceLog = async (payload: Partial<MaintenanceLog>) => {
     try {
       const res = await fetch("/api/maintenance-logs", {
@@ -978,6 +1035,10 @@ export default function App() {
                   refuels={refuels}
                   expenses={expenses}
                   debts={debts}
+                  internationalCosts={internationalCosts}
+                  onAddInternationalCost={handleAddInternationalCost}
+                  onUpdateInternationalCost={handleUpdateInternationalCost}
+                  onDeleteInternationalCost={handleDeleteInternationalCost}
                   onNavigateTo={setTab}
                 />
               )}

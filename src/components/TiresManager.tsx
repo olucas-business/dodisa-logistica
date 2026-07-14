@@ -95,6 +95,9 @@ export default function TiresManager({
 
   // Se preenchido, o modal de cadastro funciona em modo edição (atualiza em vez de criar)
   const [editingTireId, setEditingTireId] = useState<string | null>(null);
+  // Marca/modelo originais do pneu em edição, para o contador de estoque não "perder"
+  // o próprio pneu do total quando o usuário troca a marca/modelo no formulário antes de salvar
+  const [editingOriginalBrandModel, setEditingOriginalBrandModel] = useState<{ brand: string; model: string } | null>(null);
 
   // New Tire Form state
   const [newSerialNumber, setNewSerialNumber] = useState("");
@@ -158,6 +161,7 @@ export default function TiresManager({
 
   const handleOpenAdd = () => {
     setEditingTireId(null);
+    setEditingOriginalBrandModel(null);
     setNewSerialNumber("");
     setNewModel("");
     setNewBrand("Michelin");
@@ -172,6 +176,7 @@ export default function TiresManager({
 
   const handleOpenEdit = (tire: Tire) => {
     setEditingTireId(tire.id);
+    setEditingOriginalBrandModel({ brand: tire.brand, model: tire.model });
     setNewSerialNumber(tire.serialNumber);
     setNewModel(tire.model);
     setNewBrand(tire.brand);
@@ -704,7 +709,10 @@ export default function TiresManager({
                 <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 rounded-lg px-3 py-2">
                   <span className="text-[10px] font-mono font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Quantidade em estoque deste modelo</span>
                   <span className="text-xs font-black font-mono bg-blue-600 text-white rounded px-2 py-0.5">
-                    {tiresByBrandModel.find((i) => i.brand === newBrand && i.model === newModel)?.quantity || 0} un.
+                    {tiresByBrandModel.find((i) =>
+                      i.brand === (editingOriginalBrandModel?.brand ?? newBrand) &&
+                      i.model === (editingOriginalBrandModel?.model ?? newModel)
+                    )?.quantity || 0} un.
                   </span>
                 </div>
               )}

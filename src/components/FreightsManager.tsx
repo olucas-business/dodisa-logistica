@@ -3,7 +3,7 @@ import { Freight, Driver, Vehicle } from "../types";
 import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
-import { Truck, Plus, Search, Calendar, MapPin, Navigation, Coins, Trash2, Edit2, CheckCircle, Clock, PieChart as PieChartIcon } from "lucide-react";
+import { Truck, Plus, Search, Calendar, MapPin, Navigation, Coins, Trash2, Edit2, CheckCircle, Clock, PieChart as PieChartIcon, Upload } from "lucide-react";
 
 const MERCOSUL_COUNTRIES = ["Brasil", "Argentina", "Chile", "Paraguai", "Peru", "Uruguai"];
 
@@ -61,6 +61,10 @@ export default function FreightsManager({
   // Financeiro
   const [value, setValue] = useState("");
   const [commission, setCommission] = useState("");
+  const [commissionPaid, setCommissionPaid] = useState("");
+  const [commissionPending, setCommissionPending] = useState("");
+  const [commissionReceiptUrl, setCommissionReceiptUrl] = useState("");
+  const [uploadingCommissionReceipt, setUploadingCommissionReceipt] = useState(false);
   const [toll, setToll] = useState("");
   const [food, setFood] = useState("");
   const [lodging, setLodging] = useState("");
@@ -100,6 +104,9 @@ export default function FreightsManager({
 
     setValue("");
     setCommission("");
+    setCommissionPaid("");
+    setCommissionPending("");
+    setCommissionReceiptUrl("");
     setToll("");
     setFood("");
     setLodging("");
@@ -112,6 +119,42 @@ export default function FreightsManager({
     setEndKm("");
     setIsEditMode(false);
     setSelectedFreightId(null);
+  };
+
+  const handleCommissionChange = (valStr: string) => {
+    setCommission(valStr);
+    const val = Number(valStr) || 0;
+    setCommissionPaid("0");
+    setCommissionPending(String(val));
+  };
+
+  const handleUploadCommissionReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCommissionReceipt(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const dataUrl = reader.result as string;
+        const res = await fetch("/api/upload-document", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ file: dataUrl, fileName: file.name, folder: "commission-receipts" })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setCommissionReceiptUrl(data.url);
+        } else {
+          alert(data.message || "Erro ao enviar comprovante.");
+        }
+        setUploadingCommissionReceipt(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      alert("Erro ao enviar comprovante.");
+      setUploadingCommissionReceipt(false);
+    }
+    e.target.value = "";
   };
 
   const handleValueChange = (valStr: string) => {
@@ -154,6 +197,9 @@ export default function FreightsManager({
 
     setValue(String(f.financial.value));
     setCommission(String(f.financial.commission));
+    setCommissionPaid(String(f.financial.commissionPaid !== undefined ? f.financial.commissionPaid : 0));
+    setCommissionPending(String(f.financial.commissionPending !== undefined ? f.financial.commissionPending : f.financial.commission));
+    setCommissionReceiptUrl(f.financial.commissionReceiptUrl || "");
     setToll(String(f.financial.toll || ""));
     setFood(String(f.financial.food || ""));
     setLodging(String(f.financial.lodging || ""));
@@ -210,6 +256,9 @@ export default function FreightsManager({
       financial: {
         value: Number(value) || 0,
         commission: Number(commission) || 0,
+        commissionPaid: Number(commissionPaid) || 0,
+        commissionPending: Number(commissionPending) || 0,
+        commissionReceiptUrl,
         toll: Number(toll) || 0,
         food: Number(food) || 0,
         lodging: Number(lodging) || 0,
@@ -271,13 +320,11 @@ export default function FreightsManager({
     { name: "Outros", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.otherExpenses || 0), 0) }
   ].filter(c => c.value > 0);
 
-  // Intensidade por valor: vermelho = mais grave, laranja = médio, amarelo = menor
-  const maxCostBreakdown = Math.max(...costBreakdown.map(c => c.value), 1);
-  const getCostIntensityColor = (value: number) => {
-    const ratio = value / maxCostBreakdown;
-    if (ratio >= 0.66) return "#ef4444";
-    if (ratio >= 0.33) return "#f97316";
-    return "#eab308";
+  // Cores fixas por natureza do custo: azul = pedágio, verde = comissão, vermelho = demais custos
+  const getCostIntensityColor = (_value: number, name?: string) => {
+    if (name === "Pedágio") return "#3b82f6";
+    if (name === "Comissão") return "#10b981";
+    return "#ef4444";
   };
 
   return (
@@ -295,7 +342,7 @@ export default function FreightsManager({
                 <PieChart>
                   <Pie data={costBreakdown} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={3} dataKey="value">
                     {costBreakdown.map((item, index) => (
-                      <Cell key={`cell-${index}`} fill={getCostIntensityColor(item.value)} />
+                      <Cell key={`cell-${index}`} fill={getCostIntensityColor(item.value, item.name)} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
@@ -305,7 +352,7 @@ export default function FreightsManager({
             <div className="flex flex-wrap gap-3 text-[11px] font-semibold text-gray-600 dark:text-gray-400">
               {costBreakdown.map((item) => (
                 <div key={item.name} className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getCostIntensityColor(item.value) }} />
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getCostIntensityColor(item.value, item.name) }} />
                   <span>{item.name}: R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               ))}
@@ -773,10 +820,52 @@ export default function FreightsManager({
                         type="number"
                         required
                         value={commission}
-                        onChange={(e) => setCommission(e.target.value)}
+                        onChange={(e) => handleCommissionChange(e.target.value)}
                         placeholder="750"
                         className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded p-1.5 text-xs outline-none font-semibold text-blue-700 dark:text-blue-400"
                       />
+                    </div>
+                  </div>
+
+                  {/* Comissão do Motorista: paga vs pendente + comprovante */}
+                  <div className="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/30 rounded-lg p-3 space-y-2.5">
+                    <span className="text-[10px] font-bold text-emerald-900 dark:text-emerald-300 uppercase tracking-wider block">Pagamento da Comissão</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">🟢 Comissão Paga (R$)</label>
+                        <input
+                          type="number"
+                          value={commissionPaid}
+                          onChange={(e) => setCommissionPaid(e.target.value)}
+                          placeholder="0"
+                          className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded p-1 text-xs outline-none font-mono text-emerald-600 dark:text-emerald-400 font-bold"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">🟠 Comissão Pendente (R$)</label>
+                        <input
+                          type="number"
+                          value={commissionPending}
+                          onChange={(e) => setCommissionPending(e.target.value)}
+                          placeholder="750"
+                          className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded p-1 text-xs outline-none font-mono text-amber-600 dark:text-amber-450 font-bold"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500">Comprovante de Pagamento</label>
+                      <div className="flex items-center gap-2">
+                        <label className="flex-1 flex items-center justify-center gap-1.5 bg-white dark:bg-slate-900 border border-dashed border-gray-300 dark:border-slate-700 text-gray-500 dark:text-gray-400 rounded p-1.5 text-[10px] font-semibold cursor-pointer hover:border-emerald-500 transition-all">
+                          <Upload className="w-3.5 h-3.5" />
+                          {uploadingCommissionReceipt ? "Enviando..." : commissionReceiptUrl ? "Trocar arquivo" : "Enviar comprovante"}
+                          <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleUploadCommissionReceipt} disabled={uploadingCommissionReceipt} />
+                        </label>
+                        {commissionReceiptUrl && (
+                          <a href={commissionReceiptUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline shrink-0">
+                            Ver anexo
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
 

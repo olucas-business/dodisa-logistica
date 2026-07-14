@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, FormEvent } from "react";
 import {
   Freight,
   Driver,
   Vehicle,
   Refuel,
   Expense,
-  Debt
+  Debt,
+  InternationalCost
 } from "../types";
 import RadialGauge from "./RadialGauge";
 import { 
@@ -33,7 +34,11 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
-  CalendarDays
+  CalendarDays,
+  Plus,
+  Trash2,
+  X,
+  Globe2
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -59,6 +64,10 @@ interface DashboardOverviewProps {
   refuels: Refuel[];
   expenses: Expense[];
   debts: Debt[];
+  internationalCosts?: InternationalCost[];
+  onAddInternationalCost?: (payload: Partial<InternationalCost>) => Promise<boolean>;
+  onUpdateInternationalCost?: (id: string, payload: Partial<InternationalCost>) => Promise<boolean>;
+  onDeleteInternationalCost?: (id: string) => Promise<boolean>;
   onNavigateTo: (tab: string) => void;
 }
 
@@ -86,6 +95,10 @@ export default function DashboardOverview({
   refuels,
   expenses,
   debts = [],
+  internationalCosts = [],
+  onAddInternationalCost,
+  onUpdateInternationalCost,
+  onDeleteInternationalCost,
   onNavigateTo
 }: DashboardOverviewProps) {
   // Constants
@@ -132,6 +145,88 @@ export default function DashboardOverview({
 
   // Active tab toggle for bottom right charts: expenses vs cargo breakdown
   const [bottomActiveTab, setBottomActiveTab] = useState<"expenses" | "cargo">("expenses");
+
+  // Custos Operacionais por País: lançamento manual (Brasil/Argentina/Chile), com status Pago/Pagar
+  const [intCostModalOpen, setIntCostModalOpen] = useState(false);
+  const [editingIntCostId, setEditingIntCostId] = useState<string | null>(null);
+  const [intCostCountry, setIntCostCountry] = useState<"Brasil" | "Argentina" | "Chile">("Brasil");
+  const [intCostValue, setIntCostValue] = useState("");
+  const [intCostStatus, setIntCostStatus] = useState<"Pago" | "Pagar">("Pagar");
+  const [intCostDescription, setIntCostDescription] = useState("");
+  const [intCostDate, setIntCostDate] = useState(new Date().toISOString().split("T")[0]);
+
+  const resetIntCostForm = () => {
+    setEditingIntCostId(null);
+    setIntCostCountry("Brasil");
+    setIntCostValue("");
+    setIntCostStatus("Pagar");
+    setIntCostDescription("");
+    setIntCostDate(new Date().toISOString().split("T")[0]);
+  };
+
+  const handleOpenAddIntCost = () => {
+    resetIntCostForm();
+    setIntCostModalOpen(true);
+  };
+
+  const handleOpenEditIntCost = (cost: InternationalCost) => {
+    setEditingIntCostId(cost.id);
+    setIntCostCountry(cost.country);
+    setIntCostValue(String(cost.value));
+    setIntCostStatus(cost.status);
+    setIntCostDescription(cost.description || "");
+    setIntCostDate(cost.date);
+    setIntCostModalOpen(true);
+  };
+
+  const handleSubmitIntCost = async (e: FormEvent) => {
+    e.preventDefault();
+    const val = Number(intCostValue);
+    if (!val || val <= 0) {
+      alert("Informe um valor válido.");
+      return;
+    }
+    const payload: Partial<InternationalCost> = {
+      country: intCostCountry,
+      value: val,
+      status: intCostStatus,
+      description: intCostDescription,
+      date: intCostDate
+    };
+    const ok = editingIntCostId
+      ? await onUpdateInternationalCost?.(editingIntCostId, payload)
+      : await onAddInternationalCost?.(payload);
+    if (ok) {
+      setIntCostModalOpen(false);
+      resetIntCostForm();
+    }
+  };
+
+  const handleDeleteIntCost = async (id: string) => {
+    if (confirm("Excluir este lançamento de custo internacional?")) {
+      await onDeleteInternationalCost?.(id);
+    }
+  };
+
+  const COUNTRY_FLAG: Record<string, string> = { Brasil: "🇧🇷", Argentina: "🇦🇷", Chile: "🇨🇱" };
+  const COUNTRY_COLOR: Record<string, string> = { Brasil: "#10b981", Argentina: "#3b82f6", Chile: "#f97316" };
+
+  const costsByCountry = useMemo(() => {
+    const totals: Record<string, number> = { Brasil: 0, Argentina: 0, Chile: 0 };
+    internationalCosts.forEach(c => { totals[c.country] = (totals[c.country] || 0) + (c.value || 0); });
+    return Object.entries(totals)
+      .map(([country, value]) => ({ country, value }))
+      .filter(c => c.value > 0);
+  }, [internationalCosts]);
+
+  const costsByStatus = useMemo(() => {
+    const paid = internationalCosts.filter(c => c.status === "Pago").reduce((s, c) => s + (c.value || 0), 0);
+    const pending = internationalCosts.filter(c => c.status === "Pagar").reduce((s, c) => s + (c.value || 0), 0);
+    return [
+      { name: "Pago", value: paid, color: "#10b981" },
+      { name: "Pagar", value: pending, color: "#ef4444" }
+    ].filter(c => c.value > 0);
+  }, [internationalCosts]);
 
   // Alíquota de imposto configurada no Perfil da Empresa (usada no anel "Impostos" — editável também direto no anel)
   const [taxRate, setTaxRate] = useState(0);
@@ -707,6 +802,20 @@ export default function DashboardOverview({
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
   }, [freightsMonth, drivers]);
+
+  // Comissões dos motoristas: total pago vs pendente (todas as viagens, igual ao padrão de Dívida de Alavancagem)
+  const commissionPaidTotal = useMemo(() => {
+    return freights.filter(f => f.status !== "Cancelado").reduce((sum, f) => {
+      return sum + (f.financial?.commissionPaid !== undefined ? f.financial.commissionPaid : 0);
+    }, 0);
+  }, [freights]);
+
+  const commissionPendingTotal = useMemo(() => {
+    return freights.filter(f => f.status !== "Cancelado").reduce((sum, f) => {
+      const c = f.financial?.commission || 0;
+      return sum + (f.financial?.commissionPending !== undefined ? f.financial.commissionPending : c);
+    }, 0);
+  }, [freights]);
 
   // 5. Abastecimento (Refuel total and per vehicle)
   const totalFuelSpendMonth = useMemo(() => {
@@ -1724,8 +1833,114 @@ export default function DashboardOverview({
       </div>
       </div>
 
-      {/* 4b. CUSTOS OPERACIONAIS DOS FRETES */}
-      <div id="dashboard-freight-operational-costs" className="w-full">
+      {/* 3b. COMISSÕES DE MOTORISTAS: pago vs pendente, mesmo padrão da Dívida de Alavancagem */}
+      <div id="dashboard-driver-commissions" className="w-full">
+        <div className="bg-card border border-border rounded-2xl p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border pb-4 mb-4 gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl">
+                <Users className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-foreground font-sans">Comissões de Motoristas</h3>
+                <p className="text-[11px] text-muted-foreground">Pagamento de comissão por viagem: pago vs pendente.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => onNavigateTo("freights")}
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 bg-blue-500/5 hover:bg-blue-500/10 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+            >
+              Ir para Manifesto de Fretes ➔
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-center">
+            {/* Direct Metrics Column (Left - 5 cols) */}
+            <div className="xl:col-span-5 space-y-4">
+              <div className="space-y-3">
+                {/* Orange Pending */}
+                <div className="flex items-center justify-between p-3 bg-orange-500/5 border border-orange-500/20 rounded-xl">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-3 h-3 rounded-full bg-orange-500" />
+                    <div>
+                      <span className="text-xs font-black text-foreground block">Pendente</span>
+                      <span className="text-[10px] text-muted-foreground block">Comissão ainda não paga</span>
+                    </div>
+                  </div>
+                  <span className="text-sm font-black font-mono text-orange-600 dark:text-orange-400">
+                    R$ {commissionPendingTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                {/* Green Paid */}
+                <div className="flex items-center justify-between p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-3 h-3 rounded-full bg-emerald-500" />
+                    <div>
+                      <span className="text-xs font-black text-foreground block">Pago</span>
+                      <span className="text-[10px] text-muted-foreground block">Comissão já quitada</span>
+                    </div>
+                  </div>
+                  <span className="text-sm font-black font-mono text-emerald-600 dark:text-emerald-400">
+                    R$ {commissionPaidTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Graph Column (Right - 7 cols) */}
+            <div className="xl:col-span-7 h-[250px] w-full flex items-center justify-center">
+              {(() => {
+                const donutData = [
+                  { name: "Pendente", value: commissionPendingTotal, color: "#f97316" },
+                  { name: "Pago", value: commissionPaidTotal, color: "#10b981" }
+                ].filter(d => d.value > 0);
+                const grandTotal = commissionPendingTotal + commissionPaidTotal;
+
+                if (donutData.length === 0) {
+                  return <div className="text-xs text-muted-foreground font-medium">Nenhuma comissão de frete cadastrada.</div>;
+                }
+
+                return (
+                  <div className="flex items-center gap-8 w-full justify-center">
+                    <div className="h-[220px] w-[220px] relative shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={donutData} cx="50%" cy="50%" innerRadius={65} outerRadius={95} paddingAngle={3} dataKey="value">
+                            {donutData.map((entry, index) => (
+                              <Cell key={`cell-comm-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: any) => [`R$ ${Number(value).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, "Total"]}
+                            contentStyle={{ backgroundColor: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", color: "var(--color-foreground)", fontSize: "10px" }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">Total</span>
+                        <span className="text-base font-black font-mono text-foreground">R$ {grandTotal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2.5">
+                      {donutData.map(d => (
+                        <div key={d.name} className="flex items-center gap-2 text-xs font-semibold">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                          <span className="text-muted-foreground">{d.name}:</span>
+                          <span className="text-foreground font-mono">{grandTotal > 0 ? ((d.value / grandTotal) * 100).toFixed(0) : 0}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 4b. CUSTOS OPERACIONAIS DOS FRETES + CUSTOS OPERACIONAIS POR PAÍS */}
+      <div id="dashboard-freight-operational-costs" className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-4 gap-2">
             <div className="flex items-center gap-2.5">
@@ -1765,13 +1980,11 @@ export default function DashboardOverview({
               );
             }
 
-            // Intensidade por valor: vermelho = mais grave, laranja = médio, amarelo = menor
-            const maxFreightCost = Math.max(...freightCostBreakdown.map(c => c.value), 1);
-            const getIntensityColor = (value: number) => {
-              const ratio = value / maxFreightCost;
-              if (ratio >= 0.66) return "#ef4444";
-              if (ratio >= 0.33) return "#f97316";
-              return "#eab308";
+            // Cores fixas por natureza do custo: azul = pedágio, verde = comissão, vermelho = demais custos
+            const getFixedColor = (name: string) => {
+              if (name === "Pedágio") return "#3b82f6";
+              if (name === "Comissão") return "#10b981";
+              return "#ef4444";
             };
 
             return (
@@ -1781,7 +1994,7 @@ export default function DashboardOverview({
                     <PieChart>
                       <Pie data={freightCostBreakdown} cx="50%" cy="50%" innerRadius={50} outerRadius={72} paddingAngle={3} dataKey="value">
                         {freightCostBreakdown.map((item, index) => (
-                          <Cell key={`cell-${index}`} fill={getIntensityColor(item.value)} />
+                          <Cell key={`cell-${index}`} fill={getFixedColor(item.name)} />
                         ))}
                       </Pie>
                       <Tooltip
@@ -1794,7 +2007,7 @@ export default function DashboardOverview({
                 <div className="flex flex-wrap gap-3 text-[11px] font-semibold text-muted-foreground">
                   {freightCostBreakdown.map((item) => (
                     <div key={item.name} className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getIntensityColor(item.value) }} />
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getFixedColor(item.name) }} />
                       <span>{item.name}: <strong className="text-foreground">R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
                     </div>
                   ))}
@@ -1803,7 +2016,198 @@ export default function DashboardOverview({
             );
           })()}
         </div>
+
+        {/* CUSTOS OPERACIONAIS POR PAÍS (lançamento manual) */}
+        <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-4 gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2 bg-blue-500/10 text-blue-500 rounded-xl">
+                <Globe2 className="w-4 h-4" />
+              </span>
+              <div>
+                <h3 className="text-sm font-bold text-foreground font-sans">Custos Operacionais por País</h3>
+                <p className="text-[11px] text-muted-foreground">Lançamento manual de despesas internacionais (Brasil, Argentina, Chile).</p>
+              </div>
+            </div>
+            <button
+              onClick={handleOpenAddIntCost}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-[11px] transition-all flex items-center gap-1.5 shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Adicionar
+            </button>
+          </div>
+
+          {internationalCosts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[180px] w-full py-8 text-center bg-card/50 rounded-xl border border-dashed border-border p-4">
+              <Globe2 className="w-8 h-8 text-muted-foreground/40 mb-2 stroke-[1.5]" />
+              <p className="text-xs text-muted-foreground font-medium">Nenhum custo internacional cadastrado.</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Por País</span>
+                  <div className="h-[110px] w-[110px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={costsByCountry} cx="50%" cy="50%" innerRadius={30} outerRadius={50} paddingAngle={3} dataKey="value">
+                          {costsByCountry.map((item, index) => (
+                            <Cell key={`cell-c-${index}`} fill={COUNTRY_COLOR[item.country]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2 mt-1.5 text-[10px] font-semibold text-muted-foreground">
+                    {costsByCountry.map(item => (
+                      <span key={item.country} className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COUNTRY_COLOR[item.country] }} />
+                        {COUNTRY_FLAG[item.country]} {item.country}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Pago vs Pagar</span>
+                  <div className="h-[110px] w-[110px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={costsByStatus} cx="50%" cy="50%" innerRadius={30} outerRadius={50} paddingAngle={3} dataKey="value">
+                          {costsByStatus.map((item, index) => (
+                            <Cell key={`cell-s-${index}`} fill={item.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(val: any) => `R$ ${Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2 mt-1.5 text-[10px] font-semibold text-muted-foreground">
+                    {costsByStatus.map(item => (
+                      <span key={item.name} className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                        {item.name === "Pago" ? "🟢" : "🔴"} {item.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                {[...internationalCosts].sort((a, b) => b.date.localeCompare(a.date)).map(cost => (
+                  <div key={cost.id} className="flex items-center justify-between gap-2 p-2 rounded-lg border border-border bg-muted/30 text-[11px]">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span>{COUNTRY_FLAG[cost.country]}</span>
+                      <span className="font-semibold text-foreground truncate">{cost.description || cost.country}</span>
+                      <span className={`shrink-0 px-1.5 py-0.5 rounded font-bold text-[9px] ${cost.status === "Pago" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-red-500/15 text-red-600 dark:text-red-400"}`}>
+                        {cost.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-mono font-bold text-foreground">R$ {cost.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <button onClick={() => handleOpenEditIntCost(cost)} className="text-muted-foreground hover:text-blue-500 transition-colors">
+                        <Sliders className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => handleDeleteIntCost(cost.id)} className="text-muted-foreground hover:text-red-500 transition-colors">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* MODAL: Custos Operacionais por País */}
+      {intCostModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-card text-foreground rounded-2xl w-full max-w-sm border border-border shadow-2xl p-4 sm:p-6 relative animate-scale-in my-auto">
+            <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+              <h3 className="text-sm font-bold text-foreground">{editingIntCostId ? "Editar Custo Internacional" : "Novo Custo Internacional"}</h3>
+              <button onClick={() => setIntCostModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSubmitIntCost} className="space-y-3.5">
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">País</label>
+                <select
+                  value={intCostCountry}
+                  onChange={(e) => setIntCostCountry(e.target.value as any)}
+                  className="w-full bg-muted/30 border border-border rounded-lg p-2 text-xs outline-none"
+                >
+                  <option value="Brasil">🇧🇷 Brasil</option>
+                  <option value="Argentina">🇦🇷 Argentina</option>
+                  <option value="Chile">🇨🇱 Chile</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Data</label>
+                  <input
+                    type="date"
+                    value={intCostDate}
+                    onChange={(e) => setIntCostDate(e.target.value)}
+                    className="w-full bg-muted/30 border border-border rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Valor (R$) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={intCostValue}
+                    onChange={(e) => setIntCostValue(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-muted/30 border border-border rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Descrição</label>
+                <input
+                  type="text"
+                  value={intCostDescription}
+                  onChange={(e) => setIntCostDescription(e.target.value)}
+                  placeholder="Ex: Pedágio Ruta 40"
+                  className="w-full bg-muted/30 border border-border rounded-lg p-2 text-xs outline-none"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Status</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIntCostStatus("Pagar")}
+                    className={`py-2 rounded-lg text-xs font-bold transition-all ${intCostStatus === "Pagar" ? "bg-red-600 text-white" : "bg-muted text-muted-foreground"}`}
+                  >
+                    🔴 Pagar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIntCostStatus("Pago")}
+                    className={`py-2 rounded-lg text-xs font-bold transition-all ${intCostStatus === "Pago" ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground"}`}
+                  >
+                    🟢 Pago
+                  </button>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end pt-3 border-t border-border">
+                <button type="button" onClick={() => setIntCostModalOpen(false)} className="px-4 py-2 border border-border hover:bg-muted text-foreground text-xs font-semibold rounded-lg transition-all">
+                  Cancelar
+                </button>
+                <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-all">
+                  {editingIntCostId ? "Salvar Alterações" : "Adicionar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* 5. BOTTOM SECTION: FLEET STATUS & VISUAL ANALYTICS */}
       <div id="dashboard-fleet-and-analytics" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
