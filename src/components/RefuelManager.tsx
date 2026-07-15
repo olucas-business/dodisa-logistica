@@ -117,13 +117,15 @@ export default function RefuelManager({
     setConfirmDeleteId(null);
   };
 
-  const filteredRefuels = refuels.filter(r => {
-    const driverName = drivers.find(d => d.id === r.driverId)?.fullName || "";
-    const vehiclePlate = vehicles.find(v => v.id === r.vehicleId)?.plate || "";
-    return driverName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.gasStation.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  const filteredRefuels = refuelsInSelectedMonth
+    .filter(r => {
+      const driverName = drivers.find(d => d.id === r.driverId)?.fullName || "";
+      const vehiclePlate = vehicles.find(v => v.id === r.vehicleId)?.plate || "";
+      return driverName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.gasStation.toLowerCase().includes(searchTerm.toLowerCase());
+    })
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   // Chart data: spend by vehicle plate (mês selecionado), and spend by month (histórico completo)
   const vehicleTotals = Object.values(
