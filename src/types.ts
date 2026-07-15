@@ -272,7 +272,7 @@ export interface MaintenanceLog {
   id: string;
   vehicleId: string;
   item: string;
-  category: "Óleo e Filtros" | "Freios" | "Suspensão e Direção" | "Lubrificação" | "Elétrica" | "Outros";
+  category: string;
   date: string;
   km: number;
   cost: number;

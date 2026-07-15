@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { MaintenanceLog, Vehicle } from "../types";
 import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
 import {
   Wrench,
   Plus,
@@ -13,7 +14,8 @@ import {
   Disc,
   Compass as SteeringIcon,
   Zap,
-  Info
+  Info,
+  ClipboardList
 } from "lucide-react";
 
 interface MaintenanceManagerProps {
@@ -24,6 +26,7 @@ interface MaintenanceManagerProps {
 }
 
 type MaintenanceCategory = "Óleo e Filtros" | "Freios" | "Suspensão e Direção" | "Lubrificação" | "Elétrica" | "Outros";
+const CUSTOM_CATEGORY_VALUE = "__custom__";
 
 const CATEGORY_META: Record<MaintenanceCategory, { icon: React.ComponentType<any>; color: string }> = {
   "Óleo e Filtros": { icon: Droplet, color: "text-amber-600 bg-amber-500/10 border-amber-500/30" },
@@ -74,7 +77,8 @@ export default function MaintenanceManager({
 
   // Form state
   const [formVehicleId, setFormVehicleId] = useState(vehicles[0]?.id || "");
-  const [formCategory, setFormCategory] = useState<MaintenanceCategory>("Óleo e Filtros");
+  const [formCategory, setFormCategory] = useState<string>("Óleo e Filtros");
+  const [formCustomCategory, setFormCustomCategory] = useState("");
   const [formItem, setFormItem] = useState(CHECKLIST_ITEMS["Óleo e Filtros"][0]);
   const [formCustomItem, setFormCustomItem] = useState("");
   const [formDate, setFormDate] = useState(todayLocalISO());
@@ -87,6 +91,7 @@ export default function MaintenanceManager({
     const defaultVehicle = vehicles[0]?.id || "";
     setFormVehicleId(defaultVehicle);
     setFormCategory("Óleo e Filtros");
+    setFormCustomCategory("");
     setFormItem(CHECKLIST_ITEMS["Óleo e Filtros"][0]);
     setFormCustomItem("");
     setFormDate(todayLocalISO());
@@ -102,10 +107,15 @@ export default function MaintenanceManager({
     setIsAddModalOpen(true);
   };
 
-  const handleCategoryChange = (cat: MaintenanceCategory) => {
+  const handleCategoryChange = (cat: string) => {
     setFormCategory(cat);
-    setFormItem(CHECKLIST_ITEMS[cat][0]);
-    const suggested = SUGGESTED_INTERVAL_KM[CHECKLIST_ITEMS[cat][0]];
+    if (cat === CUSTOM_CATEGORY_VALUE) {
+      setFormItem("Outro Item (personalizado)");
+      return;
+    }
+    const presetCat = cat as MaintenanceCategory;
+    setFormItem(CHECKLIST_ITEMS[presetCat][0]);
+    const suggested = SUGGESTED_INTERVAL_KM[CHECKLIST_ITEMS[presetCat][0]];
     if (suggested && formKm) {
       setFormNextDueKm(String(Number(formKm) + suggested));
     }
@@ -128,7 +138,8 @@ export default function MaintenanceManager({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalItem = formItem === "Outro Item (personalizado)" ? formCustomItem.trim() : formItem;
-    if (!formVehicleId || !finalItem || !formKm) {
+    const finalCategory = formCategory === CUSTOM_CATEGORY_VALUE ? formCustomCategory.trim() : formCategory;
+    if (!formVehicleId || !finalItem || !finalCategory || !formKm) {
       alert("Por favor, preencha todos os campos obrigatórios (*).");
       return;
     }
@@ -136,7 +147,7 @@ export default function MaintenanceManager({
     const payload: Partial<MaintenanceLog> = {
       vehicleId: formVehicleId,
       item: finalItem,
-      category: formCategory,
+      category: finalCategory,
       date: formDate,
       km: Number(formKm) || 0,
       cost: Number(formCost) || 0,
@@ -176,6 +187,53 @@ export default function MaintenanceManager({
   const filteredLogs = [...maintenanceLogs]
     .filter(log => (vehicleFilter === "TODOS" || log.vehicleId === vehicleFilter) && (categoryFilter === "TODOS" || log.category === categoryFilter))
     .sort((a, b) => b.date.localeCompare(a.date));
+
+  const customCategoriesInUse = Array.from(
+    new Set(maintenanceLogs.map(l => l.category).filter(cat => cat && !(cat in CATEGORY_META)))
+  );
+  const allCategoryFilters = ["TODOS", ...Object.keys(CATEGORY_META), ...customCategoriesInUse];
+
+  // Plano de Manutenção: item mais recente por (veículo + item) com próxima troca definida
+  const maintenancePlan = (() => {
+    const latestByKey: Record<string, MaintenanceLog> = {};
+    maintenanceLogs.forEach(log => {
+      if (!log.nextDueKm) return;
+      const key = `${log.vehicleId}__${log.item}`;
+      if (!latestByKey[key] || log.date > latestByKey[key].date) {
+        latestByKey[key] = log;
+      }
+    });
+    return Object.values(latestByKey)
+      .map(log => {
+        const vehicle = vehicles.find(v => v.id === log.vehicleId);
+        const currentKm = vehicle?.currentMileage ?? log.km;
+        const span = (log.nextDueKm as number) - log.km;
+        const progressed = currentKm - log.km;
+        const progressPct = span > 0 ? Math.min(100, Math.max(0, (progressed / span) * 100)) : 100;
+        const remaining = (log.nextDueKm as number) - currentKm;
+        const status: "ok" | "atencao" | "vencido" = remaining <= 0 ? "vencido" : remaining <= 2000 ? "atencao" : "ok";
+        return {
+          key: log.id,
+          label: `${vehicle ? vehicle.plate : "?"} · ${log.item}`,
+          vehiclePlate: vehicle?.plate || "N/A",
+          item: log.item,
+          category: log.category,
+          lastKm: log.km,
+          nextDueKm: log.nextDueKm as number,
+          currentKm,
+          progressPct: Number(progressPct.toFixed(1)),
+          remaining,
+          status
+        };
+      })
+      .sort((a, b) => a.remaining - b.remaining);
+  })();
+
+  const PLAN_STATUS_COLOR: Record<string, string> = {
+    ok: "#10b981",
+    atencao: "#f59e0b",
+    vencido: "#ef4444"
+  };
 
   const totalCost = maintenanceLogs.reduce((sum, l) => sum + (l.cost || 0), 0);
   const overdueCount = maintenanceLogs.filter(l => {
@@ -219,6 +277,59 @@ export default function MaintenanceManager({
         </div>
       </div>
 
+      {/* Plano de Manutenção: progresso até a próxima troca, por item */}
+      {maintenancePlan.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
+          <h3 className="text-xs font-black uppercase tracking-wider text-foreground flex items-center gap-2 mb-4">
+            <ClipboardList className="w-4.5 h-4.5 text-blue-500" />
+            Plano de Manutenção
+          </h3>
+          <div style={{ height: Math.min(440, Math.max(160, maintenancePlan.length * 42)) }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={maintenancePlan}
+                layout="vertical"
+                margin={{ top: 4, right: 24, left: 4, bottom: 4 }}
+                barCategoryGap={10}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="currentColor" className="text-gray-300 dark:text-gray-700" opacity={0.5} />
+                <XAxis type="number" domain={[0, 100]} tickFormatter={(v) => `${v}%`} stroke="currentColor" className="text-gray-400" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis type="category" dataKey="label" width={190} stroke="currentColor" className="text-gray-400" fontSize={10} tickLine={false} axisLine={false} />
+                <Tooltip
+                  cursor={{ fill: "rgba(148,163,184,0.08)" }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload || !payload.length) return null;
+                    const d = payload[0].payload as (typeof maintenancePlan)[number];
+                    return (
+                      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg shadow-lg p-3 text-[11px] space-y-1">
+                        <p className="font-bold text-gray-900 dark:text-gray-100">{d.label}</p>
+                        <p className="text-gray-500 dark:text-gray-400">Categoria: <span className="font-semibold text-gray-700 dark:text-gray-300">{d.category}</span></p>
+                        <p className="text-gray-500 dark:text-gray-400">Última troca: <span className="font-mono text-gray-700 dark:text-gray-300">{d.lastKm.toLocaleString("pt-BR")} km</span></p>
+                        <p className="text-gray-500 dark:text-gray-400">Km atual: <span className="font-mono text-gray-700 dark:text-gray-300">{d.currentKm.toLocaleString("pt-BR")} km</span></p>
+                        <p className="text-gray-500 dark:text-gray-400">Próxima troca: <span className="font-mono text-gray-700 dark:text-gray-300">{d.nextDueKm.toLocaleString("pt-BR")} km</span></p>
+                        <p className="font-bold" style={{ color: PLAN_STATUS_COLOR[d.status] }}>
+                          {d.status === "vencido" ? `Vencido há ${Math.abs(d.remaining).toLocaleString("pt-BR")} km` : `Faltam ${d.remaining.toLocaleString("pt-BR")} km`}
+                        </p>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey="progressPct" radius={[0, 4, 4, 0]} maxBarSize={18}>
+                  {maintenancePlan.map((d) => (
+                    <Cell key={d.key} fill={PLAN_STATUS_COLOR[d.status]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex items-center gap-4 mt-3 text-[10px] font-semibold text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PLAN_STATUS_COLOR.ok }} />Em dia</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PLAN_STATUS_COLOR.atencao }} />Faltam ≤ 2.000 km</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PLAN_STATUS_COLOR.vencido }} />Vencido</span>
+          </div>
+        </div>
+      )}
+
       {/* Filter Bar */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-card p-4 border border-border rounded-xl shadow-xs">
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-1">
@@ -234,7 +345,7 @@ export default function MaintenanceManager({
           </select>
 
           <div className="flex gap-1.5 flex-wrap">
-            {["TODOS", ...Object.keys(CATEGORY_META)].map((cat) => (
+            {allCategoryFilters.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setCategoryFilter(cat)}
@@ -354,27 +465,43 @@ export default function MaintenanceManager({
                 <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Categoria *</label>
                 <select
                   value={formCategory}
-                  onChange={(e) => handleCategoryChange(e.target.value as MaintenanceCategory)}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
                   className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none"
                 >
                   {Object.keys(CATEGORY_META).map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
+                  {customCategoriesInUse.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                  <option value={CUSTOM_CATEGORY_VALUE}>+ Nova categoria personalizada</option>
                 </select>
+                {formCategory === CUSTOM_CATEGORY_VALUE && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Nome da nova categoria..."
+                    value={formCustomCategory}
+                    onChange={(e) => setFormCustomCategory(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none mt-1.5"
+                  />
+                )}
               </div>
 
               <div className="space-y-1">
                 <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Item (Checklist) *</label>
-                <select
-                  value={formItem}
-                  onChange={(e) => handleItemChange(e.target.value)}
-                  className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none"
-                >
-                  {CHECKLIST_ITEMS[formCategory].map((item) => (
-                    <option key={item} value={item}>{item}</option>
-                  ))}
-                </select>
-                {formItem === "Outro Item (personalizado)" && (
+                {formCategory !== CUSTOM_CATEGORY_VALUE && (formCategory in CHECKLIST_ITEMS) && (
+                  <select
+                    value={formItem}
+                    onChange={(e) => handleItemChange(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none"
+                  >
+                    {CHECKLIST_ITEMS[formCategory as MaintenanceCategory].map((item) => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </select>
+                )}
+                {(formCategory === CUSTOM_CATEGORY_VALUE || formItem === "Outro Item (personalizado)") && (
                   <input
                     type="text"
                     required
