@@ -22,6 +22,7 @@ export default function CompanyProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
@@ -79,6 +80,29 @@ export default function CompanyProfile() {
     reader.readAsDataURL(file);
   };
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const res = await fetch("/api/upload-document", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ file: reader.result, fileName: file.name, folder: "company-logo" })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setCompany(prev => ({ ...prev, logoUrl: data.url }));
+        }
+      } finally {
+        setUploadingLogo(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   if (loading) {
     return <div className="text-center text-muted-foreground text-sm py-10">Carregando perfil da empresa...</div>;
   }
@@ -101,6 +125,40 @@ export default function CompanyProfile() {
           {successMsg}
         </div>
       )}
+
+      <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-4">
+        <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground border-b border-border pb-2.5">
+          Logo da Empresa
+        </h3>
+        <p className="text-[11px] text-muted-foreground -mt-2">
+          Usada na barra lateral e na tela de login em vez da marca padrão do Fleet One.
+        </p>
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-xl overflow-hidden border border-border bg-muted/40 flex items-center justify-center flex-shrink-0">
+            {company.logoUrl ? (
+              <img src={company.logoUrl} alt="Logo da empresa" className="w-full h-full object-cover" />
+            ) : (
+              <Building2 className="w-6 h-6 text-muted-foreground" />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg cursor-pointer transition-colors flex items-center gap-2">
+              <Upload className="w-4 h-4" />
+              {uploadingLogo ? "Enviando..." : company.logoUrl ? "Trocar logo" : "Enviar logo"}
+              <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
+            </label>
+            {company.logoUrl && (
+              <button
+                onClick={() => handleChange("logoUrl", "")}
+                className="p-2.5 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors cursor-pointer"
+                title="Remover logo"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-5">
         <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground border-b border-border pb-2.5">

@@ -1,6 +1,7 @@
 interface BrandMarkProps {
   size?: "sm" | "md" | "lg";
   className?: string;
+  logoUrl?: string;
 }
 
 const SIZES = {
@@ -9,8 +10,16 @@ const SIZES = {
   lg: { badge: "w-11 h-11 rounded-xl", icon: "w-6 h-6" },
 };
 
-export default function BrandMark({ size = "md", className = "" }: BrandMarkProps) {
+export default function BrandMark({ size = "md", className = "", logoUrl = "" }: BrandMarkProps) {
   const { badge, icon } = SIZES[size];
+
+  if (logoUrl) {
+    return (
+      <div className={`relative ${badge} flex-shrink-0 overflow-hidden bg-card border border-border shadow-lg ${className}`}>
+        <img src={logoUrl} alt="Logo da empresa" className="w-full h-full object-cover" />
+      </div>
+    );
+  }
 
   return (
     <div

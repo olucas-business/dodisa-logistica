@@ -28,6 +28,18 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [mode, setMode] = useState<"login" | "signup" | "recovery">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [companyBranding, setCompanyBranding] = useState<{ name: string; logoUrl: string }>({ name: "", logoUrl: "" });
+
+  useEffect(() => {
+    fetch("/api/company")
+      .then(res => res.json())
+      .then((data: { success: boolean; company?: { name?: string; logoUrl?: string } }) => {
+        if (data.success && data.company) {
+          setCompanyBranding({ name: data.company.name || "", logoUrl: data.company.logoUrl || "" });
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState("Gerente");
@@ -245,12 +257,18 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
           {/* Top Brand Logo */}
           <div className="relative z-10 flex items-center gap-3">
-            <BrandMark size="lg" />
+            <BrandMark size="lg" logoUrl={companyBranding.logoUrl} />
             <div>
-              <h1 className="text-lg font-black tracking-tight flex items-center gap-1.5">
-                <span className="bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent">Fleet</span>
-                <span className="font-light text-muted-foreground dark:text-slate-400 tracking-tight">One</span>
-              </h1>
+              {companyBranding.name ? (
+                <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent truncate max-w-[220px]">
+                  {companyBranding.name}
+                </h1>
+              ) : (
+                <h1 className="text-lg font-black tracking-tight flex items-center gap-1.5">
+                  <span className="bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent">Fleet</span>
+                  <span className="font-light text-muted-foreground dark:text-slate-400 tracking-tight">One</span>
+                </h1>
+              )}
               <p className="text-[9px] text-blue-600 dark:text-blue-400/80 font-mono tracking-wider font-extrabold uppercase">A maneira mais inteligente de gerenciar sua frota.</p>
             </div>
           </div>
@@ -331,9 +349,9 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
           {/* Mobile Brand Header */}
           <div className="flex md:hidden items-center justify-between mb-8 pb-4 border-b border-border dark:border-[#1F2E4D]">
             <div className="flex items-center gap-2.5">
-              <BrandMark size="sm" />
+              <BrandMark size="sm" logoUrl={companyBranding.logoUrl} />
               <div>
-                <h1 className="text-sm font-black text-foreground dark:text-white tracking-wider uppercase">Fleet One</h1>
+                <h1 className="text-sm font-black text-foreground dark:text-white tracking-wider uppercase truncate max-w-[180px]">{companyBranding.name || "Fleet One"}</h1>
                 <p className="text-[8px] text-blue-600 dark:text-blue-400/80 font-mono tracking-widest font-extrabold">SYSTEM ACCESS</p>
               </div>
             </div>
