@@ -233,7 +233,9 @@ export interface Debt {
 export interface InternationalCost {
   id: string;
   country: "Brasil" | "Argentina" | "Chile";
-  value: number;
+  value: number;         // sempre convertido para R$ (usado nos totais/graficos)
+  currency?: string;     // moeda em que o valor foi originalmente lancado (BRL, USD, ARS, CLP)
+  exchangeRate?: number; // cotacao usada na conversao para R$
   status: "Pago" | "Pagar";
   description?: string;
   date: string;

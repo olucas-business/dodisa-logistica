@@ -247,6 +247,8 @@ export default function DashboardOverview({
   const [editingIntCostId, setEditingIntCostId] = useState<string | null>(null);
   const [intCostCountry, setIntCostCountry] = useState<"Brasil" | "Argentina" | "Chile">("Brasil");
   const [intCostValue, setIntCostValue] = useState("");
+  const [intCostCurrency, setIntCostCurrency] = useState("BRL");
+  const [intCostExchangeRate, setIntCostExchangeRate] = useState("1");
   const [intCostStatus, setIntCostStatus] = useState<"Pago" | "Pagar">("Pagar");
   const [intCostDescription, setIntCostDescription] = useState("");
   const [intCostDate, setIntCostDate] = useState(new Date().toISOString().split("T")[0]);
@@ -255,6 +257,8 @@ export default function DashboardOverview({
     setEditingIntCostId(null);
     setIntCostCountry("Brasil");
     setIntCostValue("");
+    setIntCostCurrency("BRL");
+    setIntCostExchangeRate("1");
     setIntCostStatus("Pagar");
     setIntCostDescription("");
     setIntCostDate(new Date().toISOString().split("T")[0]);
@@ -268,7 +272,10 @@ export default function DashboardOverview({
   const handleOpenEditIntCost = (cost: InternationalCost) => {
     setEditingIntCostId(cost.id);
     setIntCostCountry(cost.country);
-    setIntCostValue(String(cost.value));
+    const rate = cost.exchangeRate || 1;
+    setIntCostValue(String(cost.currency && cost.currency !== "BRL" ? cost.value / rate : cost.value));
+    setIntCostCurrency(cost.currency || "BRL");
+    setIntCostExchangeRate(String(rate));
     setIntCostStatus(cost.status);
     setIntCostDescription(cost.description || "");
     setIntCostDate(cost.date);
@@ -282,9 +289,12 @@ export default function DashboardOverview({
       alert("Informe um valor válido.");
       return;
     }
+    const rate = intCostCurrency === "BRL" ? 1 : (Number(intCostExchangeRate) || 1);
     const payload: Partial<InternationalCost> = {
       country: intCostCountry,
-      value: val,
+      value: val * rate,
+      currency: intCostCurrency,
+      exchangeRate: rate,
       status: intCostStatus,
       description: intCostDescription,
       date: intCostDate
@@ -2288,7 +2298,16 @@ export default function DashboardOverview({
                       </span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="font-mono font-bold text-foreground">R$ {cost.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      <span className="text-right">
+                        {cost.currency && cost.currency !== "BRL" && cost.exchangeRate ? (
+                          <>
+                            <span className="block font-mono font-bold text-foreground">{cost.currency} {(cost.value / cost.exchangeRate).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="block font-mono text-[9px] text-muted-foreground">≈ R$ {cost.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </>
+                        ) : (
+                          <span className="font-mono font-bold text-foreground">R$ {cost.value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        )}
+                      </span>
                       <button onClick={() => handleOpenEditIntCost(cost)} className="text-muted-foreground hover:text-blue-500 transition-colors">
                         <Sliders className="w-3 h-3" />
                       </button>
@@ -2650,7 +2669,7 @@ export default function DashboardOverview({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Valor (R$) *</label>
+                  <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Valor ({intCostCurrency}) *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -2661,6 +2680,44 @@ export default function DashboardOverview({
                     className="w-full bg-muted/30 border border-border rounded-lg p-2 text-xs outline-none font-mono"
                   />
                 </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Moeda</label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[
+                    { code: "BRL", flag: "🇧🇷" },
+                    { code: "USD", flag: "🇺🇸" },
+                    { code: "ARS", flag: "🇦🇷" },
+                    { code: "CLP", flag: "🇨🇱" }
+                  ].map(c => (
+                    <button
+                      key={c.code}
+                      type="button"
+                      onClick={() => { setIntCostCurrency(c.code); if (c.code === "BRL") setIntCostExchangeRate("1"); }}
+                      className={`py-1.5 rounded-lg text-[10px] font-bold transition-all ${intCostCurrency === c.code ? "bg-blue-600 text-white" : "bg-muted text-muted-foreground"}`}
+                    >
+                      {c.flag} {c.code}
+                    </button>
+                  ))}
+                </div>
+                {intCostCurrency !== "BRL" && (
+                  <div className="space-y-1 pt-1.5">
+                    <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Cotação (1 {intCostCurrency} em R$)</label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      value={intCostExchangeRate}
+                      onChange={(e) => setIntCostExchangeRate(e.target.value)}
+                      placeholder="Ex: 0.0065"
+                      className="w-full bg-muted/30 border border-border rounded-lg p-2 text-xs outline-none font-mono"
+                    />
+                    {Number(intCostValue) > 0 && Number(intCostExchangeRate) > 0 && (
+                      <p className="text-[10px] text-muted-foreground">
+                        ≈ R$ {(Number(intCostValue) * Number(intCostExchangeRate)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wider">Descrição</label>
