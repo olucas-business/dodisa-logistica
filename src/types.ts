@@ -116,6 +116,9 @@ export interface FinancialDetails {
   food: number;
   lodging: number;
   otherExpenses: number;
+  dailyAllowance?: number; // Diária
+  dispatcherFee?: number;  // Despachante
+  loadingFee?: number;     // Chapa (carga/descarga)
   advance?: number;       // Adiantamento (Frete Pago)
   balance?: number;       // Saldo (Frete Não Pago)
   balanceStatus?: "Pendente" | "Pago"; // Status do Saldo

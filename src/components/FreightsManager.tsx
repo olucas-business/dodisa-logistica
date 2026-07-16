@@ -113,6 +113,9 @@ export default function FreightsManager({
   const [food, setFood] = useState("");
   const [lodging, setLodging] = useState("");
   const [otherExpenses, setOtherExpenses] = useState("");
+  const [dailyAllowance, setDailyAllowance] = useState("");
+  const [dispatcherFee, setDispatcherFee] = useState("");
+  const [loadingFee, setLoadingFee] = useState("");
   const [advance, setAdvance] = useState("");
   const [balance, setBalance] = useState("");
   const [balanceStatus, setBalanceStatus] = useState<"Pendente" | "Pago">("Pendente");
@@ -155,6 +158,9 @@ export default function FreightsManager({
     setFood("");
     setLodging("");
     setOtherExpenses("");
+    setDailyAllowance("");
+    setDispatcherFee("");
+    setLoadingFee("");
     setAdvance("");
     setBalance("");
     setBalanceStatus("Pendente");
@@ -248,6 +254,9 @@ export default function FreightsManager({
     setFood(String(f.financial.food || ""));
     setLodging(String(f.financial.lodging || ""));
     setOtherExpenses(String(f.financial.otherExpenses || ""));
+    setDailyAllowance(String(f.financial.dailyAllowance || ""));
+    setDispatcherFee(String(f.financial.dispatcherFee || ""));
+    setLoadingFee(String(f.financial.loadingFee || ""));
     setAdvance(String(f.financial.advance !== undefined ? f.financial.advance : Math.round(f.financial.value * 0.7)));
     setBalance(String(f.financial.balance !== undefined ? f.financial.balance : Math.round(f.financial.value * 0.3)));
     setBalanceStatus(f.financial.balanceStatus || "Pendente");
@@ -307,6 +316,9 @@ export default function FreightsManager({
         food: Number(food) || 0,
         lodging: Number(lodging) || 0,
         otherExpenses: Number(otherExpenses) || 0,
+        dailyAllowance: Number(dailyAllowance) || 0,
+        dispatcherFee: Number(dispatcherFee) || 0,
+        loadingFee: Number(loadingFee) || 0,
         advance: Number(advance) || 0,
         balance: Number(balance) || 0,
         balanceStatus
@@ -361,6 +373,9 @@ export default function FreightsManager({
     { name: "Alimentação", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.food || 0), 0) },
     { name: "Hospedagem", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.lodging || 0), 0) },
     { name: "Comissão", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.commission || 0), 0) },
+    { name: "Diária", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.dailyAllowance || 0), 0) },
+    { name: "Despachante", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.dispatcherFee || 0), 0) },
+    { name: "Chapa", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.loadingFee || 0), 0) },
     { name: "Outros", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.otherExpenses || 0), 0) }
   ].filter(c => c.value > 0);
 
@@ -998,6 +1013,36 @@ export default function FreightsManager({
                         value={otherExpenses}
                         onChange={(e) => setOtherExpenses(e.target.value)}
                         placeholder="50"
+                        className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5 min-w-0">
+                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500 block truncate">Diária</label>
+                      <input
+                        type="number"
+                        value={dailyAllowance}
+                        onChange={(e) => setDailyAllowance(e.target.value)}
+                        placeholder="100"
+                        className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5 min-w-0">
+                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500 block truncate">Despachante</label>
+                      <input
+                        type="number"
+                        value={dispatcherFee}
+                        onChange={(e) => setDispatcherFee(e.target.value)}
+                        placeholder="0"
+                        className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5 min-w-0">
+                      <label className="text-[9px] uppercase font-mono font-bold text-gray-400 dark:text-gray-500 block truncate">Chapa</label>
+                      <input
+                        type="number"
+                        value={loadingFee}
+                        onChange={(e) => setLoadingFee(e.target.value)}
+                        placeholder="0"
                         className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-2 py-2 text-xs outline-none font-mono"
                       />
                     </div>

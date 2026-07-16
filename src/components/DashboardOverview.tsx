@@ -2167,6 +2167,9 @@ export default function DashboardOverview({
               { name: "Alimentação", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.food || 0), 0) },
               { name: "Hospedagem", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.lodging || 0), 0) },
               { name: "Comissão", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.commission || 0), 0) },
+              { name: "Diária", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.dailyAllowance || 0), 0) },
+              { name: "Despachante", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.dispatcherFee || 0), 0) },
+              { name: "Chapa", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.loadingFee || 0), 0) },
               { name: "Outros", value: activeFreightsForCost.reduce((s, f) => s + (f.financial?.otherExpenses || 0), 0) }
             ].filter(c => c.value > 0);
 
