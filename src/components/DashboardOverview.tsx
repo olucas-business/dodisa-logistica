@@ -907,9 +907,14 @@ export default function DashboardOverview({
     ];
   }, [freightsMonth]);
 
-  // 4. Comissão Mot (Driver commission)
+  // 4. Comissão Mot (Driver commission) — total obrigação do mês (usado no anel "Comissão")
   const totalCommissionMonth = useMemo(() => {
     return freightsMonth.reduce((sum, f) => sum + (f.financial?.commission || 0), 0);
+  }, [freightsMonth]);
+
+  // Total efetivamente pago no mês (distinto da obrigação total acima)
+  const totalCommissionPaidMonth = useMemo(() => {
+    return freightsMonth.reduce((sum, f) => sum + (f.financial?.commissionPaid || 0), 0);
   }, [freightsMonth]);
 
   const commissionByDriverChartData = useMemo(() => {
@@ -917,7 +922,7 @@ export default function DashboardOverview({
     freightsMonth.forEach(f => {
       const driver = drivers.find(d => d.id === f.driverId);
       const name = driver ? driver.fullName.split(" ")[0] : "Motorista";
-      map[name] = (map[name] || 0) + (f.financial?.commission || 0);
+      map[name] = (map[name] || 0) + (f.financial?.commissionPaid || 0);
     });
     return Object.entries(map)
       .map(([name, value]) => ({ name, value }))
@@ -1410,7 +1415,7 @@ export default function DashboardOverview({
           <div className="mt-3">
             <span className="text-[10.5px] text-muted-foreground block">Total Pago no Mês</span>
             <p className="text-xl font-black font-mono text-foreground leading-tight">
-              R$ {totalCommissionMonth.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              R$ {totalCommissionPaidMonth.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
             <span className="text-[9.5px] text-muted-foreground">Distribuição por motorista</span>
           </div>
@@ -2905,7 +2910,7 @@ export default function DashboardOverview({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-bold text-foreground">Distribuição de Despesas</h4>
-                  <span className="text-[10px] font-mono text-muted-foreground">Junho 2026</span>
+                  <span className="text-[10px] font-mono text-muted-foreground">{currentMonthName} {currentYear}</span>
                 </div>
                 {expenseBreakdown.length === 0 ? (
                   <div className="h-[150px] flex items-center justify-center text-xs text-muted-foreground">
@@ -2973,7 +2978,7 @@ export default function DashboardOverview({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-bold text-foreground">Receitas por Tipo de Carga</h4>
-                  <span className="text-[10px] font-mono text-muted-foreground">Junho 2026</span>
+                  <span className="text-[10px] font-mono text-muted-foreground">{currentMonthName} {currentYear}</span>
                 </div>
                 {cargoRevenueData.length === 0 ? (
                   <div className="h-[150px] flex items-center justify-center text-xs text-muted-foreground">
