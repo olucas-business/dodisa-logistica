@@ -315,9 +315,10 @@ export default function DriversManager({
     const driverOdometerEntries = driverRefuels
       .map(r => refuelOdometerDeltas[r.id])
       .filter((e): e is { kmSinceLast: number; kmPerLiter: number } => !!e);
+    // Preferir a base de odômetro (mais precisa); sem odômetro lançado, usar km do Manifesto de Fretes / litros abastecidos
     const averageConsumption = driverOdometerEntries.length > 0
       ? (driverOdometerEntries.reduce((sum, e) => sum + e.kmPerLiter, 0) / driverOdometerEntries.length).toFixed(2)
-      : "N/A";
+      : (totalFuelLiters > 0 && totalKm > 0 ? (totalKm / totalFuelLiters).toFixed(2) : "N/A");
 
     return {
       totalVoyages,
