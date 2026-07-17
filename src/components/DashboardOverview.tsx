@@ -1427,9 +1427,9 @@ export default function DashboardOverview({
               const maxVal = Math.max(...commissionByDriverChartData.map((d: any) => d.total), 1);
               return commissionByDriverChartData.slice(0, 3).map((d: any) => (
                 <div key={d.name} className="space-y-0.5">
-                  <div className="flex items-center justify-between text-[8.5px] font-mono font-medium text-muted-foreground">
-                    <span className="truncate">{d.name}</span>
-                    <span>R$ {Number(d.paid).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                  <div className="flex items-center justify-between text-[8.5px] font-mono font-medium">
+                    <span className="truncate text-muted-foreground">{d.name}</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">Pago: R$ {Number(d.paid).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden flex" style={{ width: `${(d.total / maxVal) * 100}%` }}>
                     <div className="h-full bg-emerald-500" style={{ width: `${(d.paid / d.total) * 100}%` }} />
