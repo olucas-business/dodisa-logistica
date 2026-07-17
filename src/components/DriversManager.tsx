@@ -316,15 +316,23 @@ export default function DriversManager({
     const totalFuelLiters = driverRefuels.reduce((sum, r) => sum + (r.liters || 0), 0);
     const totalFuelCost = driverRefuels.reduce((sum, r) => sum + (r.totalValue || 0), 0);
 
-    // Preferir a base de odômetro (mesmo cálculo do KPI "Média de Consumo (KM/L)" do
-    // Dashboard, filtrado pelos abastecimentos do motorista). Sem odômetro lançado nos
-    // abastecimentos desse motorista, estimar por km do Manifesto de Fretes / litros abastecidos.
-    const driverOdometerEntries = driverRefuels
+    // Mesmo cálculo e mesmo recorte de mês do KPI "Média de Consumo (KM/L)" do Dashboard
+    // (odômetro entre abastecimentos consecutivos), só que filtrado nos abastecimentos
+    // deste motorista em vez da frota inteira. Sem odômetro suficiente no mês, estimar
+    // por km do Manifesto de Fretes / litros abastecidos, também restrito ao mês atual.
+    const now = new Date();
+    const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const driverRefuelsThisMonth = driverRefuels.filter(r => r.date.startsWith(currentYearMonth));
+    const driverOdometerEntries = driverRefuelsThisMonth
       .map(r => refuelOdometerDeltas[r.id])
       .filter((e): e is { kmSinceLast: number; kmPerLiter: number } => !!e);
+    const kmThisMonth = driverFreights
+      .filter(f => f.date.startsWith(currentYearMonth))
+      .reduce((sum, f) => sum + (f.mileage?.total || 0), 0);
+    const litersThisMonth = driverRefuelsThisMonth.reduce((sum, r) => sum + (r.liters || 0), 0);
     const averageConsumption = driverOdometerEntries.length > 0
       ? (driverOdometerEntries.reduce((sum, e) => sum + e.kmPerLiter, 0) / driverOdometerEntries.length).toFixed(2)
-      : (totalFuelLiters > 0 && totalKm > 0 ? (totalKm / totalFuelLiters).toFixed(2) : "N/A");
+      : (litersThisMonth > 0 && kmThisMonth > 0 ? (kmThisMonth / litersThisMonth).toFixed(2) : "N/A");
 
     return {
       totalVoyages,
