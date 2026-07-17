@@ -312,13 +312,14 @@ export default function DriversManager({
     const totalFuelLiters = driverRefuels.reduce((sum, r) => sum + (r.liters || 0), 0);
     const totalFuelCost = driverRefuels.reduce((sum, r) => sum + (r.totalValue || 0), 0);
 
+    // Mesmo cálculo do KPI "Média de Consumo (KM/L)" do Dashboard: média do km/L por
+    // abastecimento (diferença de odômetro / litros), aqui filtrado pelos abastecimentos do motorista.
     const driverOdometerEntries = driverRefuels
       .map(r => refuelOdometerDeltas[r.id])
       .filter((e): e is { kmSinceLast: number; kmPerLiter: number } => !!e);
-    // Preferir a base de odômetro (mais precisa); sem odômetro lançado, usar km do Manifesto de Fretes / litros abastecidos
     const averageConsumption = driverOdometerEntries.length > 0
       ? (driverOdometerEntries.reduce((sum, e) => sum + e.kmPerLiter, 0) / driverOdometerEntries.length).toFixed(2)
-      : (totalFuelLiters > 0 && totalKm > 0 ? (totalKm / totalFuelLiters).toFixed(2) : "N/A");
+      : "N/A";
 
     return {
       totalVoyages,
