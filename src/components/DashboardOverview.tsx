@@ -912,23 +912,12 @@ export default function DashboardOverview({
     return freightsMonth.reduce((sum, f) => sum + (f.financial?.commissionPaid || 0), 0);
   }, [freightsMonth]);
 
-  const commissionByDriverChartData = useMemo(() => {
-    const map: Record<string, { paid: number; pending: number }> = {};
-    freightsMonth.forEach(f => {
-      const driver = drivers.find(d => d.id === f.driverId);
-      const name = driver ? driver.fullName.split(" ")[0] : "Motorista";
-      const paid = f.financial?.commissionPaid || 0;
-      const commission = f.financial?.commission || 0;
-      const pending = f.financial?.commissionPending !== undefined ? f.financial.commissionPending : commission;
-      map[name] = map[name] || { paid: 0, pending: 0 };
-      map[name].paid += paid;
-      map[name].pending += pending;
-    });
-    return Object.entries(map)
-      .map(([name, { paid, pending }]) => ({ name, value: paid, paid, pending, total: paid + pending }))
-      .filter(item => item.total > 0)
-      .sort((a, b) => b.total - a.total);
-  }, [freightsMonth, drivers]);
+  const totalCommissionPendingMonth = useMemo(() => {
+    return freightsMonth.reduce((sum, f) => {
+      const c = f.financial?.commission || 0;
+      return sum + (f.financial?.commissionPending !== undefined ? f.financial.commissionPending : c);
+    }, 0);
+  }, [freightsMonth]);
 
   // Comissões dos motoristas: total pago vs pendente (todas as viagens, igual ao padrão de Dívida de Alavancagem)
   const commissionPaidTotal = useMemo(() => {
@@ -1418,25 +1407,27 @@ export default function DashboardOverview({
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               R$ {totalCommissionPaidMonth.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
-            <span className="text-[9.5px] text-muted-foreground">Distribuição por motorista</span>
+            <span className="text-[9.5px] text-muted-foreground">Pago vs. pendente no mês</span>
           </div>
-          <div className="w-full mt-2 space-y-1.5 max-h-[55px] overflow-y-auto pr-0.5">
-            {commissionByDriverChartData.length === 0 ? (
-              <div className="text-[10px] text-muted-foreground/60 h-[24px] flex items-center justify-center font-medium">Nenhum dado</div>
-            ) : (() => {
-              const maxVal = Math.max(...commissionByDriverChartData.map((d: any) => d.total), 1);
-              return commissionByDriverChartData.slice(0, 3).map((d: any) => (
-                <div key={d.name} className="space-y-0.5">
-                  <div className="flex items-center gap-1.5 text-[8.5px] font-mono font-medium">
-                    <span className="truncate text-muted-foreground">{d.name}</span>
-                    <span className="text-emerald-600 dark:text-emerald-400">Pago: R$ {Number(d.paid).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+          <div className="space-y-1.5 mt-2">
+            {(() => {
+              const p = totalCommissionPaidMonth;
+              const n = totalCommissionPendingMonth;
+              const t = p + n;
+              const pctP = t > 0 ? Math.round((p / t) * 100) : 0;
+              const pctN = t > 0 ? 100 - pctP : 0;
+              return (
+                <>
+                  <div className="w-full h-2.5 rounded-full bg-muted flex overflow-hidden border border-border/40">
+                    <div className="bg-emerald-500 h-full" style={{ width: `${pctP}%` }} />
+                    <div className="bg-amber-500 h-full" style={{ width: `${pctN}%` }} />
                   </div>
-                  <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden flex" style={{ width: `${(d.total / maxVal) * 100}%` }}>
-                    <div className="h-full bg-emerald-500" style={{ width: `${(d.paid / d.total) * 100}%` }} />
-                    <div className="h-full bg-amber-500" style={{ width: `${(d.pending / d.total) * 100}%` }} />
+                  <div className="flex justify-between text-[9px] font-mono font-medium text-muted-foreground">
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Pago: R$ {p.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Pendente: R$ {n.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
                   </div>
-                </div>
-              ));
+                </>
+              );
             })()}
           </div>
         </div>
