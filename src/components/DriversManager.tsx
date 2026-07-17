@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Driver, Freight, Refuel } from "../types";
 import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
@@ -278,6 +278,28 @@ export default function DriversManager({
     setConfirmDeleteId(null);
   };
 
+  // Deltas de odômetro entre abastecimentos consecutivos do mesmo veículo (mesma base do Dashboard e do Abastecimento)
+  const refuelOdometerDeltas = useMemo(() => {
+    const byVehicle: Record<string, Refuel[]> = {};
+    refuels.forEach(r => {
+      byVehicle[r.vehicleId] = byVehicle[r.vehicleId] || [];
+      byVehicle[r.vehicleId].push(r);
+    });
+    const enriched: Record<string, { kmSinceLast: number; kmPerLiter: number }> = {};
+    Object.values(byVehicle).forEach(list => {
+      const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
+      for (let i = 0; i < sorted.length; i++) {
+        const curr = sorted[i];
+        const prev = sorted[i - 1];
+        if (prev && curr.odometer && prev.odometer && curr.odometer > prev.odometer && curr.liters > 0) {
+          const kmSinceLast = curr.odometer - prev.odometer;
+          enriched[curr.id] = { kmSinceLast, kmPerLiter: kmSinceLast / curr.liters };
+        }
+      }
+    });
+    return enriched;
+  }, [refuels]);
+
   // Calculations for selected driver
   const getDriverStats = (drvId: string) => {
     const driverFreights = freights.filter(f => f.driverId === drvId && f.status === "Finalizado");
@@ -290,7 +312,12 @@ export default function DriversManager({
     const totalFuelLiters = driverRefuels.reduce((sum, r) => sum + (r.liters || 0), 0);
     const totalFuelCost = driverRefuels.reduce((sum, r) => sum + (r.totalValue || 0), 0);
 
-    const averageConsumption = totalFuelLiters > 0 && totalKm > 0 ? (totalKm / totalFuelLiters).toFixed(2) : "N/A";
+    const driverOdometerEntries = driverRefuels
+      .map(r => refuelOdometerDeltas[r.id])
+      .filter((e): e is { kmSinceLast: number; kmPerLiter: number } => !!e);
+    const averageConsumption = driverOdometerEntries.length > 0
+      ? (driverOdometerEntries.reduce((sum, e) => sum + e.kmPerLiter, 0) / driverOdometerEntries.length).toFixed(2)
+      : "N/A";
 
     return {
       totalVoyages,
