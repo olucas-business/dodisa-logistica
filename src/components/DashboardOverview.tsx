@@ -1282,10 +1282,6 @@ export default function DashboardOverview({
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               R$ {avgBillingPerFreight.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
-            <div className="flex items-center justify-between text-[8px] text-muted-foreground mt-0.5">
-              <span className="flex items-center gap-0.5"><span className="w-1 h-1 rounded-full bg-emerald-500" /> Adiantamento</span>
-              <span className="flex items-center gap-0.5"><span className="w-1 h-1 rounded-full bg-amber-500" /> Saldo</span>
-            </div>
           </div>
           <div className="w-full mt-2">
             {(() => {
@@ -1302,13 +1298,13 @@ export default function DashboardOverview({
 
               return (
                 <div className="space-y-1.5">
-                  <div className="w-full h-2 rounded-full bg-muted flex overflow-hidden border border-border/40">
+                  <div className="w-full h-2.5 rounded-full bg-muted flex overflow-hidden border border-border/40">
                     <div className="bg-emerald-500 h-full" style={{ width: `${pctAdiantamento}%` }} />
                     <div className="bg-amber-500 h-full" style={{ width: `${pctSaldo}%` }} />
                   </div>
-                  <div className="flex justify-between text-[8.5px] font-mono font-medium text-muted-foreground">
-                    <span>R$ {totalAdiantamento.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
-                    <span>R$ {totalSaldo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                  <div className="flex justify-between text-[9px] font-mono font-medium text-muted-foreground">
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Adiantamento: R$ {totalAdiantamento.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Saldo: R$ {totalSaldo.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
                   </div>
                 </div>
               );
@@ -1329,7 +1325,6 @@ export default function DashboardOverview({
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               R$ {billingMonth.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
             </p>
-            <span className="text-[9.5px] text-muted-foreground">Evolução acumulada 2026</span>
           </div>
           <div className="h-[55px] w-full mt-2">
             <ResponsiveContainer width="100%" height="100%">
@@ -1368,7 +1363,6 @@ export default function DashboardOverview({
               </p>
               <span className="text-[10px] font-bold text-emerald-500">Adiantamento</span>
             </div>
-            <span className="text-[9.5px] text-muted-foreground">Proporção financeira mensal</span>
           </div>
           {/* Stacked Progress Bar */}
           <div className="space-y-1.5 mt-2">
@@ -1407,7 +1401,6 @@ export default function DashboardOverview({
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               R$ {totalCommissionPaidMonth.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
-            <span className="text-[9.5px] text-muted-foreground">Pago vs. pendente no mês</span>
           </div>
           <div className="space-y-1.5 mt-2">
             {(() => {
