@@ -303,7 +303,11 @@ export default function DriversManager({
   // Calculations for selected driver
   const getDriverStats = (drvId: string) => {
     const driverFreights = freights.filter(f => f.driverId === drvId && f.status === "Finalizado");
-    const driverRefuels = refuels.filter(r => r.driverId === drvId);
+    // Abastecimento "vai junto" do frete: inclui tanto o que foi lançado no nome do motorista
+    // quanto o que foi feito no(s) veículo(s) que ele rodou nos fretes, mesmo se o abastecimento
+    // não tiver sido explicitamente marcado com o driverId dele.
+    const driverVehicleIds = new Set(driverFreights.map(f => f.vehicleId));
+    const driverRefuels = refuels.filter(r => r.driverId === drvId || driverVehicleIds.has(r.vehicleId));
 
     const totalVoyages = driverFreights.length;
     const totalKm = driverFreights.reduce((sum, f) => sum + (f.mileage?.total || 0), 0);
@@ -312,14 +316,15 @@ export default function DriversManager({
     const totalFuelLiters = driverRefuels.reduce((sum, r) => sum + (r.liters || 0), 0);
     const totalFuelCost = driverRefuels.reduce((sum, r) => sum + (r.totalValue || 0), 0);
 
-    // Mesmo cálculo do KPI "Média de Consumo (KM/L)" do Dashboard: média do km/L por
-    // abastecimento (diferença de odômetro / litros), aqui filtrado pelos abastecimentos do motorista.
+    // Preferir a base de odômetro (mesmo cálculo do KPI "Média de Consumo (KM/L)" do
+    // Dashboard, filtrado pelos abastecimentos do motorista). Sem odômetro lançado nos
+    // abastecimentos desse motorista, estimar por km do Manifesto de Fretes / litros abastecidos.
     const driverOdometerEntries = driverRefuels
       .map(r => refuelOdometerDeltas[r.id])
       .filter((e): e is { kmSinceLast: number; kmPerLiter: number } => !!e);
     const averageConsumption = driverOdometerEntries.length > 0
       ? (driverOdometerEntries.reduce((sum, e) => sum + e.kmPerLiter, 0) / driverOdometerEntries.length).toFixed(2)
-      : "N/A";
+      : (totalFuelLiters > 0 && totalKm > 0 ? (totalKm / totalFuelLiters).toFixed(2) : "N/A");
 
     return {
       totalVoyages,
