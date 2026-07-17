@@ -1445,7 +1445,6 @@ export default function DashboardOverview({
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               R$ {totalFuelSpendMonth.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </p>
-            <span className="text-[9.5px] text-muted-foreground font-medium">Tendência dos últimos 6 meses</span>
           </div>
           <div className="h-[55px] w-full mt-2">
             {fuelSpendByVehicleChartData.length === 0 ? (
@@ -1485,7 +1484,6 @@ export default function DashboardOverview({
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               {kmMonth.toLocaleString("pt-BR")} <span className="text-xs font-bold text-muted-foreground">km</span>
             </p>
-            <span className="text-[9.5px] text-muted-foreground">Tendência dos últimos 6 meses</span>
           </div>
           <div className="h-[55px] w-full mt-2">
             {kmByVehicleChartData.length === 0 ? (
@@ -1525,7 +1523,6 @@ export default function DashboardOverview({
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               {totalLitersMonth.toLocaleString("pt-BR")} <span className="text-xs font-bold text-muted-foreground">L</span>
             </p>
-            <span className="text-[9.5px] text-muted-foreground">Tendência dos últimos 6 meses</span>
           </div>
           <div className="h-[55px] w-full mt-2">
             {litersByVehicleChartData.length === 0 ? (
@@ -1565,7 +1562,6 @@ export default function DashboardOverview({
             <p className="text-xl font-black font-mono text-foreground leading-tight">
               {averageKmLMonth > 0 ? averageKmLMonth.toFixed(2) : "0.00"} <span className="text-xs font-bold text-muted-foreground">km/L</span>
             </p>
-            <span className="text-[9.5px] text-muted-foreground">Tendência dos últimos 6 meses</span>
           </div>
           <div className="h-[55px] w-full mt-2">
             {kmLByVehicleChartData.length === 0 ? (
