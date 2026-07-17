@@ -550,13 +550,8 @@ export default function DashboardOverview({
   }, [refuels]);
 
   const kmMonth = useMemo(() => {
-    const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
-    const odometerKm = refuels
-      .filter(r => r.date.startsWith(targetYearMonth))
-      .reduce((sum, r) => sum + (refuelOdometerDeltas[r.id]?.kmSinceLast || 0), 0);
-    if (odometerKm > 0) return odometerKm;
     return freightsMonth.reduce((sum, f) => sum + (f.mileage?.total || 0), 0);
-  }, [refuels, refuelOdometerDeltas, freightsMonth, currentYear, currentMonth]);
+  }, [freightsMonth]);
   const kmPrevMonth = useMemo(() => freightsPrevMonth.reduce((sum, f) => sum + (f.mileage?.total || 0), 0), [freightsPrevMonth]);
 
   // Percentage variations
@@ -918,16 +913,21 @@ export default function DashboardOverview({
   }, [freightsMonth]);
 
   const commissionByDriverChartData = useMemo(() => {
-    const map: Record<string, number> = {};
+    const map: Record<string, { paid: number; pending: number }> = {};
     freightsMonth.forEach(f => {
       const driver = drivers.find(d => d.id === f.driverId);
       const name = driver ? driver.fullName.split(" ")[0] : "Motorista";
-      map[name] = (map[name] || 0) + (f.financial?.commissionPaid || 0);
+      const paid = f.financial?.commissionPaid || 0;
+      const commission = f.financial?.commission || 0;
+      const pending = f.financial?.commissionPending !== undefined ? f.financial.commissionPending : commission;
+      map[name] = map[name] || { paid: 0, pending: 0 };
+      map[name].paid += paid;
+      map[name].pending += pending;
     });
     return Object.entries(map)
-      .map(([name, value]) => ({ name, value }))
-      .filter(item => item.value > 0)
-      .sort((a, b) => b.value - a.value);
+      .map(([name, { paid, pending }]) => ({ name, value: paid, paid, pending, total: paid + pending }))
+      .filter(item => item.total > 0)
+      .sort((a, b) => b.total - a.total);
   }, [freightsMonth, drivers]);
 
   // Comissões dos motoristas: total pago vs pendente (todas as viagens, igual ao padrão de Dívida de Alavancagem)
@@ -993,15 +993,16 @@ export default function DashboardOverview({
     return last6MonthKeys.map(ym => ({ name: monthShortLabel(ym), value: map[ym] || 0 }));
   }, [refuels, last6MonthKeys]);
 
-  // 6. Km (Distance traveled) — mesma base de odômetro usada no KPI acima
+  // 6. Km (Distance traveled) — mesma base do Manifesto de Fretes usada no KPI acima
   const kmByVehicleChartData = useMemo(() => {
     const map: Record<string, number> = {};
-    refuels.forEach(r => {
-      const ym = (r.date || "").slice(0, 7);
-      if (last6MonthKeys.includes(ym)) map[ym] = (map[ym] || 0) + (refuelOdometerDeltas[r.id]?.kmSinceLast || 0);
+    freights.forEach(f => {
+      if (f.status === "Cancelado") return;
+      const ym = (f.date || "").slice(0, 7);
+      if (last6MonthKeys.includes(ym)) map[ym] = (map[ym] || 0) + (f.mileage?.total || 0);
     });
     return last6MonthKeys.map(ym => ({ name: monthShortLabel(ym), value: map[ym] || 0 }));
-  }, [refuels, refuelOdometerDeltas, last6MonthKeys]);
+  }, [freights, last6MonthKeys]);
 
   // 7. Consumo (Liters consumed)
   const totalLitersMonth = useMemo(() => {
@@ -1423,15 +1424,16 @@ export default function DashboardOverview({
             {commissionByDriverChartData.length === 0 ? (
               <div className="text-[10px] text-muted-foreground/60 h-[24px] flex items-center justify-center font-medium">Nenhum dado</div>
             ) : (() => {
-              const maxVal = Math.max(...commissionByDriverChartData.map((d: any) => d.value), 1);
+              const maxVal = Math.max(...commissionByDriverChartData.map((d: any) => d.total), 1);
               return commissionByDriverChartData.slice(0, 3).map((d: any) => (
                 <div key={d.name} className="space-y-0.5">
                   <div className="flex items-center justify-between text-[8.5px] font-mono font-medium text-muted-foreground">
                     <span className="truncate">{d.name}</span>
-                    <span>R$ {Number(d.value).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
+                    <span>R$ {Number(d.paid).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}</span>
                   </div>
-                  <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div className="h-full bg-purple-500 rounded-full" style={{ width: `${(d.value / maxVal) * 100}%` }} />
+                  <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden flex" style={{ width: `${(d.total / maxVal) * 100}%` }}>
+                    <div className="h-full bg-emerald-500" style={{ width: `${(d.paid / d.total) * 100}%` }} />
+                    <div className="h-full bg-amber-500" style={{ width: `${(d.pending / d.total) * 100}%` }} />
                   </div>
                 </div>
               ));
