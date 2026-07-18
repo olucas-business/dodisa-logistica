@@ -598,7 +598,7 @@ export default function DriversManager({
                       <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Comissões de Viagens</h4>
                       <div className="flex items-center gap-3 text-[10px] font-mono font-bold">
                         <span className="text-emerald-600">🟢 Pago: R$ {totalPaid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                        <span className="text-orange-600">🟠 Pendente: R$ {totalPending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="text-amber-600">🟠 Pendente: R$ {totalPending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
                     {rows.length === 0 && (
@@ -614,7 +614,7 @@ export default function DriversManager({
                             </span>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${pending <= 0.01 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-orange-50 text-orange-700 border border-orange-200"}`}>
+                            <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${pending <= 0.01 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-amber-50 text-amber-700 border border-amber-200"}`}>
                               {pending <= 0.01 ? "Pago" : `Pendente: R$ ${pending.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                             </span>
                             {onUpdateFreight && (
@@ -1219,7 +1219,7 @@ export default function DriversManager({
               Pagar Comissão — {payingCommissionFreight.freightNumber}
             </h3>
             <div className="mb-4 space-y-1">
-              <p className="text-lg font-black font-mono text-orange-600">
+              <p className="text-lg font-black font-mono text-amber-600">
                 R$ {((payingCommissionFreight.financial?.commission || 0) - (payingCommissionFreight.financial?.commissionPaid !== undefined ? payingCommissionFreight.financial.commissionPaid : 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 <span className="text-[10px] font-semibold text-gray-400 ml-1">pendente</span>
               </p>
