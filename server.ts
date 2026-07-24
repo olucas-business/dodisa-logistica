@@ -2263,7 +2263,7 @@ app.post("/api/refuels", async (req, res) => {
     date: newRefuel.date,
     category: "Combustível",
     value: Number(newRefuel.totalValue) || 0,
-    description: `Abastecimento (${newRefuel.liters}L) - Posto: ${newRefuel.gasStation}`,
+    description: `Abastecimento (${newRefuel.liters}L Diesel${newRefuel.arlaLiters ? ` + ${newRefuel.arlaLiters}L Arla` : ""}) - Posto: ${newRefuel.gasStation}`,
     receipt: ""
   };
   db.expenses.push(newExpense);
@@ -2290,7 +2290,7 @@ app.put("/api/refuels/:id", async (req, res) => {
       ...db.expenses[expenseIdx],
       date: updatedRefuel.date,
       value: Number(updatedRefuel.totalValue) || 0,
-      description: `Abastecimento (${updatedRefuel.liters}L) - Posto: ${updatedRefuel.gasStation}`
+      description: `Abastecimento (${updatedRefuel.liters}L Diesel${updatedRefuel.arlaLiters ? ` + ${updatedRefuel.arlaLiters}L Arla` : ""}) - Posto: ${updatedRefuel.gasStation}`
     };
   }
 

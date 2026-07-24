@@ -158,6 +158,8 @@ export interface Refuel {
   city: string;
   liters: number;
   pricePerLiter: number;
+  arlaLiters?: number;
+  arlaPricePerLiter?: number;
   totalValue: number;
   odometer?: number;
   receipt?: string;

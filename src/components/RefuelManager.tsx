@@ -43,6 +43,8 @@ export default function RefuelManager({
   const [driverId, setDriverId] = useState(drivers[0]?.id || "");
   const [liters, setLiters] = useState("");
   const [pricePerLiter, setPricePerLiter] = useState("");
+  const [arlaLiters, setArlaLiters] = useState("");
+  const [arlaPricePerLiter, setArlaPricePerLiter] = useState("");
   const [gasStation, setGasStation] = useState("Posto Petrobras");
   const [odometer, setOdometer] = useState("");
 
@@ -52,6 +54,8 @@ export default function RefuelManager({
     setDriverId(drivers[0]?.id || "");
     setLiters("");
     setPricePerLiter("");
+    setArlaLiters("");
+    setArlaPricePerLiter("");
     setGasStation("Posto Petrobras");
     setOdometer("");
   };
@@ -68,6 +72,8 @@ export default function RefuelManager({
     setDriverId(r.driverId);
     setLiters(String(r.liters));
     setPricePerLiter(String(r.pricePerLiter));
+    setArlaLiters(r.arlaLiters ? String(r.arlaLiters) : "");
+    setArlaPricePerLiter(r.arlaPricePerLiter ? String(r.arlaPricePerLiter) : "");
     setGasStation(r.gasStation);
     setOdometer(r.odometer ? String(r.odometer) : "");
     setEditingId(r.id);
@@ -83,7 +89,11 @@ export default function RefuelManager({
 
     const litersNum = Number(liters);
     const priceNum = Number(pricePerLiter);
-    const total = litersNum * priceNum;
+    const arlaLitersNum = Number(arlaLiters) || 0;
+    const arlaPriceNum = Number(arlaPricePerLiter) || 0;
+    // Arla sempre soma na despesa de combustível total, mas fica fora de `liters`/`pricePerLiter`
+    // para não distorcer o cálculo de consumo (Km/L), que é baseado só no diesel.
+    const total = (litersNum * priceNum) + (arlaLitersNum * arlaPriceNum);
 
     const payload: Partial<Refuel> = {
       date,
@@ -91,6 +101,8 @@ export default function RefuelManager({
       driverId,
       liters: litersNum,
       pricePerLiter: priceNum,
+      arlaLiters: arlaLitersNum || undefined,
+      arlaPricePerLiter: arlaPriceNum || undefined,
       totalValue: total,
       gasStation,
       odometer: odometer ? Number(odometer) : undefined,
@@ -389,7 +401,7 @@ export default function RefuelManager({
                 <th className="p-3">Veículo / Placa</th>
                 <th className="p-3">Motorista</th>
                 <th className="p-3">Posto de Combustível</th>
-                <th className="p-3 text-right">Liters</th>
+                <th className="p-3 text-right">Litros Diesel</th>
                 <th className="p-3 text-right">Preço por Litro</th>
                 <th className="p-3 text-right">Consumo (Km/L)</th>
                 <th className="p-3 text-right pr-5">Valor Total Pago</th>
@@ -410,7 +422,12 @@ export default function RefuelManager({
                       <MapPin className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
                       {r.gasStation}
                     </td>
-                    <td className="p-3 text-right font-mono font-bold text-gray-800 dark:text-gray-200">{r.liters.toLocaleString("pt-BR")} L</td>
+                    <td className="p-3 text-right font-mono font-bold text-gray-800 dark:text-gray-200">
+                      {r.liters.toLocaleString("pt-BR")} L
+                      {!!r.arlaLiters && (
+                        <span className="block text-[10px] font-medium text-gray-400 dark:text-gray-500">+ {r.arlaLiters.toLocaleString("pt-BR")} L Arla</span>
+                      )}
+                    </td>
                     <td className="p-3 text-right font-mono text-gray-500 dark:text-gray-400">R$ {r.pricePerLiter.toFixed(3)}</td>
                     <td className="p-3 text-right font-mono text-gray-500 dark:text-gray-400">
                       {refuelsWithEfficiency[r.id]?.kmPerLiter ? `${refuelsWithEfficiency[r.id]?.kmPerLiter?.toFixed(2)} Km/L` : "—"}
@@ -515,7 +532,7 @@ export default function RefuelManager({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans whitespace-nowrap">Litros *</label>
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans whitespace-nowrap">Litros Diesel *</label>
                   <input
                     type="number"
                     step="0.01"
@@ -527,7 +544,7 @@ export default function RefuelManager({
                   />
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans whitespace-nowrap">Preço/Litro (R$) *</label>
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans whitespace-nowrap">Preço/Litro Diesel (R$) *</label>
                   <input
                     type="number"
                     step="0.001"
@@ -535,6 +552,31 @@ export default function RefuelManager({
                     value={pricePerLiter}
                     onChange={(e) => setPricePerLiter(e.target.value)}
                     placeholder="5.89"
+                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans whitespace-nowrap">Litros Arla - opcional</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={arlaLiters}
+                    onChange={(e) => setArlaLiters(e.target.value)}
+                    placeholder="20"
+                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans whitespace-nowrap">Preço/Litro Arla (R$) - opcional</label>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value={arlaPricePerLiter}
+                    onChange={(e) => setArlaPricePerLiter(e.target.value)}
+                    placeholder="4.20"
                     className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
                   />
                 </div>
@@ -553,12 +595,31 @@ export default function RefuelManager({
                 <p className="text-[10px] text-gray-400 dark:text-gray-500">Preenchendo o odômetro em cada abastecimento, calculamos o consumo (Km/L) automaticamente.</p>
               </div>
 
-              {Number(liters) > 0 && Number(pricePerLiter) > 0 && (
-                <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 p-3 rounded-lg text-xs font-semibold text-emerald-800 dark:text-emerald-400 text-center flex justify-between items-center">
-                  <span>Valor Calculado Total:</span>
-                  <strong className="text-sm font-black">R$ {(Number(liters) * Number(pricePerLiter)).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                </div>
-              )}
+              {Number(liters) > 0 && Number(pricePerLiter) > 0 && (() => {
+                const dieselTotal = Number(liters) * Number(pricePerLiter);
+                const arlaTotal = (Number(arlaLiters) || 0) * (Number(arlaPricePerLiter) || 0);
+                return (
+                  <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 p-3 rounded-lg text-xs font-semibold text-emerald-800 dark:text-emerald-400 space-y-1">
+                    {arlaTotal > 0 && (
+                      <>
+                        <div className="flex justify-between">
+                          <span>Diesel:</span>
+                          <span className="font-mono">R$ {dieselTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Arla:</span>
+                          <span className="font-mono">R$ {arlaTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="border-t border-emerald-200 dark:border-emerald-900/40 my-1" />
+                      </>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <span>Valor Calculado Total:</span>
+                      <strong className="text-sm font-black">R$ {(dieselTotal + arlaTotal).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="flex gap-3 justify-end pt-4 border-t border-gray-150 dark:border-slate-800 flex-shrink-0">
                 <button
