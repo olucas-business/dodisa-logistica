@@ -559,7 +559,7 @@ export default function RefuelManager({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans whitespace-nowrap">Litros Arla - opcional</label>
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans whitespace-nowrap">Litros Arla</label>
                   <input
                     type="number"
                     step="0.01"
@@ -570,7 +570,7 @@ export default function RefuelManager({
                   />
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans whitespace-nowrap">Preço/Litro Arla (R$) - opcional</label>
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider font-sans whitespace-nowrap">Preço/Litro Arla (R$)</label>
                   <input
                     type="number"
                     step="0.001"
