@@ -1159,5 +1159,52 @@ html:not(.dark) .leaflet-bar a:hover {
   font-weight: 400 !important;
 }
 
+/* ============================================================ */
+/* ACCESSIBILITY: reduced motion & visible focus (site-wide)     */
+/* ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-text-blue) !important;
+  outline-offset: 2px !important;
+}
+
+/* ============================================================ */
+/* LANDING PAGE (FLEET ONE) — scoped overrides                   */
+/* ============================================================ */
+
+#fleetone-landing button.cta-btn {
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  padding: 16px 32px !important;
+  border-radius: 14px !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+#fleetone-landing button.cta-btn:hover {
+  transform: translateY(-2px);
+}
+
+#fleetone-landing button.nav-btn {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  padding: 10px 20px !important;
+  border-radius: 10px !important;
+}
+
+#fleetone-landing .hero-title {
+  font-size: clamp(2.25rem, 5vw, 3.5rem) !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.05 !important;
+}
+
 
 

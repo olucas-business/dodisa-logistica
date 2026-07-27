@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { User, Driver, Vehicle, Freight, Refuel, Expense, Tire, Debt, TruckCashTransaction, CaixaCaminhao, CaixaMovimentacao, MaintenanceLog, InternationalCost, CompanyContact, CompanyProfile as CompanyProfileData } from "./types";
 import LoginForm from "./components/LoginForm";
+import LandingPage from "./components/landing/LandingPage";
+import useSimpleRouter from "./hooks/useSimpleRouter";
 import BrandMark from "./components/BrandMark";
 import VehicleTracking from "./components/VehicleTracking";
 import CompanyProfile from "./components/CompanyProfile";
@@ -55,7 +57,10 @@ import {
 } from "lucide-react";
 
 export default function App() {
+  const { path, query, navigate } = useSimpleRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [mightBeLoggedIn] = useState<boolean>(() => typeof window !== "undefined" && !!localStorage.getItem("erp_session"));
   const [tab, setTab] = useState<string>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(() => typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
   const [aiSubTab, setAiSubTab] = useState<"image_reader" | "import" | "ai_assistant">("image_reader");
@@ -133,7 +138,15 @@ export default function App() {
         localStorage.removeItem("erp_session");
       }
     }
+    setSessionChecked(true);
   }, []);
+
+  // Keep the URL canonicalized to "/" once a session is confirmed (avoids a stale
+  // "/login" URL sitting under the authenticated dashboard).
+  useEffect(() => {
+    if (user && path !== "/") navigate("/");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Fetch full operational database
   const fetchAllData = async () => {
@@ -871,7 +884,29 @@ export default function App() {
 
   // Unauthenticated shell
   if (!user) {
-    return <LoginForm onLoginSuccess={setUser} />;
+    // A returning logged-in user might still be mid-session-restore on the very
+    // first tick — avoid flashing the marketing landing page in that window.
+    if (path === "/" && mightBeLoggedIn && !sessionChecked) {
+      return null;
+    }
+
+    if (path === "/") {
+      return (
+        <LandingPage
+          onNavigateLogin={() => navigate("/login")}
+          onNavigateSignup={() => navigate("/login?mode=signup")}
+        />
+      );
+    }
+
+    // NOTE: a future "/demo" path would render an InteractiveDemo component here,
+    // composing the real manager components with a mocked dataset — deferred for now.
+    return (
+      <LoginForm
+        onLoginSuccess={(u) => { setUser(u); navigate("/"); }}
+        initialMode={query.get("mode") === "signup" ? "signup" : "login"}
+      />
+    );
   }
 
   // Redirect Motorista users to Driver Portal

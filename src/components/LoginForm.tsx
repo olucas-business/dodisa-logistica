@@ -22,10 +22,11 @@ import { motion, AnimatePresence } from "motion/react";
 
 interface LoginFormProps {
   onLoginSuccess: (user: User) => void;
+  initialMode?: "login" | "signup";
 }
 
-export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
-  const [mode, setMode] = useState<"login" | "signup" | "recovery">("login");
+export default function LoginForm({ onLoginSuccess, initialMode = "login" }: LoginFormProps) {
+  const [mode, setMode] = useState<"login" | "signup" | "recovery">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [companyBranding, setCompanyBranding] = useState<{ name: string; logoUrl: string }>({ name: "", logoUrl: "" });
