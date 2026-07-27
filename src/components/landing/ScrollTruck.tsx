@@ -57,18 +57,23 @@ export default function ScrollTruck({ targetRef, reduced }: ScrollTruckProps) {
       className="sticky top-[12vh] z-0 flex justify-center pointer-events-none select-none"
       style={{ x, opacity }}
     >
-      <img
-        src={TRUCK_PHOTO_URL}
-        alt="Caminhão moderno em rodovia"
-        width={640}
-        height={320}
-        loading="eager"
-        fetchPriority="high"
-        decoding="async"
-        referrerPolicy="no-referrer"
-        className="w-[85vw] max-w-[640px] h-[180px] md:h-[320px] object-cover rounded-3xl"
-        style={{ maskImage: EDGE_FADE_MASK, WebkitMaskImage: EDGE_FADE_MASK, maskComposite: "intersect", WebkitMaskComposite: "source-in" }}
-      />
+      <div className="relative w-[85vw] max-w-[640px] h-[180px] md:h-[320px]">
+        <img
+          src={TRUCK_PHOTO_URL}
+          alt="Caminhão moderno em rodovia"
+          width={640}
+          height={320}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          referrerPolicy="no-referrer"
+          className="w-full h-full object-cover rounded-3xl"
+          style={{ maskImage: EDGE_FADE_MASK, WebkitMaskImage: EDGE_FADE_MASK, maskComposite: "intersect", WebkitMaskComposite: "source-in" }}
+        />
+        <div className="dust-puff absolute bottom-[8%] left-[10%] w-3 h-3 md:w-4 md:h-4 rounded-full bg-slate-400/40" style={{ animationDelay: "0s" }} aria-hidden="true" />
+        <div className="dust-puff absolute bottom-[12%] left-[16%] w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-slate-400/30" style={{ animationDelay: "0.5s" }} aria-hidden="true" />
+        <div className="dust-puff absolute bottom-[6%] left-[21%] w-2 h-2 md:w-2.5 md:h-2.5 rounded-full bg-slate-400/25" style={{ animationDelay: "1s" }} aria-hidden="true" />
+      </div>
     </motion.div>
   );
 }
