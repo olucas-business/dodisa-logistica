@@ -1215,16 +1215,7 @@ html:not(.dark) .leaflet-bar a:hover {
   animation: dust-puff 1.8s ease-out infinite;
 }
 
-/* Exhaust smoke puffs rising from the truck's stack */
-@keyframes exhaust-puff {
-  0% { transform: translate(0, 0) scale(0.5); opacity: 0.4; }
-  100% { transform: translate(-14px, -34px) scale(1.6); opacity: 0; }
-}
-.exhaust-puff {
-  animation: exhaust-puff 2s ease-out infinite;
-}
-
-/* Soft pulsing headlight glow on the vector truck */
+/* Soft pulsing headlight glow overlaid on the hero truck photo */
 @keyframes headlight-glow-pulse {
   0%, 100% { opacity: 0.7; }
   50% { opacity: 1; }
