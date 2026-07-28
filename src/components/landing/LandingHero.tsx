@@ -1,38 +1,107 @@
-import { ArrowRight, LogIn } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { ArrowRight, PlayCircle } from "lucide-react";
+import { gsap, ScrollTrigger } from "./gsapSetup";
+import DashboardPreviewCard from "./DashboardPreviewCard";
 
 interface LandingHeroProps {
-  onNavigateLogin: () => void;
   onExplore: () => void;
+  reduced: boolean;
 }
 
-export default function LandingHero({ onNavigateLogin, onExplore }: LandingHeroProps) {
-  return (
-    <section className="relative z-10 max-w-6xl mx-auto px-5 md:px-8 pt-16 md:pt-24 pb-40 md:pb-56 text-center">
-      <h1 className="hero-title font-black tracking-tight text-foreground leading-none">
-        Fleet One
-      </h1>
-      <p className="mt-4 text-lg md:text-xl text-muted-foreground font-semibold">
-        A maneira mais inteligente de gerenciar sua frota.
-      </p>
-      <p className="mt-3 max-w-xl mx-auto text-base text-muted-foreground">
-        Controle sua operação, seus caminhões e suas finanças em um único lugar.
-      </p>
+const HERO_PHOTO_URL =
+  "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=2400";
 
-      <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-4">
-        <button
-          onClick={onExplore}
-          className="cta-btn w-full sm:w-auto bg-card border-2 border-primary text-primary hover:bg-accent flex items-center justify-center gap-2"
-        >
-          Explorar demonstração
-          <ArrowRight className="w-5 h-5" />
-        </button>
-        <button
-          onClick={onNavigateLogin}
-          className="cta-btn w-full sm:w-auto bg-primary text-primary-foreground hover:opacity-90 shadow-lg flex items-center justify-center gap-2"
-        >
-          <LogIn className="w-5 h-5" />
-          Entrar no sistema
-        </button>
+export default function LandingHero({ onExplore, reduced }: LandingHeroProps) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const bgRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (reduced || !sectionRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.to(bgRef.current, {
+        yPercent: 12,
+        ease: "none",
+        scrollTrigger: { trigger: sectionRef.current, start: "top top", end: "bottom top", scrub: true },
+      });
+      gsap.to(cardRef.current, {
+        yPercent: -10,
+        ease: "none",
+        scrollTrigger: { trigger: sectionRef.current, start: "top top", end: "bottom top", scrub: true },
+      });
+      gsap.to(contentRef.current, {
+        yPercent: 5,
+        ease: "none",
+        scrollTrigger: { trigger: sectionRef.current, start: "top top", end: "bottom top", scrub: true },
+      });
+    }, sectionRef);
+    return () => ctx.revert();
+  }, [reduced]);
+
+  useEffect(() => {
+    return () => ScrollTrigger.getAll().forEach((st) => st.trigger === sectionRef.current && st.kill());
+  }, []);
+
+  return (
+    <section ref={sectionRef} className="relative z-10 min-h-[560px] md:min-h-[680px] lg:min-h-screen flex items-center overflow-hidden">
+      {/* Background photo layer (subtle parallax) */}
+      <div ref={bgRef} className="absolute inset-x-0 -top-[10%] -bottom-[10%]">
+        <img
+          src={HERO_PHOTO_URL}
+          alt="Caminhão Scania moderno em rodovia"
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          referrerPolicy="no-referrer"
+          className="w-full h-full object-cover"
+          style={{ objectPosition: "30% 55%" }}
+        />
+        {/* Fixed dark navy overlay (literal rgba, not the theme's slate-950 token —
+            this project's dark-mode palette inverts slate-950 to near-white, which
+            would otherwise wash this cinematic overlay out to near-white). */}
+        <div className="absolute inset-0" style={{ backgroundColor: "rgba(2,6,23,0.35)", mixBlendMode: "multiply" }} />
+        <div
+          className="absolute inset-0"
+          style={{ backgroundImage: "linear-gradient(to right, rgba(2,6,23,0.95) 0%, rgba(2,6,23,0.65) 50%, rgba(2,6,23,0.1) 100%)" }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-40"
+          style={{ backgroundImage: "linear-gradient(to top, rgba(2,6,23,1) 0%, rgba(2,6,23,0.4) 50%, rgba(2,6,23,0) 100%)" }}
+        />
+      </div>
+
+      <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-8 py-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div ref={contentRef} className="text-center lg:text-left">
+          <h1 className="hero-title font-black tracking-tight text-white leading-none">Fleet One</h1>
+          <p className="mt-4 text-lg md:text-xl text-slate-200 font-semibold">
+            A maneira mais inteligente de gerenciar sua frota.
+          </p>
+          <p className="mt-3 max-w-xl mx-auto lg:mx-0 text-base text-slate-300">
+            Controle sua operação, seus caminhões e suas finanças em um único lugar.
+          </p>
+
+          <div className="mt-9 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4">
+            <button
+              onClick={onExplore}
+              className="cta-btn w-full sm:w-auto bg-primary text-primary-foreground hover:opacity-90 shadow-lg flex items-center justify-center gap-2"
+            >
+              Conhecer Plataforma
+              <ArrowRight className="w-5 h-5" />
+            </button>
+            <button
+              onClick={onExplore}
+              className="cta-btn w-full sm:w-auto bg-white/10 backdrop-blur border-2 border-white/30 text-white hover:bg-white/20 flex items-center justify-center gap-2"
+            >
+              <PlayCircle className="w-5 h-5" />
+              Explorar Demonstração
+            </button>
+          </div>
+        </div>
+
+        <div ref={cardRef} className="hidden lg:block" style={{ perspective: "1200px" }}>
+          <DashboardPreviewCard reduced={reduced} />
+        </div>
       </div>
     </section>
   );

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 import { Satellite } from "lucide-react";
 import SectionReveal from "../SectionReveal";
+import { gsap, ScrollTrigger } from "../gsapSetup";
 import { rastreamentoStops } from "../landing-mock-data";
 
 interface SectionProps {
@@ -19,6 +20,7 @@ const truckIcon = L.divIcon({
 
 export default function RastreamentoSection({ reduced }: SectionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
 
   useEffect(() => {
@@ -44,19 +46,56 @@ export default function RastreamentoSection({ reduced }: SectionProps) {
     ).addTo(map);
 
     const latlngs: [number, number][] = rastreamentoStops.map((s) => [s.lat, s.lng]);
-    L.polyline(latlngs, { color: "#3b82f6", weight: 3, opacity: 0.7, dashArray: "6, 4" }).addTo(map);
+    const route = L.polyline(latlngs, { color: "#3b82f6", weight: 3, opacity: 0.85 }).addTo(map);
     latlngs.forEach(([lat, lng], i) => {
       L.marker([lat, lng], { icon: truckIcon })
         .addTo(map)
         .bindTooltip(rastreamentoStops[i].label, { direction: "top", offset: [0, -16], permanent: false });
     });
+    const movingMarker = L.marker(latlngs[0], { icon: truckIcon, opacity: reduced ? 0 : 1 }).addTo(map);
 
     mapRef.current = map;
+
+    // Draw the route in sync with scroll, and slide a marker along it.
+    let tween: gsap.core.Tween | null = null;
+    const path = (route as unknown as { _path?: SVGPathElement })._path;
+    if (path && !reduced) {
+      const length = path.getTotalLength();
+      path.style.strokeDasharray = `${length}`;
+      path.style.strokeDashoffset = `${length}`;
+      tween = gsap.to(path, {
+        strokeDashoffset: 0,
+        ease: "none",
+        scrollTrigger: {
+          trigger: cardRef.current,
+          start: "top 80%",
+          end: "bottom 40%",
+          scrub: true,
+        },
+        onUpdate: function onUpdate() {
+          const progress = this.progress();
+          const steps = rastreamentoStops.length - 1;
+          const idx = Math.min(progress * steps, steps);
+          const i0 = Math.floor(idx);
+          const i1 = Math.min(i0 + 1, steps);
+          const t = idx - i0;
+          const a = rastreamentoStops[i0];
+          const b = rastreamentoStops[i1];
+          movingMarker.setLatLng([a.lat + (b.lat - a.lat) * t, a.lng + (b.lng - a.lng) * t]);
+        },
+      });
+    } else if (path) {
+      path.style.strokeDasharray = "";
+      path.style.strokeDashoffset = "";
+    }
+
     return () => {
+      tween?.scrollTrigger?.kill();
+      tween?.kill();
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [reduced]);
 
   return (
     <SectionReveal reduced={reduced} className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 py-20 md:py-28">
@@ -70,7 +109,7 @@ export default function RastreamentoSection({ reduced }: SectionProps) {
         </p>
       </div>
 
-      <div className="bg-card border border-border rounded-2xl p-2 shadow-sm">
+      <div ref={cardRef} className="bg-card border border-border rounded-2xl p-2 shadow-sm">
         <div ref={containerRef} className="w-full h-[280px] md:h-[360px] rounded-xl overflow-hidden pointer-events-none" />
       </div>
     </SectionReveal>

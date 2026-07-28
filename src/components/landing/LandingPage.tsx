@@ -42,7 +42,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateSignup }: Landi
         <RoadLine targetRef={narrativeWrapperRef} reduced={reduced} />
         <ScrollTruck targetRef={narrativeWrapperRef} reduced={reduced} />
 
-        <LandingHero onNavigateLogin={onNavigateLogin} onExplore={handleExplore} />
+        <LandingHero onExplore={handleExplore} reduced={reduced} />
 
         <div ref={firstSectionRef}>
           <OperacaoSection reduced={reduced} />

@@ -1,7 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { Fuel } from "lucide-react";
 import SectionReveal from "../SectionReveal";
 import RadialGauge from "../../RadialGauge";
+import { gsap } from "../gsapSetup";
 import { combustivelStats, combustivelTrend } from "../landing-mock-data";
 
 interface SectionProps {
@@ -9,6 +11,27 @@ interface SectionProps {
 }
 
 export default function CombustivelSection({ reduced }: SectionProps) {
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [fillProgress, setFillProgress] = useState(reduced ? 1 : 0);
+
+  useEffect(() => {
+    if (reduced || !gridRef.current) return;
+    const state = { p: 0 };
+    const tween = gsap.to(state, {
+      p: 1,
+      duration: 1.4,
+      ease: "power2.out",
+      scrollTrigger: { trigger: gridRef.current, start: "top 78%", toggleActions: "play none none none" },
+      onUpdate: () => setFillProgress(state.p),
+    });
+    return () => {
+      tween.scrollTrigger?.kill();
+      tween.kill();
+    };
+  }, [reduced]);
+
+  const animatedKmL = combustivelStats.avgKmL * fillProgress;
+
   return (
     <SectionReveal reduced={reduced} className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 py-20 md:py-28">
       <div className="text-center max-w-lg mx-auto mb-10">
@@ -21,12 +44,23 @@ export default function CombustivelSection({ reduced }: SectionProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
-        <RadialGauge label="KM/L (média)" value={(combustivelStats.avgKmL / 5) * 100} displayValue={`${combustivelStats.avgKmL.toFixed(1)} km/L`} />
+      <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
+        <RadialGauge
+          label="KM/L (média)"
+          value={(animatedKmL / 5) * 100}
+          displayValue={`${animatedKmL.toFixed(1)} km/L`}
+        />
 
         <div className="bg-card border border-border p-5 rounded-2xl">
           <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Litros no mês</span>
           <p className="text-3xl mt-1">{combustivelStats.litersMonth.toLocaleString("pt-BR")} L</p>
+          {/* Abstract "fuel pump filling" indicator, in sync with the gauge above */}
+          <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden relative">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400"
+              style={{ width: `${fillProgress * 100}%` }}
+            />
+          </div>
         </div>
 
         <div className="bg-card border border-border p-5 rounded-2xl">

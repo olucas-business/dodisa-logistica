@@ -38,10 +38,11 @@ export default function ScrollTruck({ targetRef, reduced }: ScrollTruckProps) {
   const xVelocity = useVelocity(xNum);
   const motionBlur = useTransform(xVelocity, (v) => `blur(${Math.min(Math.abs(v) / 45, 1.4).toFixed(2)}px)`);
 
-  // Full strength in the hero; fades to a translucent "ambient" layer once it
-  // crosses into text-only section headers (no card behind them), so it never
-  // fights section copy for contrast; fades out entirely at the end.
-  const opacity = useTransform(scrollYProgress, [0, 0.08, 0.14, 0.9, 0.96, 1], [1, 1, 0.35, 0.35, 0.35, 0]);
+  // Invisible through the hero (which now has its own full-bleed truck photo
+  // background) — fades in as a translucent "ambient" travel motif once the
+  // narrative sections begin, staying subtle enough to never fight section
+  // copy for contrast (no card behind those headings); fades out at the end.
+  const opacity = useTransform(scrollYProgress, [0, 0.16, 0.24, 0.9, 0.96, 1], [0, 0, 0.35, 0.35, 0.35, 0]);
 
   if (reduced) {
     return (
@@ -65,8 +66,11 @@ export default function ScrollTruck({ targetRef, reduced }: ScrollTruckProps) {
   }
 
   return (
+    // h-0 keeps this sticky anchor from reserving real layout height while it's
+    // invisible through the hero (opacity 0 there) — the sized truck content below
+    // is a flex-centered child that overflows this zero-height box once it fades in.
     <motion.div
-      className="sticky top-[12vh] z-0 flex justify-center pointer-events-none select-none"
+      className="sticky top-[12vh] z-0 h-0 flex justify-center pointer-events-none select-none"
       style={{ x, opacity }}
     >
       <motion.div

@@ -1252,5 +1252,23 @@ html:not(.dark) .leaflet-bar a:hover {
   animation: turn-signal-blink 1.4s ease-in-out infinite;
 }
 
+/* Button glow + icon nudge micro-interactions (landing only) */
+#fleetone-landing button.cta-btn:hover,
+#fleetone-landing button.nav-btn:hover {
+  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.25), 0 8px 24px -6px rgba(79, 70, 229, 0.45) !important;
+}
+#fleetone-landing button.cta-btn svg,
+#fleetone-landing button.nav-btn svg {
+  transition: transform 0.25s ease;
+}
+#fleetone-landing button.cta-btn:hover svg,
+#fleetone-landing button.nav-btn:hover svg {
+  transform: rotate(8deg) scale(1.08);
+}
+#fleetone-landing .bg-card:hover svg:first-of-type {
+  transition: transform 0.25s ease;
+  transform: rotate(-6deg) scale(1.08);
+}
+
 
 
