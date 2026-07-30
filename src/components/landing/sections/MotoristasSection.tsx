@@ -17,7 +17,7 @@ function initials(name: string) {
 
 export default function MotoristasSection({ reduced }: SectionProps) {
   return (
-    <SectionReveal reduced={reduced} className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 py-20 md:py-28">
+    <SectionReveal reduced={reduced} className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 py-24 md:py-36">
       <div className="text-center max-w-lg mx-auto mb-10">
         <h2 className="flex items-center justify-center gap-2">
           <Users className="w-6 h-6 text-blue-500" />

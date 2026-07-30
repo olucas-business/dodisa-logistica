@@ -471,29 +471,32 @@ html, body {
   color: var(--foreground) !important;
 }
 
-/* Light mode text defaults */
-html:not(.dark) p, 
-html:not(.dark) span, 
-html:not(.dark) li, 
-html:not(.dark) label, 
-html:not(.dark) td, 
-html:not(.dark) th, 
-html:not(.dark) h1, 
-html:not(.dark) h2, 
-html:not(.dark) h3, 
-html:not(.dark) h4, 
-html:not(.dark) h5, 
-html:not(.dark) h6 {
+/* Light mode text defaults. Guarded with :not([class*="text-"]) — mirrors the
+   dark-mode p/span/li/label rule below — so an element that already opted into
+   an explicit Tailwind text-color class (e.g. a status badge, or white text on
+   a photo background) keeps that color instead of being forced to foreground. */
+html:not(.dark) p:not([class*="text-"]),
+html:not(.dark) span:not([class*="text-"]),
+html:not(.dark) li:not([class*="text-"]),
+html:not(.dark) label:not([class*="text-"]),
+html:not(.dark) td,
+html:not(.dark) th,
+html:not(.dark) h1:not([class*="text-"]),
+html:not(.dark) h2:not([class*="text-"]),
+html:not(.dark) h3:not([class*="text-"]),
+html:not(.dark) h4:not([class*="text-"]),
+html:not(.dark) h5:not([class*="text-"]),
+html:not(.dark) h6:not([class*="text-"]) {
   color: var(--foreground);
 }
 
 /* HIGH-CONTRAST TYPOGRAPHY IN DARK MODE - NOT BLACK, AND HIGH HIERARCHICAL CONTRAST */
-html.dark h1, 
-html.dark h2, 
-html.dark h3, 
-html.dark h4, 
-html.dark h5, 
-html.dark h6,
+html.dark h1:not([class*="text-"]),
+html.dark h2:not([class*="text-"]),
+html.dark h3:not([class*="text-"]),
+html.dark h4:not([class*="text-"]),
+html.dark h5:not([class*="text-"]),
+html.dark h6:not([class*="text-"]),
 html.dark strong:not([class*="text-"]),
 html.dark .card-kpi-value, 
 html.dark .metric-value, 
@@ -1201,27 +1204,26 @@ html:not(.dark) .leaflet-bar a:hover {
 }
 
 #fleetone-landing .hero-title {
-  font-size: clamp(2.25rem, 5vw, 3.5rem) !important;
-  letter-spacing: -0.03em !important;
-  line-height: 1.05 !important;
+  font-size: clamp(3rem, 7vw, 5.5rem) !important;
+  letter-spacing: -0.04em !important;
+  line-height: 0.95 !important;
 }
 
-/* Dust puffs trailing the scroll truck */
-@keyframes dust-puff {
-  0% { transform: translate(0, 0) scale(0.4); opacity: 0.35; }
-  100% { transform: translate(-42px, 16px) scale(1.3); opacity: 0; }
-}
-.dust-puff {
-  animation: dust-puff 1.8s ease-out infinite;
+/* The real hero <h1> (not FinalCtaSection's <h2 class="hero-title">, which
+   wants the normal theme foreground) sits on a dark photo and must stay white
+   regardless of app light/dark mode — the global h1 rule forces
+   var(--color-text-primary) !important, which is near-black in light mode. */
+#fleetone-landing h1.hero-title {
+  color: #fff !important;
 }
 
-/* Soft pulsing headlight glow overlaid on the hero truck photo */
-@keyframes headlight-glow-pulse {
-  0%, 100% { opacity: 0.7; }
-  50% { opacity: 1; }
-}
-.headlight-glow {
-  animation: headlight-glow-pulse 1.8s ease-in-out infinite;
+/* Section headings get real display-type weight on the landing page — the
+   dashboard's compact 22px h2 rule is right for a dense admin panel, but reads
+   as an afterthought on a premium marketing page with room to breathe. */
+#fleetone-landing h2 {
+  font-size: clamp(1.75rem, 3.2vw, 2.5rem) !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.15 !important;
 }
 
 /* Card "turn-signal" hover micro-interaction (landing only) */

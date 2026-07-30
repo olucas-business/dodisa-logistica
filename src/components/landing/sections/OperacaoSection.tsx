@@ -15,7 +15,7 @@ const CARDS = [
 
 export default function OperacaoSection({ reduced }: SectionProps) {
   return (
-    <SectionReveal reduced={reduced} className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 py-20 md:py-28">
+    <SectionReveal reduced={reduced} className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 py-24 md:py-36">
       <div className="text-center max-w-lg mx-auto mb-10">
         <h2>Sua operação, em um único lugar.</h2>
         <p className="mt-2 text-muted-foreground">

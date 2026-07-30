@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ArrowRight, PlayCircle } from "lucide-react";
+import { ArrowRight, PlayCircle, ShieldCheck } from "lucide-react";
 import { gsap, ScrollTrigger } from "./gsapSetup";
 import DashboardPreviewCard from "./DashboardPreviewCard";
 
@@ -44,7 +44,7 @@ export default function LandingHero({ onExplore, reduced }: LandingHeroProps) {
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative z-10 min-h-[560px] md:min-h-[680px] lg:min-h-screen flex items-center overflow-hidden">
+    <section ref={sectionRef} className="relative z-10 min-h-[640px] md:min-h-[720px] lg:min-h-screen flex items-center overflow-hidden">
       {/* Background photo layer (subtle parallax) */}
       <div ref={bgRef} className="absolute inset-x-0 -top-[10%] -bottom-[10%]">
         <img
@@ -55,15 +55,19 @@ export default function LandingHero({ onExplore, reduced }: LandingHeroProps) {
           decoding="async"
           referrerPolicy="no-referrer"
           className="w-full h-full object-cover"
-          style={{ objectPosition: "30% 55%" }}
+          style={{ objectPosition: "30% 55%", filter: "grayscale(0.4) contrast(1.15) brightness(0.85) saturate(1.05)" }}
         />
+        {/* Signature brand color-grade — unifies the photo with the brand palette
+            (a plain photo would read as generic reused stock imagery) and softens
+            the truck's own real-world decals into atmosphere rather than clutter. */}
+        <div className="absolute inset-0" style={{ backgroundColor: "#1D3D8F", mixBlendMode: "color" }} />
         {/* Fixed dark navy overlay (literal rgba, not the theme's slate-950 token —
             this project's dark-mode palette inverts slate-950 to near-white, which
             would otherwise wash this cinematic overlay out to near-white). */}
         <div className="absolute inset-0" style={{ backgroundColor: "rgba(2,6,23,0.35)", mixBlendMode: "multiply" }} />
         <div
           className="absolute inset-0"
-          style={{ backgroundImage: "linear-gradient(to right, rgba(2,6,23,0.95) 0%, rgba(2,6,23,0.65) 50%, rgba(2,6,23,0.1) 100%)" }}
+          style={{ backgroundImage: "linear-gradient(to right, rgba(2,6,23,0.96) 0%, rgba(2,6,23,0.72) 48%, rgba(2,6,23,0.25) 100%)" }}
         />
         <div
           className="absolute inset-x-0 bottom-0 h-40"
@@ -71,17 +75,22 @@ export default function LandingHero({ onExplore, reduced }: LandingHeroProps) {
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-5 md:px-8 py-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-10 py-24 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-16 items-center">
         <div ref={contentRef} className="text-center lg:text-left">
-          <h1 className="hero-title font-black tracking-tight text-white leading-none">Fleet One</h1>
-          <p className="mt-4 text-lg md:text-xl text-slate-200 font-semibold">
+          <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-blue-300 mb-5">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Gestão inteligente de frotas
+          </span>
+
+          <h1 className="hero-title font-black tracking-tight text-white leading-[0.95]">Fleet One</h1>
+          <p className="mt-5 text-xl md:text-2xl text-slate-100 font-bold">
             A maneira mais inteligente de gerenciar sua frota.
           </p>
-          <p className="mt-3 max-w-xl mx-auto lg:mx-0 text-base text-slate-300">
+          <p className="mt-4 max-w-xl mx-auto lg:mx-0 text-base md:text-lg text-slate-300 leading-relaxed">
             Controle sua operação, seus caminhões e suas finanças em um único lugar.
           </p>
 
-          <div className="mt-9 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4">
+          <div className="mt-10 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4">
             <button
               onClick={onExplore}
               className="cta-btn w-full sm:w-auto bg-primary text-primary-foreground hover:opacity-90 shadow-lg flex items-center justify-center gap-2"
