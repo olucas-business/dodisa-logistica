@@ -1,5 +1,7 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useReducedMotion } from "motion/react";
+import type Lenis from "lenis";
+import { createLenis } from "./lenisSetup";
 import LandingNav from "./LandingNav";
 import LandingHero from "./LandingHero";
 import RoadSignDivider from "./RoadSignDivider";
@@ -20,16 +22,33 @@ interface LandingPageProps {
 export default function LandingPage({ onNavigateLogin, onNavigateSignup }: LandingPageProps) {
   const reduced = !!useReducedMotion();
   const firstSectionRef = useRef<HTMLDivElement>(null);
+  const lenisRef = useRef<Lenis | null>(null);
+
+  // Cinematic smooth-scroll for the whole page — skipped under reduced-motion,
+  // where native (instant) scroll is what the visitor actually asked for.
+  useEffect(() => {
+    if (reduced) return;
+    const { lenis, destroy } = createLenis();
+    lenisRef.current = lenis;
+    return () => {
+      lenisRef.current = null;
+      destroy();
+    };
+  }, [reduced]);
 
   const handleExplore = () => {
-    firstSectionRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    if (lenisRef.current && firstSectionRef.current) {
+      lenisRef.current.scrollTo(firstSectionRef.current, { duration: 1.2 });
+    } else {
+      firstSectionRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+    }
   };
 
   return (
     <div id="fleetone-landing" className="relative bg-background text-foreground min-h-screen">
       <LandingNav onNavigateLogin={onNavigateLogin} />
 
-      <LandingHero onExplore={handleExplore} reduced={reduced} />
+      <LandingHero onExplore={handleExplore} onNavigateLogin={onNavigateLogin} reduced={reduced} />
 
       <div ref={firstSectionRef}>
         <BeforeAfterSection reduced={reduced} />

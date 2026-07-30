@@ -1,14 +1,15 @@
 import { useEffect, useRef } from "react";
-import { ClipboardList, UserCheck, Route, Fuel, Wrench, Package, Coins, FileText, Truck } from "lucide-react";
+import { ClipboardList, Route, Satellite, Fuel, Wrench, Package, Coins, PackageCheck, TrendingUp, Truck } from "lucide-react";
 import SectionReveal from "../SectionReveal";
 import { gsap } from "../gsapSetup";
+import Canvas3DWrapper from "../Canvas3DWrapper";
 import { timelineSteps } from "../landing-mock-data";
 
 interface SectionProps {
   reduced: boolean;
 }
 
-const ICONS = { ClipboardList, UserCheck, Route, Fuel, Wrench, Package, Coins, FileText };
+const ICONS = { ClipboardList, Package, Route, Satellite, Fuel, Wrench, Coins, PackageCheck, TrendingUp };
 
 export default function TimelineSection({ reduced }: SectionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,7 +42,7 @@ export default function TimelineSection({ reduced }: SectionProps) {
     <SectionReveal reduced={reduced} className="relative z-10 max-w-3xl mx-auto px-5 md:px-8 py-24 md:py-36">
       <div className="text-center max-w-lg mx-auto mb-14">
         <h2>A operação ganha controle, passo a passo.</h2>
-        <p className="mt-2 text-muted-foreground">Do planejamento ao relatório, tudo conectado.</p>
+        <p className="mt-2 text-muted-foreground">Do planejamento aos resultados, tudo conectado.</p>
       </div>
 
       <div ref={containerRef} className="relative">
@@ -69,12 +70,18 @@ export default function TimelineSection({ reduced }: SectionProps) {
         <div className="space-y-10">
           {timelineSteps.map((step) => {
             const Icon = ICONS[step.icon];
+            const isCarregamento = step.label === "Carregamento";
             return (
               <div key={step.label} className="relative flex items-center gap-5 pl-16 md:pl-20">
                 <div className="absolute left-6 md:left-8 -translate-x-1/2 w-9 h-9 rounded-full bg-card border-2 border-border flex items-center justify-center z-10">
                   <Icon className="w-4 h-4 text-blue-500" />
                 </div>
                 <p className="font-bold text-base md:text-lg">{step.label}</p>
+                {isCarregamento && (
+                  <div className="hidden md:block w-28 h-20">
+                    <Canvas3DWrapper reduced={reduced} className="w-full h-full" loadScene={() => import("../three/CargoScene")} />
+                  </div>
+                )}
               </div>
             );
           })}

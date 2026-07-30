@@ -1,17 +1,19 @@
 import { useEffect, useRef } from "react";
-import { ArrowRight, PlayCircle, ShieldCheck } from "lucide-react";
+import { ArrowRight, LogIn, ShieldCheck } from "lucide-react";
 import { gsap, ScrollTrigger } from "./gsapSetup";
 import DashboardPreviewCard from "./DashboardPreviewCard";
+import Canvas3DWrapper from "./Canvas3DWrapper";
 
 interface LandingHeroProps {
   onExplore: () => void;
+  onNavigateLogin: () => void;
   reduced: boolean;
 }
 
 const HERO_PHOTO_URL =
   "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=2400";
 
-export default function LandingHero({ onExplore, reduced }: LandingHeroProps) {
+export default function LandingHero({ onExplore, onNavigateLogin, reduced }: LandingHeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const bgRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -95,20 +97,23 @@ export default function LandingHero({ onExplore, reduced }: LandingHeroProps) {
               onClick={onExplore}
               className="cta-btn w-full sm:w-auto bg-primary text-primary-foreground hover:opacity-90 shadow-lg flex items-center justify-center gap-2"
             >
-              Conhecer Plataforma
+              Explorar Demonstração
               <ArrowRight className="w-5 h-5" />
             </button>
             <button
-              onClick={onExplore}
+              onClick={onNavigateLogin}
               className="cta-btn w-full sm:w-auto bg-white/10 backdrop-blur border-2 border-white/30 text-white hover:bg-white/20 flex items-center justify-center gap-2"
             >
-              <PlayCircle className="w-5 h-5" />
-              Explorar Demonstração
+              <LogIn className="w-5 h-5" />
+              Entrar no Sistema
             </button>
           </div>
         </div>
 
-        <div ref={cardRef} className="hidden lg:block" style={{ perspective: "1200px" }}>
+        <div ref={cardRef} className="relative hidden lg:block" style={{ perspective: "1200px" }}>
+          <div className="absolute -top-10 -right-6 w-24 h-24 pointer-events-none">
+            <Canvas3DWrapper reduced={reduced} className="w-full h-full" loadScene={() => import("./three/GpsPinScene")} />
+          </div>
           <DashboardPreviewCard reduced={reduced} />
         </div>
       </div>

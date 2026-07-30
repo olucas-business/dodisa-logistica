@@ -11,8 +11,8 @@ export const rastreamentoStops = [
 export const antesProblemas = [
   { label: "Planilhas soltas", icon: "FileWarning" as const },
   { label: "Sem controle de custos", icon: "TrendingDown" as const },
+  { label: "Combinado pelo WhatsApp", icon: "MessageSquareOff" as const },
   { label: "Motoristas sem acompanhamento", icon: "UserX" as const },
-  { label: "Mensagens espalhadas", icon: "MessageSquareOff" as const },
 ];
 
 export const depoisStats = {
@@ -20,16 +20,17 @@ export const depoisStats = {
   billingMonth: 128400,
 };
 
-// Seção Timeline
+// Seção Timeline — jornada completa da operação
 export const timelineSteps = [
   { label: "Planejamento", icon: "ClipboardList" as const },
-  { label: "Motorista", icon: "UserCheck" as const },
+  { label: "Carregamento", icon: "Package" as const },
   { label: "Viagem", icon: "Route" as const },
+  { label: "Monitoramento", icon: "Satellite" as const },
   { label: "Abastecimento", icon: "Fuel" as const },
   { label: "Manutenção", icon: "Wrench" as const },
-  { label: "Frete", icon: "Package" as const },
   { label: "Financeiro", icon: "Coins" as const },
-  { label: "Relatórios", icon: "FileText" as const },
+  { label: "Entrega", icon: "PackageCheck" as const },
+  { label: "Resultados", icon: "TrendingUp" as const },
 ];
 
 // Seção Módulos do Dashboard
