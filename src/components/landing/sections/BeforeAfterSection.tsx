@@ -43,8 +43,7 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
   return (
     <SectionReveal reduced={reduced} className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 py-24 md:py-40">
       <div className="text-center max-w-xl mx-auto mb-12">
-        <h2>Assim administram hoje. Assim administram com o Fleet One.</h2>
-        <p className="mt-3 text-muted-foreground">Role a página e veja a transformação acontecer.</p>
+        <h2>Antes. Com o Fleet One.</h2>
       </div>
 
       <div ref={sectionRef} className="relative h-[540px] md:h-[680px] rounded-3xl overflow-hidden shadow-2xl">

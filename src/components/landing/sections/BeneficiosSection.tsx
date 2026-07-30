@@ -21,7 +21,7 @@ export default function BeneficiosSection({ reduced }: SectionProps) {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="max-w-xl mb-16 md:mb-20"
       >
-        Você não compra um sistema. Compra tranquilidade.
+        Não é um sistema. É tranquilidade.
       </motion.h2>
 
       <div ref={ref} className="grid grid-cols-1 md:grid-cols-2 gap-x-12">

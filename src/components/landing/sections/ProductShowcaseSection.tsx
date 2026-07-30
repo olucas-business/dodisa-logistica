@@ -41,7 +41,6 @@ export default function ProductShowcaseSection({ reduced }: SectionProps) {
         className="text-center max-w-lg mx-auto mb-14"
       >
         <h2>A central de comando da sua operação.</h2>
-        <p className="mt-3 text-muted-foreground">Tudo o que importa, em uma única tela.</p>
       </motion.div>
 
       <motion.div

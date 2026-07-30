@@ -14,38 +14,20 @@ export const depoisStats = {
   billingMonth: 128400,
 };
 
-// Seção Benefícios — resultado, não funcionalidade
+// Seção Benefícios — resultado, não funcionalidade. Frases curtas de propósito.
 export const beneficios = [
-  { label: "Saiba exatamente quanto custa cada viagem" },
-  { label: "Tenha controle total da sua frota" },
-  { label: "Centralize todas as informações" },
-  { label: "Tome decisões baseadas em dados" },
-  { label: "Reduza desperdícios" },
-  { label: "Acompanhe toda a operação em tempo real" },
+  { label: "Quanto custa cada viagem" },
+  { label: "Controle total da frota" },
+  { label: "Decisões com dados" },
+  { label: "Tudo em tempo real" },
 ];
 
-// Seção Como Funciona
+// Seção Como Funciona — só o passo, sem explicação longa
 export const comoFunciona = [
-  {
-    step: "01",
-    title: "Cadastre sua frota",
-    description: "Caminhões, motoristas e rotas — tudo em um só cadastro, em poucos minutos.",
-  },
-  {
-    step: "02",
-    title: "Acompanhe em tempo real",
-    description: "Fretes, combustível, manutenção e caixa, atualizados conforme a operação acontece.",
-  },
-  {
-    step: "03",
-    title: "Decida com dados",
-    description: "Relatórios e IA mostram exatamente onde estão os custos e as oportunidades.",
-  },
-  {
-    step: "04",
-    title: "Cresça com controle",
-    description: "Escale a operação sabendo, a qualquer momento, o que está acontecendo e por quê.",
-  },
+  { step: "01", title: "Cadastre sua frota" },
+  { step: "02", title: "Acompanhe em tempo real" },
+  { step: "03", title: "Decida com dados" },
+  { step: "04", title: "Cresça com controle" },
 ];
 
 // Seção Números

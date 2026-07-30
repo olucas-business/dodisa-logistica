@@ -24,8 +24,8 @@ export default function HowItWorksSection({ reduced }: SectionProps) {
         <h2>Como funciona.</h2>
       </motion.div>
 
-      <div ref={ref} className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-8">
-        {comoFunciona.map(({ step, title, description }, i) => (
+      <div ref={ref} className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-10">
+        {comoFunciona.map(({ step, title }, i) => (
           <motion.div
             key={step}
             initial={reduced ? false : { opacity: 0, y: 24 }}
@@ -35,7 +35,6 @@ export default function HowItWorksSection({ reduced }: SectionProps) {
           >
             <span className="font-mono text-sm font-bold text-primary">{step}</span>
             <h3 className="mt-3 text-lg md:text-xl font-black tracking-tight">{title}</h3>
-            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{description}</p>
           </motion.div>
         ))}
       </div>
