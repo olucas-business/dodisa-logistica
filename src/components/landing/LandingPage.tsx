@@ -5,12 +5,12 @@ import LandingHero from "./LandingHero";
 import RoadSignDivider from "./RoadSignDivider";
 import FinalCtaSection from "./FinalCtaSection";
 import LandingFooter from "./LandingFooter";
-import OperacaoSection from "./sections/OperacaoSection";
-import RastreamentoSection from "./sections/RastreamentoSection";
-import CombustivelSection from "./sections/CombustivelSection";
-import DespesasManutencaoSection from "./sections/DespesasManutencaoSection";
-import FretesFinanceiroSection from "./sections/FretesFinanceiroSection";
-import MotoristasSection from "./sections/MotoristasSection";
+import BeforeAfterSection from "./sections/BeforeAfterSection";
+import TimelineSection from "./sections/TimelineSection";
+import DashboardModulesSection from "./sections/DashboardModulesSection";
+import BeneficiosSection from "./sections/BeneficiosSection";
+import NumerosSection from "./sections/NumerosSection";
+import DemonstracaoSection from "./sections/DemonstracaoSection";
 
 interface LandingPageProps {
   onNavigateLogin: () => void;
@@ -32,18 +32,18 @@ export default function LandingPage({ onNavigateLogin, onNavigateSignup }: Landi
       <LandingHero onExplore={handleExplore} reduced={reduced} />
 
       <div ref={firstSectionRef}>
-        <OperacaoSection reduced={reduced} />
+        <BeforeAfterSection reduced={reduced} />
       </div>
-      <RoadSignDivider label="Rastreamento" />
-      <RastreamentoSection reduced={reduced} />
-      <RoadSignDivider label="Combustível" />
-      <CombustivelSection reduced={reduced} />
-      <RoadSignDivider label="Despesas & Manutenção" />
-      <DespesasManutencaoSection reduced={reduced} />
-      <RoadSignDivider label="Fretes & Financeiro" />
-      <FretesFinanceiroSection reduced={reduced} />
-      <RoadSignDivider label="Motoristas" />
-      <MotoristasSection reduced={reduced} />
+      <RoadSignDivider label="A jornada da operação" />
+      <TimelineSection reduced={reduced} />
+      <RoadSignDivider label="Módulos do sistema" />
+      <DashboardModulesSection reduced={reduced} />
+      <RoadSignDivider label="Benefícios" />
+      <BeneficiosSection reduced={reduced} />
+      <RoadSignDivider label="Em números" />
+      <NumerosSection reduced={reduced} />
+      <RoadSignDivider label="Demonstração" />
+      <DemonstracaoSection reduced={reduced} onExplore={handleExplore} />
 
       <FinalCtaSection onNavigateSignup={onNavigateSignup} onNavigateLogin={onNavigateLogin} />
       <LandingFooter onNavigateLogin={onNavigateLogin} />

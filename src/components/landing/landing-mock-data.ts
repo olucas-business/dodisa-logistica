@@ -1,32 +1,41 @@
 // Dados meramente ilustrativos exibidos na landing page (não refletem clientes reais).
 // Distintos do futuro dataset de demonstração navegável (ver nota em App.tsx / useSimpleRouter).
 
-export const operacaoStats = {
-  trucksActive: 18,
-  driversOnRoute: 12,
-  tripsToday: 7,
-};
-
 export const rastreamentoStops = [
   { id: "sp", label: "São Paulo / SP", lat: -23.55, lng: -46.63 },
   { id: "cur", label: "Curitiba / PR", lat: -25.43, lng: -49.27 },
   { id: "poa", label: "Porto Alegre / RS", lat: -30.03, lng: -51.23 },
 ];
 
-export const combustivelStats = {
-  avgKmL: 2.9,
-  litersMonth: 8420,
-  costMonth: 46870,
+// Seção Antes x Depois
+export const antesProblemas = [
+  { label: "Planilhas soltas", icon: "FileWarning" as const },
+  { label: "Sem controle de custos", icon: "TrendingDown" as const },
+  { label: "Motoristas sem acompanhamento", icon: "UserX" as const },
+  { label: "Mensagens espalhadas", icon: "MessageSquareOff" as const },
+];
+
+export const depoisStats = {
+  trucksActive: 18,
+  billingMonth: 128400,
 };
 
-export const combustivelTrend = [
-  { mes: "Fev", litros: 7200 },
-  { mes: "Mar", litros: 7650 },
-  { mes: "Abr", litros: 7980 },
-  { mes: "Mai", litros: 8100 },
-  { mes: "Jun", litros: 8340 },
-  { mes: "Jul", litros: 8420 },
+// Seção Timeline
+export const timelineSteps = [
+  { label: "Planejamento", icon: "ClipboardList" as const },
+  { label: "Motorista", icon: "UserCheck" as const },
+  { label: "Viagem", icon: "Route" as const },
+  { label: "Abastecimento", icon: "Fuel" as const },
+  { label: "Manutenção", icon: "Wrench" as const },
+  { label: "Frete", icon: "Package" as const },
+  { label: "Financeiro", icon: "Coins" as const },
+  { label: "Relatórios", icon: "FileText" as const },
 ];
+
+// Seção Módulos do Dashboard
+export const combustivelStats = {
+  avgKmL: 2.9,
+};
 
 export const despesasBreakdown = [
   { categoria: "Combustível", valor: 46870, cor: "#3b82f6" },
@@ -36,20 +45,35 @@ export const despesasBreakdown = [
   { categoria: "Pneus", valor: 4180, cor: "#ef4444" },
 ];
 
-export const despesasStats = {
-  tiresChangedMonth: 6,
-  nextMaintenanceDays: 12,
-};
-
-export const fretesFinanceiro = [
-  { id: "1", cliente: "Distribuidora Alfa", valor: 8200, status: "Pago" as const },
-  { id: "2", cliente: "Comércio Beta Ltda", valor: 5400, status: "Pendente" as const },
-  { id: "3", cliente: "Indústria Gama S/A", valor: 12300, status: "Adiantamento" as const },
-  { id: "4", cliente: "Atacado Delta", valor: 3100, status: "Pendente" as const },
+export const motoristasPreview = [
+  { id: "1", nome: "Carlos Silva", ativo: true },
+  { id: "2", nome: "João Pereira", ativo: true },
 ];
 
-export const motoristas = [
-  { id: "1", nome: "Carlos Silva", viagensMes: 14, comissao: 3200, kmRodados: 9840, ativo: true },
-  { id: "2", nome: "João Pereira", viagensMes: 11, comissao: 2650, kmRodados: 8120, ativo: true },
-  { id: "3", nome: "Marcos Souza", viagensMes: 9, comissao: 2100, kmRodados: 6890, ativo: false },
+export const freteExemplo = { cliente: "Distribuidora Alfa", valor: 8200, status: "Pago" as const };
+
+// Seção Benefícios
+export const beneficios = [
+  { label: "Saiba exatamente onde seu dinheiro está", icon: "DollarSign" as const },
+  { label: "Tenha controle total da sua frota", icon: "ShieldCheck" as const },
+  { label: "Reduza desperdícios", icon: "TrendingDown" as const },
+  { label: "Organize toda sua operação", icon: "LayoutGrid" as const },
+  { label: "Acompanhe cada motorista", icon: "Users" as const },
+  { label: "Controle combustível em tempo real", icon: "Fuel" as const },
+  { label: "Centralize todas as informações", icon: "Database" as const },
+];
+
+// Seção Números
+export const numeros = [
+  { value: 500, suffix: "+", label: "Registros organizados por transportadora" },
+  { value: 50000, suffix: "+", label: "Quilômetros monitorados" },
+  { value: 100, suffix: "%", label: "Controle financeiro em tempo real" },
+];
+
+// Seção Demonstração
+export const demoTiles = [
+  { label: "Dashboard", icon: "LayoutGrid" as const },
+  { label: "Financeiro", icon: "Coins" as const },
+  { label: "Combustível", icon: "Fuel" as const },
+  { label: "Mapa", icon: "MapPin" as const },
 ];
