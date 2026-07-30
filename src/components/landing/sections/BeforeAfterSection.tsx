@@ -63,13 +63,17 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
           <span className="absolute top-6 left-6 text-[11px] font-black uppercase tracking-widest text-red-300">
             Sem Fleet One
           </span>
-          <div className="absolute inset-0 flex flex-wrap content-center justify-center gap-3 p-8 md:p-14">
+          {/* Anchored to the bottom-right corner (not centered) so the wipe
+              boundary — which sweeps left-to-right — never slices through the
+              middle of a tag as it passes. These stay whole until the very
+              end of the transition. */}
+          <div className="absolute inset-0 flex flex-col items-end justify-end gap-3 p-6 md:p-14">
             {antesProblemas.map(({ label, icon }) => {
               const Icon = ICONS[icon];
               return (
                 <span
                   key={label}
-                  className="flex items-center gap-2 bg-black/40 border border-white/10 text-slate-200 text-xs font-bold px-3 py-2 rounded-full backdrop-blur-sm"
+                  className="flex items-center gap-2 bg-black/40 border border-white/10 text-slate-200 text-xs font-bold px-3 py-2 rounded-full backdrop-blur-sm whitespace-nowrap"
                 >
                   <Icon className="w-3.5 h-3.5 text-red-400" /> {label}
                 </span>
@@ -88,26 +92,29 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
           <span className="absolute top-6 left-6 text-[11px] font-black uppercase tracking-widest text-emerald-600">
             Com Fleet One
           </span>
-          <div className="absolute inset-0 flex items-center justify-center gap-4 md:gap-6 p-6 md:p-14 flex-wrap">
-            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 min-w-[150px]">
+          {/* Anchored to the left (where the wipe reveal starts) so every card
+              is fully visible early in the transition instead of popping in
+              piecemeal once the reveal crosses the panel's centre. */}
+          <div className="absolute inset-0 flex flex-col items-start justify-center gap-3 p-6 md:p-14">
+            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 min-w-[170px]">
               <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Caminhões ativos</span>
               <p className="text-2xl font-black font-mono text-slate-900 mt-1">
                 <CountUp value={depoisStats.trucksActive} />
               </p>
             </div>
-            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 min-w-[150px]">
+            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 min-w-[170px]">
               <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Motoristas ativos</span>
               <p className="text-2xl font-black font-mono text-slate-900 mt-1">
                 <CountUp value={depoisStats.driversActive} />
               </p>
             </div>
-            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 min-w-[180px]">
+            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 min-w-[170px]">
               <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Faturamento do mês</span>
               <p className="text-2xl font-black font-mono text-slate-900 mt-1">
                 R$ <CountUp value={depoisStats.billingMonth} />
               </p>
             </div>
-            <span className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-3 py-2 rounded-full">
+            <span className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-3 py-2 rounded-full whitespace-nowrap">
               <Coins className="w-3.5 h-3.5" /> Financeiro em dia
             </span>
           </div>

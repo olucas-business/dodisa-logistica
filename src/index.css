@@ -1281,6 +1281,19 @@ html:not(.dark) .leaflet-bar a:hover {
   transform: rotate(-6deg) scale(1.08);
 }
 
+/* Slow-breathing ambient glow behind the ChaosSection phrases */
+@keyframes chaos-glow-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.12); opacity: 0.6; }
+}
+.chaos-glow {
+  background: radial-gradient(closest-side, rgba(248, 113, 113, 0.22), transparent);
+  animation: chaos-glow-breathe 6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chaos-glow { animation: none; opacity: 0.35; }
+}
+
 
 
 

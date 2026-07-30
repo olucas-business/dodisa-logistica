@@ -12,9 +12,16 @@ const CHAOS_PHRASES = [
   "Custos sem explicação. Decisões no escuro.",
 ];
 
-// The "problem" beat of the story, told purely through type and a scroll-
-// synced route marker — no icons, no cards. Deliberately short: this only
-// needs to land the discomfort before TransformationSection resolves it.
+// Same photo as BeforeAfterSection's "antes" side — reused here, heavily
+// blurred and darkened, purely as atmosphere. Ties the chaos beat back to
+// the cluttered-desk motif instead of leaving the frame pure black void.
+const CHAOS_PHOTO_URL =
+  "https://images.unsplash.com/photo-1753340328027-73acda445c58?auto=format&fit=crop&q=60&w=1200";
+
+// The "problem" beat of the story, told through type, a dim atmospheric
+// backdrop and a scroll-synced route marker — no icons, no cards. Short on
+// purpose: this only needs to land the discomfort before TransformationSection
+// resolves it.
 export default function ChaosSection({ reduced }: SectionProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -55,6 +62,25 @@ export default function ChaosSection({ reduced }: SectionProps) {
   return (
     <section ref={wrapperRef} className="relative bg-[#05070d]" style={{ height: `${CHAOS_PHRASES.length * 42}vh` }}>
       <div className="sticky top-0 h-screen overflow-hidden">
+        {/* Dim atmospheric backdrop — a real photo, not flat black void */}
+        <div className="absolute inset-0" aria-hidden="true">
+          <img
+            src={CHAOS_PHOTO_URL}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover"
+            style={{ filter: "grayscale(0.7) brightness(0.28) contrast(1.1) blur(3px)", transform: "scale(1.05)" }}
+          />
+          <div className="absolute inset-0" style={{ backgroundColor: "rgba(5,7,13,0.75)" }} />
+        </div>
+
+        {/* Slow-breathing red glow — keeps the frame alive without adding a "card" */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
+          <div className="chaos-glow w-[55vw] h-[55vw] max-w-[760px] max-h-[760px] rounded-full" />
+        </div>
+
         <div className="absolute right-6 md:right-12 top-0 h-full w-px flex items-center pointer-events-none" aria-hidden="true">
           <div className="relative h-[60%] w-px bg-white/15">
             {CHAOS_PHRASES.map((_, i) => {
