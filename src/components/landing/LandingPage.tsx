@@ -6,9 +6,11 @@ import LandingNav from "./LandingNav";
 import LandingHero from "./LandingHero";
 import FinalCtaSection from "./FinalCtaSection";
 import LandingFooter from "./LandingFooter";
-import ScrollStorySection from "./sections/ScrollStorySection";
-import ProductShowcaseSection from "./sections/ProductShowcaseSection";
+import ChaosSection from "./sections/ChaosSection";
+import TransformationSection from "./sections/TransformationSection";
 import BeforeAfterSection from "./sections/BeforeAfterSection";
+import ProductShowcaseSection from "./sections/ProductShowcaseSection";
+import HowItWorksSection from "./sections/HowItWorksSection";
 import BeneficiosSection from "./sections/BeneficiosSection";
 import NumerosSection from "./sections/NumerosSection";
 
@@ -48,12 +50,19 @@ export default function LandingPage({ onNavigateLogin, onNavigateSignup }: Landi
 
       <LandingHero onExplore={handleExplore} reduced={reduced} />
 
+      {/* Problema → Solução: contado só com tipografia, sem cards. */}
       <div ref={firstSectionRef}>
-        <ScrollStorySection reduced={reduced} />
+        <ChaosSection reduced={reduced} />
       </div>
-      <ProductShowcaseSection reduced={reduced} />
+      <TransformationSection reduced={reduced} />
+
+      {/* A transformação, demonstrada, e depois o produto de fato. */}
       <BeforeAfterSection reduced={reduced} />
+      <ProductShowcaseSection reduced={reduced} />
+
+      {/* Benefícios → como funciona → prova social → CTA. */}
       <BeneficiosSection reduced={reduced} />
+      <HowItWorksSection reduced={reduced} />
       <NumerosSection reduced={reduced} />
 
       <FinalCtaSection onNavigateSignup={onNavigateSignup} onNavigateLogin={onNavigateLogin} />

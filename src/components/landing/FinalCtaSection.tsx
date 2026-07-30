@@ -14,7 +14,7 @@ export default function FinalCtaSection({ onNavigateSignup, onNavigateLogin }: F
         aria-hidden="true"
       />
       <p className="text-sm font-black uppercase tracking-widest text-primary">Fleet One</p>
-      <p className="mt-1 text-muted-foreground font-semibold">A maneira mais inteligente de gerenciar sua frota.</p>
+      <p className="mt-1 text-muted-foreground font-semibold">Organização, controle e clareza para sua transportadora.</p>
       <h2 className="hero-title mt-4 font-black tracking-tight text-foreground">
         Sua operação merece mais controle.
       </h2>

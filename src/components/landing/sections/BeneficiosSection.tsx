@@ -1,64 +1,49 @@
-import { useEffect, useRef } from "react";
-import { DollarSign, ShieldCheck, Database, BarChart3, TrendingDown, Activity } from "lucide-react";
-import SectionReveal from "../SectionReveal";
-import { gsap } from "../gsapSetup";
+import { useRef } from "react";
+import { motion, useInView } from "motion/react";
 import { beneficios } from "../landing-mock-data";
 
 interface SectionProps {
   reduced: boolean;
 }
 
-const ICONS = { DollarSign, ShieldCheck, Database, BarChart3, TrendingDown, Activity };
-
+// Pure editorial list — no icons, no cards. What the customer buys is
+// organização/controle/economia/clareza, and the type itself should carry
+// that weight instead of a grid of colored chips.
 export default function BeneficiosSection({ reduced }: SectionProps) {
-  const listRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (reduced || !listRef.current) return;
-    const items = listRef.current.querySelectorAll<HTMLElement>(".beneficio-item");
-    const tween = gsap.fromTo(
-      items,
-      { opacity: 0, y: 16 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.45,
-        stagger: 0.08,
-        ease: "power2.out",
-        scrollTrigger: { trigger: listRef.current, start: "top 80%", toggleActions: "play none none none" },
-      }
-    );
-    return () => {
-      tween.scrollTrigger?.kill();
-      tween.kill();
-    };
-  }, [reduced]);
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-10% 0px -10% 0px" });
 
   return (
-    <SectionReveal reduced={reduced} className="relative z-10 max-w-2xl mx-auto px-6 py-24 md:py-36">
-      <div className="text-center mb-16">
-        <h2>O que muda no seu dia a dia.</h2>
-      </div>
+    <section className="relative z-10 max-w-5xl mx-auto px-6 py-24 md:py-40">
+      <motion.h2
+        initial={reduced ? false : { opacity: 0, y: 20 }}
+        animate={reduced || isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="max-w-xl mb-16 md:mb-20"
+      >
+        Você não compra um sistema. Compra tranquilidade.
+      </motion.h2>
 
-      <div ref={listRef}>
-        {beneficios.map(({ label, icon }, i) => {
-          const Icon = ICONS[icon];
-          return (
-            <div
-              key={label}
-              className={`beneficio-item group flex items-center gap-5 py-6 px-4 -mx-4 rounded-2xl transition-colors hover:bg-card ${i > 0 ? "border-t border-border" : ""}`}
-            >
-              <span className="font-mono text-xs text-muted-foreground/50 w-6 shrink-0">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <span className="p-2.5 bg-primary/10 text-primary rounded-xl shrink-0 transition-transform group-hover:scale-110">
-                <Icon className="w-4.5 h-4.5" />
-              </span>
-              <p className="font-bold text-lg md:text-xl">{label}</p>
-            </div>
-          );
-        })}
+      <div ref={ref} className="grid grid-cols-1 md:grid-cols-2 gap-x-12">
+        {beneficios.map(({ label }, i) => (
+          <motion.div
+            key={label}
+            initial={reduced ? false : { opacity: 0, y: 24 }}
+            animate={reduced || isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: reduced ? 0 : i * 0.07, ease: [0.16, 1, 0.3, 1] }}
+            className={`group py-7 md:py-8 flex items-start gap-5 ${i > 0 ? "border-t border-border" : ""} ${
+              i === 1 ? "md:border-t-0" : ""
+            }`}
+          >
+            <span className="font-mono text-xs text-muted-foreground/50 pt-1.5 shrink-0">
+              {String(i + 1).padStart(2, "0")}
+            </span>
+            <p className="text-xl md:text-2xl font-bold tracking-tight leading-snug transition-colors group-hover:text-primary">
+              {label}
+            </p>
+          </motion.div>
+        ))}
       </div>
-    </SectionReveal>
+    </section>
   );
 }

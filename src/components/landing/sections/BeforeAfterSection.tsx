@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { FileWarning, TrendingDown, MessageSquareOff, Coins } from "lucide-react";
+import { FileWarning, TrendingDown, MessageSquareOff, Coins, MoveHorizontal } from "lucide-react";
 import SectionReveal from "../SectionReveal";
 import CountUp from "../../CountUp";
 import { gsap } from "../gsapSetup";
@@ -19,6 +19,7 @@ const ICONS = { FileWarning, TrendingDown, MessageSquareOff };
 export default function BeforeAfterSection({ reduced }: SectionProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const depoisRef = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (reduced || !sectionRef.current || !depoisRef.current) return;
@@ -28,9 +29,9 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
       ease: "none",
       scrollTrigger: { trigger: sectionRef.current, start: "top 70%", end: "bottom 30%", scrub: true },
       onUpdate: () => {
-        if (depoisRef.current) {
-          depoisRef.current.style.clipPath = `inset(0 ${100 - state.p * 100}% 0 0)`;
-        }
+        const pct = state.p * 100;
+        if (depoisRef.current) depoisRef.current.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+        if (handleRef.current) handleRef.current.style.left = `${pct}%`;
       },
     });
     return () => {
@@ -40,13 +41,13 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
   }, [reduced]);
 
   return (
-    <SectionReveal reduced={reduced} className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 py-24 md:py-36">
-      <div className="text-center max-w-xl mx-auto mb-10">
-        <h2>Sua operação hoje. Sua operação com o Fleet One.</h2>
-        <p className="mt-2 text-muted-foreground">Role a página e veja a diferença.</p>
+    <SectionReveal reduced={reduced} className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 py-24 md:py-40">
+      <div className="text-center max-w-xl mx-auto mb-12">
+        <h2>Assim administram hoje. Assim administram com o Fleet One.</h2>
+        <p className="mt-3 text-muted-foreground">Role a página e veja a transformação acontecer.</p>
       </div>
 
-      <div ref={sectionRef} className="relative h-[520px] md:h-[640px] rounded-3xl overflow-hidden shadow-2xl">
+      <div ref={sectionRef} className="relative h-[540px] md:h-[680px] rounded-3xl overflow-hidden shadow-2xl">
         {/* ANTES layer (base) */}
         <div className="absolute inset-0">
           <img
@@ -59,7 +60,7 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
             style={{ filter: "grayscale(0.5) brightness(0.5) contrast(1.05)" }}
           />
           <div className="absolute inset-0" style={{ backgroundColor: "rgba(2,6,23,0.55)" }} />
-          <span className="absolute top-5 left-5 text-[11px] font-black uppercase tracking-widest text-red-300">
+          <span className="absolute top-6 left-6 text-[11px] font-black uppercase tracking-widest text-red-300">
             Sem Fleet One
           </span>
           <div className="absolute inset-0 flex flex-wrap content-center justify-center gap-3 p-8 md:p-14">
@@ -84,7 +85,7 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
           style={{ clipPath: reduced ? "inset(0 50% 0 0)" : "inset(0 100% 0 0)" }}
         >
           <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #EEF2FF 0%, #FFFFFF 60%)" }} />
-          <span className="absolute top-5 left-5 text-[11px] font-black uppercase tracking-widest text-emerald-600">
+          <span className="absolute top-6 left-6 text-[11px] font-black uppercase tracking-widest text-emerald-600">
             Com Fleet One
           </span>
           <div className="absolute inset-0 flex items-center justify-center gap-4 md:gap-6 p-6 md:p-14 flex-wrap">
@@ -109,6 +110,18 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
             <span className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-3 py-2 rounded-full">
               <Coins className="w-3.5 h-3.5" /> Financeiro em dia
             </span>
+          </div>
+        </div>
+
+        {/* Scroll-driven wipe handle — a small, deliberate touch that makes the
+            clip-path boundary read as an intentional "slider", not a glitch. */}
+        <div
+          ref={handleRef}
+          className="absolute inset-y-0 w-0.5 bg-white/80 pointer-events-none hidden md:block"
+          style={{ left: reduced ? "50%" : "0%" }}
+        >
+          <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-white shadow-xl flex items-center justify-center">
+            <MoveHorizontal className="w-4 h-4 text-slate-700" />
           </div>
         </div>
       </div>

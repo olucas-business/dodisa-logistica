@@ -1217,6 +1217,15 @@ html:not(.dark) .leaflet-bar a:hover {
   color: #fff !important;
 }
 
+/* TransformationSection's "Fleet One." reveal reuses the Hero's large display
+   type (.hero-title) but, like the real h1, sits on a permanently-dark
+   background — it needs the same forced-white override, scoped narrowly
+   (by the .text-white marker) so it doesn't affect FinalCtaSection's plain
+   h2.hero-title, which wants the normal theme foreground. */
+#fleetone-landing h2.hero-title.text-white {
+  color: #fff !important;
+}
+
 /* Section headings get real display-type weight on the landing page — the
    dashboard's compact 22px h2 rule is right for a dense admin panel, but reads
    as an afterthought on a premium marketing page with room to breathe. */

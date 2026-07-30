@@ -45,7 +45,7 @@ export default function NumerosSection({ reduced }: SectionProps) {
   }, [reduced]);
 
   return (
-    <SectionReveal reduced={reduced} className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 py-24 md:py-36">
+    <SectionReveal reduced={reduced} className="relative z-10 max-w-5xl mx-auto px-5 md:px-8 py-24 md:py-40">
       <div ref={containerRef} className="grid grid-cols-1 md:grid-cols-3 gap-10 text-center items-center">
         {numeros.map((n) =>
           n.suffix === "%" ? (

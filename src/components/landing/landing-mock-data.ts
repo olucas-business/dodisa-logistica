@@ -1,19 +1,6 @@
 // Dados meramente ilustrativos exibidos na landing page (não refletem clientes reais).
 // Distintos do futuro dataset de demonstração navegável (ver nota em App.tsx / useSimpleRouter).
 
-// Narrativa tipográfica (ScrollStorySection) — Problema → Caos → Fleet One → Controle → Resultados
-export const scrollStorySteps = [
-  "O problema começa pequeno.",
-  "Planilhas. WhatsApp. Papel.",
-  "Aos poucos, você perde o controle.",
-  "Custos sem explicação.",
-  "Informações espalhadas por todo lugar.",
-  "Fleet One.",
-  "Tudo organizado.",
-  "Tudo sob controle.",
-  "Resultados de verdade.",
-];
-
 // Seção Antes x Depois
 export const antesProblemas = [
   { label: "Planilhas soltas", icon: "FileWarning" as const },
@@ -29,12 +16,36 @@ export const depoisStats = {
 
 // Seção Benefícios — resultado, não funcionalidade
 export const beneficios = [
-  { label: "Saiba exatamente quanto custa cada viagem", icon: "DollarSign" as const },
-  { label: "Tenha controle total da sua frota", icon: "ShieldCheck" as const },
-  { label: "Centralize todas as informações", icon: "Database" as const },
-  { label: "Tome decisões baseadas em dados", icon: "BarChart3" as const },
-  { label: "Reduza desperdícios", icon: "TrendingDown" as const },
-  { label: "Acompanhe toda a operação em tempo real", icon: "Activity" as const },
+  { label: "Saiba exatamente quanto custa cada viagem" },
+  { label: "Tenha controle total da sua frota" },
+  { label: "Centralize todas as informações" },
+  { label: "Tome decisões baseadas em dados" },
+  { label: "Reduza desperdícios" },
+  { label: "Acompanhe toda a operação em tempo real" },
+];
+
+// Seção Como Funciona
+export const comoFunciona = [
+  {
+    step: "01",
+    title: "Cadastre sua frota",
+    description: "Caminhões, motoristas e rotas — tudo em um só cadastro, em poucos minutos.",
+  },
+  {
+    step: "02",
+    title: "Acompanhe em tempo real",
+    description: "Fretes, combustível, manutenção e caixa, atualizados conforme a operação acontece.",
+  },
+  {
+    step: "03",
+    title: "Decida com dados",
+    description: "Relatórios e IA mostram exatamente onde estão os custos e as oportunidades.",
+  },
+  {
+    step: "04",
+    title: "Cresça com controle",
+    description: "Escale a operação sabendo, a qualquer momento, o que está acontecendo e por quê.",
+  },
 ];
 
 // Seção Números
