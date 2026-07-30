@@ -1217,15 +1217,6 @@ html:not(.dark) .leaflet-bar a:hover {
   color: #fff !important;
 }
 
-/* TransformationSection's "Fleet One." reveal reuses the Hero's large display
-   type (.hero-title) but, like the real h1, sits on a permanently-dark
-   background — it needs the same forced-white override, scoped narrowly
-   (by the .text-white marker) so it doesn't affect FinalCtaSection's plain
-   h2.hero-title, which wants the normal theme foreground. */
-#fleetone-landing h2.hero-title.text-white {
-  color: #fff !important;
-}
-
 /* Section headings get real display-type weight on the landing page — the
    dashboard's compact 22px h2 rule is right for a dense admin panel, but reads
    as an afterthought on a premium marketing page with room to breathe. */
@@ -1279,19 +1270,6 @@ html:not(.dark) .leaflet-bar a:hover {
 #fleetone-landing .bg-card:hover svg:first-of-type {
   transition: transform 0.25s ease;
   transform: rotate(-6deg) scale(1.08);
-}
-
-/* Slow-breathing ambient glow behind the ChaosSection phrases */
-@keyframes chaos-glow-breathe {
-  0%, 100% { transform: scale(1); opacity: 0.4; }
-  50% { transform: scale(1.12); opacity: 0.6; }
-}
-.chaos-glow {
-  background: radial-gradient(closest-side, rgba(248, 113, 113, 0.22), transparent);
-  animation: chaos-glow-breathe 6s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .chaos-glow { animation: none; opacity: 0.35; }
 }
 
 

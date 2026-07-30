@@ -6,8 +6,7 @@ import LandingNav from "./LandingNav";
 import LandingHero from "./LandingHero";
 import FinalCtaSection from "./FinalCtaSection";
 import LandingFooter from "./LandingFooter";
-import ChaosSection from "./sections/ChaosSection";
-import TransformationSection from "./sections/TransformationSection";
+import ProblemSolutionSection from "./sections/ProblemSolutionSection";
 import BeforeAfterSection from "./sections/BeforeAfterSection";
 import ProductShowcaseSection from "./sections/ProductShowcaseSection";
 import HowItWorksSection from "./sections/HowItWorksSection";
@@ -50,11 +49,10 @@ export default function LandingPage({ onNavigateLogin, onNavigateSignup }: Landi
 
       <LandingHero onExplore={handleExplore} reduced={reduced} />
 
-      {/* Problema → Solução: contado só com tipografia, sem cards. */}
+      {/* Problema → Solução: um bloco simples, com fade-in. */}
       <div ref={firstSectionRef}>
-        <ChaosSection reduced={reduced} />
+        <ProblemSolutionSection reduced={reduced} />
       </div>
-      <TransformationSection reduced={reduced} />
 
       {/* A transformação, demonstrada, e depois o produto de fato. */}
       <BeforeAfterSection reduced={reduced} />
