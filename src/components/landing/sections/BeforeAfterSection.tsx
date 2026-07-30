@@ -46,7 +46,7 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
         <p className="mt-2 text-muted-foreground">Role a página e veja a diferença.</p>
       </div>
 
-      <div ref={sectionRef} className="relative h-[440px] md:h-[500px] rounded-3xl overflow-hidden shadow-2xl">
+      <div ref={sectionRef} className="relative h-[520px] md:h-[640px] rounded-3xl overflow-hidden shadow-2xl">
         {/* ANTES layer (base) */}
         <div className="absolute inset-0">
           <img
@@ -88,13 +88,19 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
             Com Fleet One
           </span>
           <div className="absolute inset-0 flex items-center justify-center gap-4 md:gap-6 p-6 md:p-14 flex-wrap">
-            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-4 min-w-[140px]">
+            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 min-w-[150px]">
               <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Caminhões ativos</span>
               <p className="text-2xl font-black font-mono text-slate-900 mt-1">
                 <CountUp value={depoisStats.trucksActive} />
               </p>
             </div>
-            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-4 min-w-[170px]">
+            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 min-w-[150px]">
+              <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Motoristas ativos</span>
+              <p className="text-2xl font-black font-mono text-slate-900 mt-1">
+                <CountUp value={depoisStats.driversActive} />
+              </p>
+            </div>
+            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 min-w-[180px]">
               <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Faturamento do mês</span>
               <p className="text-2xl font-black font-mono text-slate-900 mt-1">
                 R$ <CountUp value={depoisStats.billingMonth} />

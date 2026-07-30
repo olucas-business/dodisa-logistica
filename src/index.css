@@ -1272,5 +1272,18 @@ html:not(.dark) .leaflet-bar a:hover {
   transform: rotate(-6deg) scale(1.08);
 }
 
+/* Slow-drifting ambient glow behind the ScrollStory phrases */
+@keyframes story-glow-drift {
+  0%, 100% { transform: translate(-6%, -4%) scale(1); opacity: 0.35; }
+  50% { transform: translate(6%, 4%) scale(1.15); opacity: 0.5; }
+}
+.story-glow {
+  background: radial-gradient(closest-side, rgba(79, 70, 229, 0.25), transparent);
+  animation: story-glow-drift 10s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .story-glow { animation: none; opacity: 0.3; }
+}
+
 
 

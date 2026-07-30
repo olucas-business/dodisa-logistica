@@ -7,6 +7,7 @@ import LandingHero from "./LandingHero";
 import FinalCtaSection from "./FinalCtaSection";
 import LandingFooter from "./LandingFooter";
 import ScrollStorySection from "./sections/ScrollStorySection";
+import ProductShowcaseSection from "./sections/ProductShowcaseSection";
 import BeforeAfterSection from "./sections/BeforeAfterSection";
 import BeneficiosSection from "./sections/BeneficiosSection";
 import NumerosSection from "./sections/NumerosSection";
@@ -50,6 +51,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateSignup }: Landi
       <div ref={firstSectionRef}>
         <ScrollStorySection reduced={reduced} />
       </div>
+      <ProductShowcaseSection reduced={reduced} />
       <BeforeAfterSection reduced={reduced} />
       <BeneficiosSection reduced={reduced} />
       <NumerosSection reduced={reduced} />

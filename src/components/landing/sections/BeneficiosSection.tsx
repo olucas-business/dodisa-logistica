@@ -46,9 +46,14 @@ export default function BeneficiosSection({ reduced }: SectionProps) {
           return (
             <div
               key={label}
-              className={`beneficio-item flex items-center gap-5 py-6 ${i > 0 ? "border-t border-border" : ""}`}
+              className={`beneficio-item group flex items-center gap-5 py-6 px-4 -mx-4 rounded-2xl transition-colors hover:bg-card ${i > 0 ? "border-t border-border" : ""}`}
             >
-              <Icon className="w-5 h-5 text-primary shrink-0" />
+              <span className="font-mono text-xs text-muted-foreground/50 w-6 shrink-0">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="p-2.5 bg-primary/10 text-primary rounded-xl shrink-0 transition-transform group-hover:scale-110">
+                <Icon className="w-4.5 h-4.5" />
+              </span>
               <p className="font-bold text-lg md:text-xl">{label}</p>
             </div>
           );

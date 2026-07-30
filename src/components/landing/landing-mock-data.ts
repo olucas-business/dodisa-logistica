@@ -23,6 +23,7 @@ export const antesProblemas = [
 
 export const depoisStats = {
   trucksActive: 18,
+  driversActive: 12,
   billingMonth: 128400,
 };
 

@@ -60,7 +60,7 @@ export default function CountUp({
     : count.toFixed(decimals);
 
   return (
-    <span className="font-mono">
+    <span className="font-mono text-inherit">
       {prefix}
       {formattedValue}
       {suffix}

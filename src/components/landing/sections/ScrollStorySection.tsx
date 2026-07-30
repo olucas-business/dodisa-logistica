@@ -47,9 +47,17 @@ export default function ScrollStorySection({ reduced }: SectionProps) {
     );
   }
 
+  const stepLabel = String(activeIndex + 1).padStart(2, "0");
+  const totalLabel = String(scrollStorySteps.length).padStart(2, "0");
+
   return (
-    <section ref={wrapperRef} className="relative" style={{ height: `${scrollStorySteps.length * 60}vh` }}>
+    <section ref={wrapperRef} className="relative" style={{ height: `${scrollStorySteps.length * 40}vh` }}>
       <div className="sticky top-0 h-screen overflow-hidden">
+        {/* Slow-drifting glow — keeps the frame alive without adding a "card" */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
+          <div className="story-glow w-[60vw] h-[60vw] max-w-[800px] max-h-[800px] rounded-full" />
+        </div>
+
         {scrollStorySteps.map((phrase, i) => (
           <div
             key={i}
@@ -67,6 +75,12 @@ export default function ScrollStorySection({ reduced }: SectionProps) {
             </p>
           </div>
         ))}
+
+        {/* Monospace progress readout — a deliberate "operational system"
+            touch, reusing the app's own data font instead of the display sans. */}
+        <span className="absolute bottom-8 right-8 font-mono text-xs text-muted-foreground/60 tracking-wider">
+          {stepLabel} / {totalLabel}
+        </span>
       </div>
     </section>
   );
