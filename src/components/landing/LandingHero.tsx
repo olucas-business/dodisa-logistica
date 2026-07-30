@@ -1,19 +1,21 @@
 import { useEffect, useRef } from "react";
-import { ArrowRight, LogIn, ShieldCheck } from "lucide-react";
+import { ArrowRight, PlayCircle } from "lucide-react";
 import { gsap, ScrollTrigger } from "./gsapSetup";
 import DashboardPreviewCard from "./DashboardPreviewCard";
 import Canvas3DWrapper from "./Canvas3DWrapper";
 
 interface LandingHeroProps {
   onExplore: () => void;
-  onNavigateLogin: () => void;
   reduced: boolean;
 }
 
+// Aerial drone shot of a highway — chosen deliberately over a single truck
+// close-up: it reads as "an operation seen with total visibility from above",
+// which is the actual Fleet One pitch (clareza/controle), not just a vehicle.
 const HERO_PHOTO_URL =
-  "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=2400";
+  "https://images.unsplash.com/photo-1708193203896-ba0630862bb6?auto=format&fit=crop&q=80&w=2400";
 
-export default function LandingHero({ onExplore, onNavigateLogin, reduced }: LandingHeroProps) {
+export default function LandingHero({ onExplore, reduced }: LandingHeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const bgRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -51,17 +53,16 @@ export default function LandingHero({ onExplore, onNavigateLogin, reduced }: Lan
       <div ref={bgRef} className="absolute inset-x-0 -top-[10%] -bottom-[10%]">
         <img
           src={HERO_PHOTO_URL}
-          alt="Caminhão Scania moderno em rodovia"
+          alt="Vista aérea de uma rodovia — operação logística em movimento"
           loading="eager"
           fetchPriority="high"
           decoding="async"
           referrerPolicy="no-referrer"
           className="w-full h-full object-cover"
-          style={{ objectPosition: "30% 55%", filter: "grayscale(0.4) contrast(1.15) brightness(0.85) saturate(1.05)" }}
+          style={{ objectPosition: "center 50%", filter: "grayscale(0.35) contrast(1.15) brightness(0.85) saturate(1.05)" }}
         />
-        {/* Signature brand color-grade — unifies the photo with the brand palette
-            (a plain photo would read as generic reused stock imagery) and softens
-            the truck's own real-world decals into atmosphere rather than clutter. */}
+        {/* Signature brand color-grade — unifies any real-world photo with the
+            brand palette instead of leaving it as generic reused stock imagery. */}
         <div className="absolute inset-0" style={{ backgroundColor: "#1D3D8F", mixBlendMode: "color" }} />
         {/* Fixed dark navy overlay (literal rgba, not the theme's slate-950 token —
             this project's dark-mode palette inverts slate-950 to near-white, which
@@ -79,17 +80,9 @@ export default function LandingHero({ onExplore, onNavigateLogin, reduced }: Lan
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 md:px-10 py-24 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-16 items-center">
         <div ref={contentRef} className="text-center lg:text-left">
-          <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-blue-300 mb-5">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Gestão inteligente de frotas
-          </span>
-
           <h1 className="hero-title font-black tracking-tight text-white leading-[0.95]">Fleet One</h1>
           <p className="mt-5 text-xl md:text-2xl text-slate-100 font-bold">
-            A maneira mais inteligente de gerenciar sua frota.
-          </p>
-          <p className="mt-4 max-w-xl mx-auto lg:mx-0 text-base md:text-lg text-slate-300 leading-relaxed">
-            Controle sua operação, seus caminhões e suas finanças em um único lugar.
+            O sistema operacional da sua transportadora.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4">
@@ -97,15 +90,15 @@ export default function LandingHero({ onExplore, onNavigateLogin, reduced }: Lan
               onClick={onExplore}
               className="cta-btn w-full sm:w-auto bg-primary text-primary-foreground hover:opacity-90 shadow-lg flex items-center justify-center gap-2"
             >
-              Explorar Demonstração
+              Conhecer a Plataforma
               <ArrowRight className="w-5 h-5" />
             </button>
             <button
-              onClick={onNavigateLogin}
+              onClick={onExplore}
               className="cta-btn w-full sm:w-auto bg-white/10 backdrop-blur border-2 border-white/30 text-white hover:bg-white/20 flex items-center justify-center gap-2"
             >
-              <LogIn className="w-5 h-5" />
-              Entrar no Sistema
+              <PlayCircle className="w-5 h-5" />
+              Explorar Demonstração
             </button>
           </div>
         </div>

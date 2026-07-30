@@ -4,15 +4,12 @@ import type Lenis from "lenis";
 import { createLenis } from "./lenisSetup";
 import LandingNav from "./LandingNav";
 import LandingHero from "./LandingHero";
-import RoadSignDivider from "./RoadSignDivider";
 import FinalCtaSection from "./FinalCtaSection";
 import LandingFooter from "./LandingFooter";
+import ScrollStorySection from "./sections/ScrollStorySection";
 import BeforeAfterSection from "./sections/BeforeAfterSection";
-import TimelineSection from "./sections/TimelineSection";
-import DashboardModulesSection from "./sections/DashboardModulesSection";
 import BeneficiosSection from "./sections/BeneficiosSection";
 import NumerosSection from "./sections/NumerosSection";
-import DemonstracaoSection from "./sections/DemonstracaoSection";
 
 interface LandingPageProps {
   onNavigateLogin: () => void;
@@ -48,21 +45,14 @@ export default function LandingPage({ onNavigateLogin, onNavigateSignup }: Landi
     <div id="fleetone-landing" className="relative bg-background text-foreground min-h-screen">
       <LandingNav onNavigateLogin={onNavigateLogin} />
 
-      <LandingHero onExplore={handleExplore} onNavigateLogin={onNavigateLogin} reduced={reduced} />
+      <LandingHero onExplore={handleExplore} reduced={reduced} />
 
       <div ref={firstSectionRef}>
-        <BeforeAfterSection reduced={reduced} />
+        <ScrollStorySection reduced={reduced} />
       </div>
-      <RoadSignDivider label="A jornada da operação" />
-      <TimelineSection reduced={reduced} />
-      <RoadSignDivider label="Módulos do sistema" />
-      <DashboardModulesSection reduced={reduced} />
-      <RoadSignDivider label="Benefícios" />
+      <BeforeAfterSection reduced={reduced} />
       <BeneficiosSection reduced={reduced} />
-      <RoadSignDivider label="Em números" />
       <NumerosSection reduced={reduced} />
-      <RoadSignDivider label="Demonstração" />
-      <DemonstracaoSection reduced={reduced} onExplore={handleExplore} />
 
       <FinalCtaSection onNavigateSignup={onNavigateSignup} onNavigateLogin={onNavigateLogin} />
       <LandingFooter onNavigateLogin={onNavigateLogin} />

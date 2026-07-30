@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { FileWarning, TrendingDown, UserX, MessageSquareOff, Coins } from "lucide-react";
+import { FileWarning, TrendingDown, MessageSquareOff, Coins } from "lucide-react";
 import SectionReveal from "../SectionReveal";
 import CountUp from "../../CountUp";
 import { gsap } from "../gsapSetup";
@@ -14,7 +14,7 @@ interface SectionProps {
 const ANTES_PHOTO_URL =
   "https://images.unsplash.com/photo-1753340328027-73acda445c58?auto=format&fit=crop&q=80&w=1600";
 
-const ICONS = { FileWarning, TrendingDown, UserX, MessageSquareOff };
+const ICONS = { FileWarning, TrendingDown, MessageSquareOff };
 
 export default function BeforeAfterSection({ reduced }: SectionProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
