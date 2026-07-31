@@ -13,6 +13,7 @@ import ImportSection from "./sections/ImportSection";
 import HowItWorksSection from "./sections/HowItWorksSection";
 import BeneficiosSection from "./sections/BeneficiosSection";
 import FreightCalculatorSection from "./sections/FreightCalculatorSection";
+import LogisticsBreakSection from "./sections/LogisticsBreakSection";
 import TestimonialsSection from "./sections/TestimonialsSection";
 import NumerosSection from "./sections/NumerosSection";
 import PricingSection from "./sections/PricingSection";
@@ -68,6 +69,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateSignup }: Landi
       <BeneficiosSection reduced={reduced} />
       <FreightCalculatorSection reduced={reduced} />
       <HowItWorksSection reduced={reduced} />
+      <LogisticsBreakSection reduced={reduced} />
       <TestimonialsSection reduced={reduced} />
       <NumerosSection reduced={reduced} />
 
