@@ -1301,7 +1301,7 @@ export default function FreightsManager({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Consumo médio (km/l)</label>
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Consumo médio (km/l)</label>
                   <input
                     type="number"
                     step="0.1"
@@ -1312,7 +1312,7 @@ export default function FreightsManager({
                   />
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Preço combustível (R$)</label>
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Preço combustível (R$)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1326,7 +1326,7 @@ export default function FreightsManager({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Valor do frete (R$)</label>
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Frete (R$)</label>
                   <input
                     type="number"
                     step="1"
@@ -1337,7 +1337,7 @@ export default function FreightsManager({
                   />
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Comissão (%)</label>
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Comissão (%)</label>
                   <input
                     type="number"
                     step="0.5"
@@ -1348,7 +1348,7 @@ export default function FreightsManager({
                   />
                 </div>
                 <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap">Pedágios (R$)</label>
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Pedágios (R$)</label>
                   <input
                     type="number"
                     step="1"
