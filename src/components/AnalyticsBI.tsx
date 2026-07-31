@@ -111,8 +111,11 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
     "Outros": 0
   };
 
-  // Add direct expenses
+  // Add direct expenses — "Combustível" lançado aqui é ignorado porque o
+  // abastecimento (refuelsMonth) já cobre essa categoria logo abaixo; somar
+  // os dois dobrava o valor de combustível no gráfico.
   expensesMonth.forEach(e => {
+    if (e.category === "Combustível") return;
     const cat = categorySummary[e.category] !== undefined ? e.category : "Outros";
     categorySummary[cat] += (e.value || 0);
   });
@@ -180,7 +183,9 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
   // High-level metrics (mês selecionado)
   const totalFaturamento = freightsMonth.reduce((sum, f) => sum + (f.financial?.value || 0), 0);
 
-  const totalDirectExpenses = expensesMonth.reduce((sum, e) => sum + (e.value || 0), 0);
+  // Exclui a categoria "Combustível" para não contar o abastecimento
+  // (totalRefuelsCost, logo abaixo) duas vezes no total de despesas.
+  const totalDirectExpenses = expensesMonth.filter(e => e.category !== "Combustível").reduce((sum, e) => sum + (e.value || 0), 0);
   const totalRefuelsCost = refuelsMonth.reduce((sum, r) => sum + (r.totalValue || 0), 0);
   const totalFreightExpenses = freightsMonth.reduce((sum, f) => {
     const fin = f.financial;
