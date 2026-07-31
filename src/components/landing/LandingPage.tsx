@@ -11,6 +11,7 @@ import BeforeAfterSection from "./sections/BeforeAfterSection";
 import ProductShowcaseSection from "./sections/ProductShowcaseSection";
 import HowItWorksSection from "./sections/HowItWorksSection";
 import BeneficiosSection from "./sections/BeneficiosSection";
+import FreightCalculatorSection from "./sections/FreightCalculatorSection";
 import NumerosSection from "./sections/NumerosSection";
 
 interface LandingPageProps {
@@ -58,8 +59,9 @@ export default function LandingPage({ onNavigateLogin, onNavigateSignup }: Landi
       <BeforeAfterSection reduced={reduced} />
       <ProductShowcaseSection reduced={reduced} />
 
-      {/* Benefícios → como funciona → prova social → CTA. */}
+      {/* Benefícios → prova prática do benefício #1 → como funciona → CTA. */}
       <BeneficiosSection reduced={reduced} />
+      <FreightCalculatorSection reduced={reduced} />
       <HowItWorksSection reduced={reduced} />
       <NumerosSection reduced={reduced} />
 

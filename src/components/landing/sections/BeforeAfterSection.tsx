@@ -24,10 +24,22 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
   useEffect(() => {
     if (reduced || !sectionRef.current || !depoisRef.current) return;
     const state = { p: 0 };
+    // pin: true pins the panel itself for exactly `end` px of scroll and maps
+    // p:0→1 across that same pinned duration — so the reveal always finishes
+    // right as the panel is about to release, instead of a manually-guessed
+    // sticky/wrapper height that could unstick before (or long after) the
+    // wipe actually completes.
     const tween = gsap.to(state, {
       p: 1,
       ease: "none",
-      scrollTrigger: { trigger: sectionRef.current, start: "top 70%", end: "bottom 30%", scrub: true },
+      scrollTrigger: {
+        trigger: sectionRef.current,
+        start: "top 96px",
+        end: "+=1500",
+        pin: true,
+        anticipatePin: 1,
+        scrub: true,
+      },
       onUpdate: () => {
         const pct = state.p * 100;
         if (depoisRef.current) depoisRef.current.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;

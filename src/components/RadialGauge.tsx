@@ -11,7 +11,11 @@ interface RadialGaugeProps {
 }
 
 export default function RadialGauge({ label, value, displayValue, editable, onEdit }: RadialGaugeProps) {
-  const data = [{ value: Math.min(100, Math.max(0, value)) }];
+  const isNegative = value < 0;
+  // Negative values (e.g. a loss instead of a profit margin) get their own
+  // small-but-visible red arc instead of silently clamping to 0 — a 0-value
+  // ring and a "-64%" ring looked identical before, which read as broken.
+  const data = [{ value: isNegative ? Math.min(100, Math.abs(value)) : Math.min(100, Math.max(0, value)) }];
   const gradientId = `gauge-grad-${useId().replace(/:/g, "")}`;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -50,12 +54,33 @@ export default function RadialGauge({ label, value, displayValue, editable, onEd
           >
             <defs>
               <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#60a5fa" />
-                <stop offset="100%" stopColor="#4ade80" />
+                {isNegative ? (
+                  <>
+                    <stop offset="0%" stopColor="#f87171" />
+                    <stop offset="100%" stopColor="#ef4444" />
+                  </>
+                ) : (
+                  <>
+                    <stop offset="0%" stopColor="#60a5fa" />
+                    <stop offset="100%" stopColor="#4ade80" />
+                  </>
+                )}
               </linearGradient>
             </defs>
             <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-            <RadialBar dataKey="value" cornerRadius={10} fill={`url(#${gradientId})`} background={{ fill: "var(--muted)" }} />
+            {/* isAnimationActive={false} — Recharts' default 0→value entrance
+                animation replays on every re-render (e.g. any parent state
+                update), which made several gauges with different values look
+                like they were "tracing" out of sync with each other. The
+                underlying data is a live snapshot, not a growth metric, so
+                it should just render at its final position immediately. */}
+            <RadialBar
+              dataKey="value"
+              cornerRadius={10}
+              fill={`url(#${gradientId})`}
+              background={{ fill: "var(--muted)" }}
+              isAnimationActive={false}
+            />
           </RadialBarChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex items-center justify-center px-2">
@@ -75,7 +100,9 @@ export default function RadialGauge({ label, value, displayValue, editable, onEd
             />
           ) : (
             <span
-              className={`font-black font-mono bg-gradient-to-br from-blue-400 to-emerald-400 bg-clip-text text-transparent text-center ${
+              className={`font-black font-mono bg-clip-text text-transparent text-center ${
+                isNegative ? "bg-gradient-to-br from-red-400 to-red-600" : "bg-gradient-to-br from-blue-400 to-emerald-400"
+              } ${
                 (displayValue?.length ?? 0) > 10 ? "text-base leading-tight" : (displayValue?.length ?? 0) > 6 ? "text-2xl leading-none" : "text-4xl leading-none"
               }`}
             >
