@@ -111,12 +111,12 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
     "Outros": 0
   };
 
-  // Add direct expenses — "Combustível" e "Pedágio" lançados aqui são
-  // ignorados porque o abastecimento (refuelsMonth) e o pedágio do frete
-  // (fin.toll, logo abaixo) já cobrem essas categorias; somar os dois
-  // dobrava o valor no gráfico.
+  // Add direct expenses — "Combustível", "Pedágio" e "Outros" lançados aqui
+  // são ignorados porque o abastecimento (refuelsMonth) e os custos do
+  // frete (fin.toll / fin.commission / fin.otherExpenses, logo abaixo) já
+  // cobrem essas categorias; somar os dois dobrava o valor no gráfico.
   expensesMonth.forEach(e => {
-    if (e.category === "Combustível" || e.category === "Pedágio") return;
+    if (e.category === "Combustível" || e.category === "Pedágio" || e.category === "Outros") return;
     const cat = categorySummary[e.category] !== undefined ? e.category : "Outros";
     categorySummary[cat] += (e.value || 0);
   });
@@ -184,10 +184,10 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
   // High-level metrics (mês selecionado)
   const totalFaturamento = freightsMonth.reduce((sum, f) => sum + (f.financial?.value || 0), 0);
 
-  // Exclui "Combustível" e "Pedágio" para não contar o abastecimento
-  // (totalRefuelsCost) e o pedágio do frete (fin.toll, logo abaixo) duas
-  // vezes no total de despesas.
-  const totalDirectExpenses = expensesMonth.filter(e => e.category !== "Combustível" && e.category !== "Pedágio").reduce((sum, e) => sum + (e.value || 0), 0);
+  // Exclui "Combustível", "Pedágio" e "Outros" para não contar o
+  // abastecimento (totalRefuelsCost) e os custos do frete (fin.toll /
+  // fin.commission / fin.otherExpenses, logo abaixo) duas vezes no total.
+  const totalDirectExpenses = expensesMonth.filter(e => e.category !== "Combustível" && e.category !== "Pedágio" && e.category !== "Outros").reduce((sum, e) => sum + (e.value || 0), 0);
   const totalRefuelsCost = refuelsMonth.reduce((sum, r) => sum + (r.totalValue || 0), 0);
   const totalFreightExpenses = freightsMonth.reduce((sum, f) => {
     const fin = f.financial;

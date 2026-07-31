@@ -420,12 +420,13 @@ export default function DashboardOverview({
 
   const expensesMonth = useMemo(() => {
     const targetYearMonth = `${currentYear}-${currentMonth < 10 ? "0" + currentMonth : currentMonth}`;
-    // Combustível e Pedágio lançados na aba de Despesas gerais são excluídos
-    // daqui porque já são somados separadamente: combustível via refuelExp
-    // (abastecimento) e pedágio via freightExp (fin.toll, por frete) — sem
-    // esse filtro, um lançamento nessas categorias em Despesas era contado
-    // duas vezes no total do mês, diluindo artificialmente as porcentagens.
-    const directExp = expenses.filter(e => e.date.startsWith(targetYearMonth) && e.category !== "Combustível" && e.category !== "Pedágio").reduce((sum, e) => sum + (e.value || 0), 0);
+    // Combustível, Pedágio e Outros lançados na aba de Despesas gerais são
+    // excluídos daqui porque já são somados separadamente dentro de cada
+    // frete: combustível via refuelExp (abastecimento), pedágio e "outras
+    // despesas" via freightExp (fin.toll / fin.otherExpenses) — sem esse
+    // filtro, um lançamento nessas categorias em Despesas era contado duas
+    // vezes no total do mês, diluindo artificialmente as porcentagens.
+    const directExp = expenses.filter(e => e.date.startsWith(targetYearMonth) && e.category !== "Combustível" && e.category !== "Pedágio" && e.category !== "Outros").reduce((sum, e) => sum + (e.value || 0), 0);
     const refuelExp = refuels.filter(r => r.date.startsWith(targetYearMonth)).reduce((sum, r) => sum + (r.totalValue || 0), 0);
     const freightExp = freightsMonth.reduce((sum, f) => {
       const fin = f.financial;
