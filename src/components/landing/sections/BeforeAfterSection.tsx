@@ -9,10 +9,13 @@ interface SectionProps {
   reduced: boolean;
 }
 
-// Real photo (Unsplash, standard free license) — cluttered desk with papers,
-// used only for the "Sem Fleet One" side of the comparison.
+// Real photos (Unsplash, standard free license) — cluttered desk for "Sem
+// Fleet One", bright organized workspace for "Com Fleet One", so the reveal
+// swaps one real photo for another instead of fading into empty white space.
 const ANTES_PHOTO_URL =
   "https://images.unsplash.com/photo-1753340328027-73acda445c58?auto=format&fit=crop&q=80&w=1600";
+const DEPOIS_PHOTO_URL =
+  "https://images.unsplash.com/photo-1742198810079-49bb51d1c5af?auto=format&fit=crop&q=80&w=1600";
 
 const ICONS = { FileWarning, TrendingDown, MessageSquareOff };
 
@@ -99,7 +102,15 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
           className="absolute inset-0 bg-white"
           style={{ clipPath: reduced ? "inset(0 50% 0 0)" : "inset(0 100% 0 0)" }}
         >
-          <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #EEF2FF 0%, #FFFFFF 60%)" }} />
+          <img
+            src={DEPOIS_PHOTO_URL}
+            alt="Espaço de trabalho organizado e iluminado"
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, #EEF2FF 0%, rgba(238,242,255,0.75) 38%, rgba(255,255,255,0.15) 65%)" }} />
           <span className="absolute top-6 left-6 text-[11px] font-black uppercase tracking-widest text-emerald-600">
             Com Fleet One
           </span>

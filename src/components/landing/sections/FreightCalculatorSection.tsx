@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
-import { AlertTriangle, TrendingUp } from "lucide-react";
 import BrandMark from "../../BrandMark";
 
 interface SectionProps {
@@ -8,29 +7,21 @@ interface SectionProps {
 }
 
 interface Inputs {
-  freteIda: number;
-  freteVolta: number;
+  valorFrete: number;
   distancia: number;
   consumo: number;
-  precoCombustivel: number;
-  pedagios: number;
-  comissao: number;
 }
 
 const DEFAULTS: Inputs = {
-  freteIda: 8000,
-  freteVolta: 6000,
+  valorFrete: 14000,
   distancia: 1800,
   consumo: 2.5,
-  precoCombustivel: 6.2,
-  pedagios: 450,
-  comissao: 12,
 };
 
-const fmtMoney = (v: number) =>
-  v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const PRECO_COMBUSTIVEL = 6.2;
+const COMISSAO_PCT = 12;
 
-const fmtPct = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const fmtMoney = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function NumberField({
   label,
@@ -56,7 +47,7 @@ function NumberField({
           type="number"
           value={value}
           step={step}
-          onChange={(e) => onChange(Number(e.target.value))}
+          onChange={(e) => onChange(Math.max(0, Number(e.target.value)))}
           className="w-full bg-transparent text-white font-mono font-bold text-sm outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         {suffix && <span className="text-slate-500 text-sm font-bold shrink-0">{suffix}</span>}
@@ -65,34 +56,23 @@ function NumberField({
   );
 }
 
-// A real, live freight-cost calculator — the most literal "ação prática" the
-// page can offer for its #1 stated benefit ("saiba exatamente quanto custa
-// cada viagem"). Visitors edit their own numbers and watch the breakdown
-// react instantly, instead of reading a paragraph that promises it.
+// A small, illustrative sample of the freight-cost calculation — NOT the
+// full tool (that lives inside the platform, with tolls, driver commission
+// settings, saved history, etc.). This just proves the "saiba quanto custa
+// cada viagem" benefit is real, with three fields instead of the full form.
 export default function FreightCalculatorSection({ reduced }: SectionProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-15% 0px -15% 0px" });
   const [inputs, setInputs] = useState<Inputs>(DEFAULTS);
 
-  const set = <K extends keyof Inputs>(key: K) => (v: number) =>
-    setInputs((prev) => ({ ...prev, [key]: Math.max(0, v) }));
+  const set = <K extends keyof Inputs>(key: K) => (v: number) => setInputs((prev) => ({ ...prev, [key]: v }));
 
-  const bruto = inputs.freteIda + inputs.freteVolta;
-  const custoCombustivel = inputs.consumo > 0 ? (inputs.distancia / inputs.consumo) * inputs.precoCombustivel : 0;
-  const comissaoValor = bruto * (inputs.comissao / 100);
-  const custosTotais = custoCombustivel + comissaoValor + inputs.pedagios;
-  const lucro = bruto - custosTotais;
-  const margem = bruto > 0 ? (lucro / bruto) * 100 : 0;
-
-  const linhas = [
-    { label: "Faturamento bruto", valor: bruto, pct: bruto > 0 ? 100 : 0, tom: "text-white" },
-    { label: "Combustível", valor: -custoCombustivel, pct: bruto > 0 ? (custoCombustivel / bruto) * 100 : 0, tom: "text-red-300" },
-    { label: "Comissão do motorista", valor: -comissaoValor, pct: bruto > 0 ? (comissaoValor / bruto) * 100 : 0, tom: "text-red-300" },
-    { label: "Pedágios e despesas", valor: -inputs.pedagios, pct: bruto > 0 ? (inputs.pedagios / bruto) * 100 : 0, tom: "text-red-300" },
-  ];
+  const custoCombustivel = inputs.consumo > 0 ? (inputs.distancia / inputs.consumo) * PRECO_COMBUSTIVEL : 0;
+  const comissaoValor = inputs.valorFrete * (COMISSAO_PCT / 100);
+  const lucro = inputs.valorFrete - custoCombustivel - comissaoValor;
 
   return (
-    <section className="relative z-10 max-w-5xl mx-auto px-6 py-24 md:py-40">
+    <section className="relative z-10 max-w-4xl mx-auto px-6 py-24 md:py-40">
       <motion.div
         initial={reduced ? false : { opacity: 0, y: 24 }}
         animate={reduced || isInView ? { opacity: 1, y: 0 } : {}}
@@ -121,65 +101,37 @@ export default function FreightCalculatorSection({ reduced }: SectionProps) {
           <div className="flex items-center justify-between border-b border-white/10 pb-5 mb-8">
             <span className="flex items-center gap-2.5">
               <BrandMark size="sm" />
-              <span className="text-sm font-black text-white uppercase tracking-wider">Calculadora de frete</span>
+              <span className="text-sm font-black text-white uppercase tracking-wider">Amostra de cálculo</span>
             </span>
-            <span className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Ao vivo
-            </span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Simulação</span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            {/* Inputs */}
-            <div className="grid grid-cols-2 gap-4">
-              <NumberField label="Frete de ida" prefix="R$" value={inputs.freteIda} onChange={set("freteIda")} step={100} />
-              <NumberField label="Frete de volta" prefix="R$" value={inputs.freteVolta} onChange={set("freteVolta")} step={100} />
-              <NumberField label="Distância total" suffix="km" value={inputs.distancia} onChange={set("distancia")} step={50} />
-              <NumberField label="Consumo médio" suffix="km/l" value={inputs.consumo} onChange={set("consumo")} step={0.1} />
-              <NumberField label="Preço do combustível" prefix="R$" value={inputs.precoCombustivel} onChange={set("precoCombustivel")} step={0.05} />
-              <NumberField label="Pedágios e despesas" prefix="R$" value={inputs.pedagios} onChange={set("pedagios")} step={10} />
-              <div className="col-span-2">
-                <NumberField label="Comissão do motorista" suffix="%" value={inputs.comissao} onChange={set("comissao")} step={0.5} />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <NumberField label="Valor do frete" prefix="R$" value={inputs.valorFrete} onChange={set("valorFrete")} step={500} />
+            <NumberField label="Distância" suffix="km" value={inputs.distancia} onChange={set("distancia")} step={50} />
+            <NumberField label="Consumo médio" suffix="km/l" value={inputs.consumo} onChange={set("consumo")} step={0.1} />
+          </div>
+
+          <div className="border-t border-white/10 pt-6 flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 block mb-1">
+                Combustível + comissão estimados
+              </span>
+              <span className="font-mono font-bold text-red-300 text-sm">
+                -R$ {fmtMoney(custoCombustivel + comissaoValor)}
+              </span>
             </div>
-
-            {/* Result breakdown */}
-            <div className="flex flex-col">
-              <div className="space-y-0 flex-1">
-                {linhas.map(({ label, valor, pct, tom }) => (
-                  <div key={label} className="flex items-center justify-between py-2.5 border-b border-white/5">
-                    <span className="text-xs font-bold text-slate-400">{label}</span>
-                    <span className="flex items-baseline gap-2">
-                      <span className={`font-mono font-bold text-sm ${tom}`}>
-                        {valor < 0 ? "-" : ""}R$ {fmtMoney(Math.abs(valor))}
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-500 w-12 text-right">{fmtPct(pct)}%</span>
-                    </span>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between py-3.5 mt-1">
-                  <span className="text-sm font-black text-white uppercase tracking-wide">Lucro líquido</span>
-                  <span className="flex items-baseline gap-2">
-                    <span className={`font-mono font-black text-xl ${lucro >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                      R$ {fmtMoney(lucro)}
-                    </span>
-                    <span className="text-xs font-mono text-slate-400 w-12 text-right">{fmtPct(margem)}%</span>
-                  </span>
-                </div>
-              </div>
-
-              {margem < 20 ? (
-                <div className="flex items-start gap-2.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold px-4 py-3 rounded-xl mt-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                  Margem apertada — revise os valores antes de aceitar esse frete.
-                </div>
-              ) : (
-                <div className="flex items-start gap-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold px-4 py-3 rounded-xl mt-2">
-                  <TrendingUp className="w-4 h-4 shrink-0 mt-0.5" />
-                  Margem saudável para essa viagem.
-                </div>
-              )}
+            <div className="text-right">
+              <span className="text-[11px] uppercase tracking-wider font-bold text-slate-400 block mb-1">Lucro estimado</span>
+              <span className={`font-mono font-black text-2xl ${lucro >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                R$ {fmtMoney(lucro)}
+              </span>
             </div>
           </div>
+
+          <p className="text-[11px] text-slate-500 mt-8 text-center">
+            Amostra simplificada — a calculadora completa, com pedágios, comissão configurável e histórico, fica dentro da plataforma.
+          </p>
         </div>
       </motion.div>
     </section>
