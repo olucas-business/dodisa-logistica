@@ -68,18 +68,20 @@ export default function RadialGauge({ label, value, displayValue, editable, onEd
               </linearGradient>
             </defs>
             <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-            {/* isAnimationActive={false} — Recharts' default 0→value entrance
-                animation replays on every re-render (e.g. any parent state
-                update), which made several gauges with different values look
-                like they were "tracing" out of sync with each other. The
-                underlying data is a live snapshot, not a growth metric, so
-                it should just render at its final position immediately. */}
+            {/* Short, fixed-duration animation: long enough to read as a
+                "loading in" transition when the value changes (e.g. switching
+                the selected month), short enough that several gauges with
+                very different values settle together instead of visibly
+                drifting out of sync with each other (the original complaint
+                with Recharts' ~1500ms default). */}
             <RadialBar
               dataKey="value"
               cornerRadius={10}
               fill={`url(#${gradientId})`}
               background={{ fill: "var(--muted)" }}
-              isAnimationActive={false}
+              isAnimationActive
+              animationDuration={550}
+              animationEasing="ease-out"
             />
           </RadialBarChart>
         </ResponsiveContainer>
@@ -103,7 +105,14 @@ export default function RadialGauge({ label, value, displayValue, editable, onEd
               className={`font-black font-mono bg-clip-text text-transparent text-center ${
                 isNegative ? "bg-gradient-to-br from-red-400 to-red-600" : "bg-gradient-to-br from-blue-400 to-emerald-400"
               } ${
-                (displayValue?.length ?? 0) > 10 ? "text-base leading-tight" : (displayValue?.length ?? 0) > 6 ? "text-2xl leading-none" : "text-4xl leading-none"
+                // Arbitrary sizes on purpose — a plain `text-3xl` here would get
+                // silently forced to a fixed 30px/JetBrains-Mono by the app-wide
+                // KPI-number override in index.css, ignoring these three tiers.
+                (displayValue?.length ?? 0) > 10
+                  ? "text-[0.8rem] leading-tight"
+                  : (displayValue?.length ?? 0) > 6
+                  ? "text-[1.15rem] leading-none"
+                  : "text-[1.6rem] leading-none"
               }`}
             >
               {displayValue !== undefined ? displayValue : `${value.toFixed(0)}%`}

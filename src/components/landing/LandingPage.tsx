@@ -9,10 +9,14 @@ import LandingFooter from "./LandingFooter";
 import ProblemSolutionSection from "./sections/ProblemSolutionSection";
 import BeforeAfterSection from "./sections/BeforeAfterSection";
 import ProductShowcaseSection from "./sections/ProductShowcaseSection";
+import ImportSection from "./sections/ImportSection";
 import HowItWorksSection from "./sections/HowItWorksSection";
 import BeneficiosSection from "./sections/BeneficiosSection";
 import FreightCalculatorSection from "./sections/FreightCalculatorSection";
+import TestimonialsSection from "./sections/TestimonialsSection";
 import NumerosSection from "./sections/NumerosSection";
+import PricingSection from "./sections/PricingSection";
+import FAQSection from "./sections/FAQSection";
 
 interface LandingPageProps {
   onNavigateLogin: () => void;
@@ -58,12 +62,18 @@ export default function LandingPage({ onNavigateLogin, onNavigateSignup }: Landi
       {/* A transformação, demonstrada, e depois o produto de fato. */}
       <BeforeAfterSection reduced={reduced} />
       <ProductShowcaseSection reduced={reduced} />
+      <ImportSection reduced={reduced} />
 
-      {/* Benefícios → prova prática do benefício #1 → como funciona → CTA. */}
+      {/* Benefícios → prova prática do benefício #1 → como funciona → prova social. */}
       <BeneficiosSection reduced={reduced} />
       <FreightCalculatorSection reduced={reduced} />
       <HowItWorksSection reduced={reduced} />
+      <TestimonialsSection reduced={reduced} />
       <NumerosSection reduced={reduced} />
+
+      {/* Preço → objeções → CTA final. */}
+      <PricingSection reduced={reduced} onNavigateSignup={onNavigateSignup} />
+      <FAQSection reduced={reduced} />
 
       <FinalCtaSection onNavigateSignup={onNavigateSignup} onNavigateLogin={onNavigateLogin} />
       <LandingFooter onNavigateLogin={onNavigateLogin} />
