@@ -1079,13 +1079,13 @@ export default function DashboardOverview({
 
   // Indicadores de Performance (anéis): métricas financeiras e operacionais do mês filtrado
   const impostosPercentage = taxRate;
-  // Anel do valor de Combustível usa a mesma proporção (gasto/despesas) do anel #6, mas exibe o valor em R$
-  const fuelSpendRingPercentage = expensesMonth > 0 ? (totalFuelSpendMonth / expensesMonth) * 100 : 0;
+  // Anel do valor de Combustível usa a mesma proporção (combustível/faturamento) do anel #6, mas exibe o valor em R$
+  const fuelSpendRingPercentage = billingMonth > 0 ? (totalFuelSpendMonth / billingMonth) * 100 : 0;
   // Comissão: calculada automaticamente a partir do somatório real dos manifestos de frete (nunca editável manualmente)
   const comissaoPercentage = billingMonth > 0 ? Math.min(100, (totalCommissionMonth / billingMonth) * 100) : 0;
   // KM/L não é um percentual: normaliza visualmente contra um teto de referência de 3.5 km/L (eficiência típica de caminhões)
   const kmLRingPercentage = Math.min(100, (averageKmLMonth / 3.5) * 100);
-  const fuelSpendPercentageOfExpenses = expensesMonth > 0 ? (totalFuelSpendMonth / expensesMonth) * 100 : 0;
+  const fuelSpendPercentageOfBilling = billingMonth > 0 ? (totalFuelSpendMonth / billingMonth) * 100 : 0;
 
   return (
     <div id="central-controle-dashboard" className="space-y-6 animate-fade-in text-left">
@@ -1228,7 +1228,7 @@ export default function DashboardOverview({
         <RadialGauge label="Comissão" value={comissaoPercentage} displayValue={`R$ ${totalCommissionMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmLMonth.toFixed(2)}`} />
         <RadialGauge label="Margem Lucro" value={marginPercentage} displayValue={`${marginPercentage}%`} />
-        <RadialGauge label="% Combustível" value={fuelSpendPercentageOfExpenses} />
+        <RadialGauge label="% Combustível" value={fuelSpendPercentageOfBilling} />
       </div>
 
       {/* 1c. HERO CHART: Faturamento vs Custos ao longo do ano (destaque visual principal) */}

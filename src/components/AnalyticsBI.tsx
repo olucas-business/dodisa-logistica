@@ -228,13 +228,13 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
   const averageKmL = kmLMonthValues.length > 0 ? kmLMonthValues.reduce((sum, v) => sum + v, 0) / kmLMonthValues.length : 0;
 
   const impostosPercentage = taxRate;
-  // Anel do valor de Combustível usa a mesma proporção (gasto/despesas) do anel "% Gasto c/ Combustível", mas exibe o valor em R$
-  const fuelSpendRingPercentage = totalDespesas > 0 ? (totalRefuelsCost / totalDespesas) * 100 : 0;
+  // Anel do valor de Combustível usa a mesma proporção (combustível/faturamento) do anel "% Combustível", mas exibe o valor em R$
+  const fuelSpendRingPercentage = totalFaturamento > 0 ? (totalRefuelsCost / totalFaturamento) * 100 : 0;
   // Comissão: calculada automaticamente a partir do somatório real dos manifestos de frete (nunca editável manualmente)
   const comissaoPercentage = totalFaturamento > 0 ? Math.min(100, (totalComissao / totalFaturamento) * 100) : 0;
   // KM/L não é um percentual: normaliza visualmente contra um teto de referência de 3.5 km/L (eficiência típica de caminhões)
   const kmLRingPercentage = Math.min(100, (averageKmL / 3.5) * 100);
-  const fuelSpendPercentageOfExpenses = totalDespesas > 0 ? (totalRefuelsCost / totalDespesas) * 100 : 0;
+  const fuelSpendPercentageOfBilling = totalFaturamento > 0 ? (totalRefuelsCost / totalFaturamento) * 100 : 0;
 
   return (
     <div id="modulo-analytics-container" className="space-y-6">
@@ -286,7 +286,7 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
         <RadialGauge label="Comissão" value={comissaoPercentage} displayValue={`R$ ${totalComissao.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmL.toFixed(2)}`} />
         <RadialGauge label="Margem Lucro" value={Number(averageMargin)} displayValue={`${averageMargin}%`} />
-        <RadialGauge label="% Combustível" value={fuelSpendPercentageOfExpenses} />
+        <RadialGauge label="% Combustível" value={fuelSpendPercentageOfBilling} />
       </div>
 
       {/* MoM Performance Chart Card */}
