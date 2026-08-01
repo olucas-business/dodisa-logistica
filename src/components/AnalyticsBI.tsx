@@ -227,7 +227,11 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
   const kmLMonthValues = refuelsMonth.map(r => kmLPerRefuel[r.id]).filter((v): v is number => v !== undefined);
   const averageKmL = kmLMonthValues.length > 0 ? kmLMonthValues.reduce((sum, v) => sum + v, 0) / kmLMonthValues.length : 0;
 
-  const impostosPercentage = taxRate;
+  // Igual aos outros gauges do bloco (Combustível, Comissão, Margem): zera
+  // junto com o mês sem faturamento, em vez de mostrar a alíquota configurada
+  // isolada (anel cheio) enquanto o R$ ao lado mostra 0 — os dois precisam
+  // concordar.
+  const impostosPercentage = totalFaturamento > 0 ? taxRate : 0;
   // Anel do valor de Combustível usa a mesma proporção (combustível/faturamento) do anel "% Combustível", mas exibe o valor em R$
   const fuelSpendRingPercentage = totalFaturamento > 0 ? (totalRefuelsCost / totalFaturamento) * 100 : 0;
   // Comissão: calculada automaticamente a partir do somatório real dos manifestos de frete (nunca editável manualmente)
@@ -282,10 +286,12 @@ export default function AnalyticsBI({ freights, drivers, vehicles, expenses, ref
       {/* Radial Gauges Row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <RadialGauge label="Impostos" value={impostosPercentage} displayValue={`R$ ${(totalFaturamento * (impostosPercentage / 100)).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} editable onEdit={(v) => saveCompanyField("taxRate", v)} />
-        <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalRefuelsCost.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="Comissão" value={comissaoPercentage} displayValue={`R$ ${totalComissao.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmL.toFixed(2)}`} />
         <RadialGauge label="Margem Lucro" value={Number(averageMargin)} displayValue={`${averageMargin}%`} />
+        {/* Combustível e % Combustível ficam lado a lado de propósito — são a
+            mesma métrica (gasto/faturamento), uma em R$ e outra em %. */}
+        <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalRefuelsCost.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="% Combustível" value={fuelSpendPercentageOfBilling} />
       </div>
 

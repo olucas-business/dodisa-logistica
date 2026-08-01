@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Freight, Driver, Vehicle, Refuel } from "../types";
 import { todayLocalISO } from "../utils/date";
 import SessionAnnotations from "./SessionAnnotations";
@@ -6,6 +6,36 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { Truck, Plus, Search, Calendar, MapPin, Navigation, Coins, Trash2, Edit2, CheckCircle, Clock, PieChart as PieChartIcon, Upload, Fuel, Calculator, AlertTriangle, TrendingUp } from "lucide-react";
 
 const MERCOSUL_COUNTRIES = ["Brasil", "Argentina", "Chile", "Paraguai", "Peru", "Uruguai"];
+
+// Mesma chave usada em DashboardOverview.tsx — os dois pontos de acesso à
+// calculadora (painel geral e aqui) compartilham a última simulação
+// digitada, em vez de cada um esquecer o que o outro guardou.
+const ROUTE_CALC_STORAGE_KEY = "fleetone:routeCalc";
+interface RouteCalcState {
+  vehicleId: string;
+  distancia: string;
+  consumo: string;
+  precoCombustivel: string;
+  valorFrete: string;
+  comissaoPct: string;
+  pedagio: string;
+}
+function loadRouteCalcState(): RouteCalcState | null {
+  try {
+    const raw = localStorage.getItem(ROUTE_CALC_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+function saveRouteCalcState(state: RouteCalcState) {
+  try {
+    localStorage.setItem(ROUTE_CALC_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // localStorage indisponível (modo privado, etc.) — não é crítico, a
+    // calculadora simplesmente não memoriza entre sessões.
+  }
+}
 
 interface FreightsManagerProps {
   freights: Freight[];
@@ -88,14 +118,25 @@ export default function FreightsManager({
   const [calcPedagio, setCalcPedagio] = useState("");
 
   const handleOpenRouteCalc = () => {
-    const firstVehicle = vehicles[0];
-    setCalcVehicleId(firstVehicle?.id || "");
-    setCalcDistancia("");
-    setCalcConsumo(firstVehicle?.averageConsumption || "");
-    setCalcPrecoCombustivel("6.20");
-    setCalcValorFrete("");
-    setCalcComissaoPct("10");
-    setCalcPedagio("");
+    const saved = loadRouteCalcState();
+    if (saved) {
+      setCalcVehicleId(saved.vehicleId);
+      setCalcDistancia(saved.distancia);
+      setCalcConsumo(saved.consumo);
+      setCalcPrecoCombustivel(saved.precoCombustivel);
+      setCalcValorFrete(saved.valorFrete);
+      setCalcComissaoPct(saved.comissaoPct);
+      setCalcPedagio(saved.pedagio);
+    } else {
+      const firstVehicle = vehicles[0];
+      setCalcVehicleId(firstVehicle?.id || "");
+      setCalcDistancia("");
+      setCalcConsumo(firstVehicle?.averageConsumption || "");
+      setCalcPrecoCombustivel("6.20");
+      setCalcValorFrete("");
+      setCalcComissaoPct("10");
+      setCalcPedagio("");
+    }
     setShowRouteCalc(true);
   };
 
@@ -104,6 +145,21 @@ export default function FreightsManager({
     const v = vehicles.find(veh => veh.id === vId);
     if (v) setCalcConsumo(v.averageConsumption || "");
   };
+
+  // Memoriza a simulação a cada alteração, enquanto a calculadora está
+  // aberta — assim reabrir (aqui ou no painel geral) retoma de onde parou.
+  useEffect(() => {
+    if (!showRouteCalc) return;
+    saveRouteCalcState({
+      vehicleId: calcVehicleId,
+      distancia: calcDistancia,
+      consumo: calcConsumo,
+      precoCombustivel: calcPrecoCombustivel,
+      valorFrete: calcValorFrete,
+      comissaoPct: calcComissaoPct,
+      pedagio: calcPedagio,
+    });
+  }, [showRouteCalc, calcVehicleId, calcDistancia, calcConsumo, calcPrecoCombustivel, calcValorFrete, calcComissaoPct, calcPedagio]);
 
   const calcDistNum = Number(calcDistancia) || 0;
   const calcConsumoNum = Number(calcConsumo) || 0;
@@ -507,9 +563,9 @@ export default function FreightsManager({
         <div className="flex gap-2 w-full md:w-auto">
           <button
             onClick={handleOpenRouteCalc}
-            className="flex-1 md:flex-none px-4 py-2 bg-white border border-gray-250 hover:bg-gray-50 text-gray-700 font-semibold text-xs rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm"
+            className="flex-1 md:flex-none px-4 py-2 bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold text-xs rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm"
           >
-            <Calculator className="w-4.5 h-4.5 text-blue-600" />
+            <Calculator className="w-4.5 h-4.5" />
             Calcular Nova Rota
           </button>
           <button

@@ -38,7 +38,8 @@ import {
   Plus,
   Trash2,
   X,
-  Globe2
+  Globe2,
+  Calculator
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -89,6 +90,36 @@ const HUB_COORDINATES: Record<string, { x: number; y: number; name: string; stat
 };
 
 const COLORS = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899", "#14b8a6", "#6366f1", "#ef4444"];
+
+// Mesma chave usada em FreightsManager.tsx — os dois pontos de acesso à
+// calculadora (painel geral e Manifesto de Fretes) compartilham a última
+// simulação digitada, em vez de cada um esquecer o que o outro guardou.
+const ROUTE_CALC_STORAGE_KEY = "fleetone:routeCalc";
+interface RouteCalcState {
+  vehicleId: string;
+  distancia: string;
+  consumo: string;
+  precoCombustivel: string;
+  valorFrete: string;
+  comissaoPct: string;
+  pedagio: string;
+}
+function loadRouteCalcState(): RouteCalcState | null {
+  try {
+    const raw = localStorage.getItem(ROUTE_CALC_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+function saveRouteCalcState(state: RouteCalcState) {
+  try {
+    localStorage.setItem(ROUTE_CALC_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // localStorage indisponível (modo privado, etc.) — não é crítico, a
+    // calculadora simplesmente não memoriza entre sessões.
+  }
+}
 
 export default function DashboardOverview({
   freights,
@@ -146,6 +177,73 @@ export default function DashboardOverview({
       setSelectedMonth(m => m + 1);
     }
   };
+
+  // Calculadora de novo frete: estimativa rápida de lucro de uma rota, acessível
+  // direto do painel geral (mesma lógica usada em FreightsManager.tsx).
+  const [showRouteCalc, setShowRouteCalc] = useState(false);
+  const [calcVehicleId, setCalcVehicleId] = useState("");
+  const [calcDistancia, setCalcDistancia] = useState("");
+  const [calcConsumo, setCalcConsumo] = useState("");
+  const [calcPrecoCombustivel, setCalcPrecoCombustivel] = useState("6.20");
+  const [calcValorFrete, setCalcValorFrete] = useState("");
+  const [calcComissaoPct, setCalcComissaoPct] = useState("10");
+  const [calcPedagio, setCalcPedagio] = useState("");
+
+  const handleOpenRouteCalc = () => {
+    const saved = loadRouteCalcState();
+    if (saved) {
+      setCalcVehicleId(saved.vehicleId);
+      setCalcDistancia(saved.distancia);
+      setCalcConsumo(saved.consumo);
+      setCalcPrecoCombustivel(saved.precoCombustivel);
+      setCalcValorFrete(saved.valorFrete);
+      setCalcComissaoPct(saved.comissaoPct);
+      setCalcPedagio(saved.pedagio);
+    } else {
+      const firstVehicle = vehicles[0];
+      setCalcVehicleId(firstVehicle?.id || "");
+      setCalcDistancia("");
+      setCalcConsumo(firstVehicle?.averageConsumption || "");
+      setCalcPrecoCombustivel("6.20");
+      setCalcValorFrete("");
+      setCalcComissaoPct("10");
+      setCalcPedagio("");
+    }
+    setShowRouteCalc(true);
+  };
+
+  const handleCalcVehicleChange = (vId: string) => {
+    setCalcVehicleId(vId);
+    const v = vehicles.find(veh => veh.id === vId);
+    if (v) setCalcConsumo(v.averageConsumption || "");
+  };
+
+  // Memoriza a simulação a cada alteração, enquanto a calculadora está
+  // aberta — assim reabrir (aqui ou no Manifesto de Fretes) retoma de onde
+  // parou, em vez de sempre voltar aos valores padrão.
+  useEffect(() => {
+    if (!showRouteCalc) return;
+    saveRouteCalcState({
+      vehicleId: calcVehicleId,
+      distancia: calcDistancia,
+      consumo: calcConsumo,
+      precoCombustivel: calcPrecoCombustivel,
+      valorFrete: calcValorFrete,
+      comissaoPct: calcComissaoPct,
+      pedagio: calcPedagio,
+    });
+  }, [showRouteCalc, calcVehicleId, calcDistancia, calcConsumo, calcPrecoCombustivel, calcValorFrete, calcComissaoPct, calcPedagio]);
+
+  const calcDistNum = Number(calcDistancia) || 0;
+  const calcConsumoNum = Number(calcConsumo) || 0;
+  const calcPrecoNum = Number(calcPrecoCombustivel) || 0;
+  const calcValorFreteNum = Number(calcValorFrete) || 0;
+  const calcComissaoPctNum = Number(calcComissaoPct) || 0;
+  const calcPedagioNum = Number(calcPedagio) || 0;
+  const calcCustoCombustivel = calcConsumoNum > 0 ? (calcDistNum / calcConsumoNum) * calcPrecoNum : 0;
+  const calcComissaoValor = calcValorFreteNum * (calcComissaoPctNum / 100);
+  const calcLucro = calcValorFreteNum - calcCustoCombustivel - calcComissaoValor - calcPedagioNum;
+  const calcMargem = calcValorFreteNum > 0 ? (calcLucro / calcValorFreteNum) * 100 : 0;
 
   // Active tab toggle for bottom right charts: expenses vs cargo breakdown
   const [bottomActiveTab, setBottomActiveTab] = useState<"expenses" | "cargo">("expenses");
@@ -1078,7 +1176,11 @@ export default function DashboardOverview({
   };
 
   // Indicadores de Performance (anéis): métricas financeiras e operacionais do mês filtrado
-  const impostosPercentage = taxRate;
+  // Igual aos outros gauges do bloco (Combustível, Comissão, Margem): zera
+  // junto com o mês sem faturamento, em vez de mostrar a alíquota configurada
+  // isolada (anel cheio) enquanto o R$ ao lado mostra 0 — os dois precisam
+  // concordar.
+  const impostosPercentage = billingMonth > 0 ? taxRate : 0;
   // Anel do valor de Combustível usa a mesma proporção (combustível/faturamento) do anel #6, mas exibe o valor em R$
   const fuelSpendRingPercentage = billingMonth > 0 ? (totalFuelSpendMonth / billingMonth) * 100 : 0;
   // Comissão: calculada automaticamente a partir do somatório real dos manifestos de frete (nunca editável manualmente)
@@ -1221,13 +1323,24 @@ export default function DashboardOverview({
         </div>
       </div>
 
+      {/* Acesso rápido: estimar um novo frete antes de aceitar, sem sair do painel geral */}
+      <button
+        onClick={handleOpenRouteCalc}
+        className="w-full sm:w-auto px-4 py-2.5 bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold text-xs rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+      >
+        <Calculator className="w-4.5 h-4.5" />
+        Calcular Frete
+      </button>
+
       {/* 1b. INDICADORES DE PERFORMANCE (Anéis de Progresso, mesmo estilo do BI Analítico) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <RadialGauge label="Impostos" value={impostosPercentage} displayValue={`R$ ${(billingMonth * (impostosPercentage / 100)).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} editable onEdit={(v) => saveCompanyField("taxRate", v)} />
-        <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalFuelSpendMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="Comissão" value={comissaoPercentage} displayValue={`R$ ${totalCommissionMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="KM/L (média)" value={kmLRingPercentage} displayValue={`${averageKmLMonth.toFixed(2)}`} />
         <RadialGauge label="Margem Lucro" value={marginPercentage} displayValue={`${marginPercentage}%`} />
+        {/* Combustível e % Combustível ficam lado a lado de propósito — são a
+            mesma métrica (gasto/faturamento), uma em R$ e outra em %. */}
+        <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalFuelSpendMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="% Combustível" value={fuelSpendPercentageOfBilling} />
       </div>
 
@@ -3111,6 +3224,171 @@ export default function DashboardOverview({
         </div>
 
       </div>
+
+      {/* CALCULAR FRETE — estimativa rápida de lucro de uma rota, acessível direto do painel geral */}
+      {showRouteCalc && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-2xl w-full max-w-lg border border-gray-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 relative animate-scale-in my-auto">
+            <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-slate-850 pb-3 mb-4 flex items-center gap-1.5">
+              <Calculator className="w-4 h-4 text-blue-600" />
+              Calcular Frete
+            </h3>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-4">
+              Estime o lucro de uma rota antes de aceitar o frete. Isto não cria um manifesto — quando estiver satisfeito, vá para o Manifesto de Fretes e registre normalmente.
+            </p>
+
+            <div className="space-y-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Veículo</label>
+                  <select
+                    value={calcVehicleId}
+                    onChange={(e) => handleCalcVehicleChange(e.target.value)}
+                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none"
+                  >
+                    {vehicles.length === 0 && <option value="">Nenhum veículo cadastrado</option>}
+                    {vehicles.map(v => (
+                      <option key={v.id} value={v.id}>{v.brand} {v.model} ({v.plate})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Distância (km)</label>
+                  <input
+                    type="number"
+                    step="1"
+                    value={calcDistancia}
+                    onChange={(e) => setCalcDistancia(e.target.value)}
+                    placeholder="1800"
+                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Consumo médio (km/l)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={calcConsumo}
+                    onChange={(e) => setCalcConsumo(e.target.value)}
+                    placeholder="2.5"
+                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Preço combustível (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={calcPrecoCombustivel}
+                    onChange={(e) => setCalcPrecoCombustivel(e.target.value)}
+                    placeholder="6.20"
+                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Frete (R$)</label>
+                  <input
+                    type="number"
+                    step="1"
+                    value={calcValorFrete}
+                    onChange={(e) => setCalcValorFrete(e.target.value)}
+                    placeholder="14000"
+                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Comissão (%)</label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={calcComissaoPct}
+                    onChange={(e) => setCalcComissaoPct(e.target.value)}
+                    placeholder="10"
+                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+                <div className="space-y-1 min-w-0">
+                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Pedágios (R$)</label>
+                  <input
+                    type="number"
+                    step="1"
+                    value={calcPedagio}
+                    onChange={(e) => setCalcPedagio(e.target.value)}
+                    placeholder="450"
+                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg p-3.5 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-500 dark:text-gray-400 font-semibold">Combustível estimado</span>
+                  <span className="font-mono font-bold text-red-500">
+                    -R$ {calcCustoCombustivel.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-500 dark:text-gray-400 font-semibold">Comissão do motorista</span>
+                  <span className="font-mono font-bold text-red-500">
+                    -R$ {calcComissaoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-500 dark:text-gray-400 font-semibold">Pedágios</span>
+                  <span className="font-mono font-bold text-red-500">
+                    -R$ {calcPedagioNum.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-slate-800">
+                  <span className="text-xs font-black uppercase text-gray-900 dark:text-gray-100">Lucro líquido</span>
+                  <span className={`font-mono font-black text-base ${calcLucro >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    R$ {calcLucro.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <span className="text-[10px] font-bold ml-1">({calcMargem.toFixed(1)}%)</span>
+                  </span>
+                </div>
+              </div>
+
+              {calcValorFreteNum > 0 && (
+                calcMargem < 20 ? (
+                  <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-400 text-xs font-semibold px-3 py-2.5 rounded-lg">
+                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                    Margem apertada — revise os valores antes de aceitar esse frete.
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-3 py-2.5 rounded-lg">
+                    <TrendingUp className="w-4 h-4 shrink-0 mt-0.5" />
+                    Margem saudável para essa rota.
+                  </div>
+                )
+              )}
+
+              <div className="flex gap-3 justify-end pt-3 border-t border-gray-150 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowRouteCalc(false)}
+                  className="px-4 py-2 border border-gray-250 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-semibold rounded-lg transition-all cursor-pointer"
+                >
+                  Fechar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowRouteCalc(false); onNavigateTo("freights"); }}
+                  disabled={!calcValorFreteNum || vehicles.length === 0}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                >
+                  Ir para Manifesto de Fretes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
