@@ -21,7 +21,15 @@ export default function RadialGauge({ label, value, displayValue, editable, onEd
   // Negative values (e.g. a loss instead of a profit margin) get their own
   // small-but-visible red arc instead of silently clamping to 0 — a 0-value
   // ring and a "-64%" ring looked identical before, which read as broken.
-  const data = [{ value: isNegative ? Math.min(100, Math.abs(value)) : Math.min(100, Math.max(0, value)) }];
+  const rawArcValue = isNegative ? Math.min(100, Math.abs(value)) : Math.min(100, Math.max(0, value));
+  // Small-but-real percentages (a 2-5% tax rate is common and correct) render
+  // as a barely-there dot once the rounded end-caps swallow the whole arc —
+  // it reads as "broken/invisible", not "small". Floor any nonzero value to a
+  // minimum arc length so it's always clearly legible as a visible segment;
+  // the number in the center keeps showing the true, unfloored figure.
+  const MIN_VISIBLE_ARC = 15;
+  const arcValue = rawArcValue > 0 && rawArcValue < MIN_VISIBLE_ARC ? MIN_VISIBLE_ARC : rawArcValue;
+  const data = [{ value: arcValue }];
   const gradientId = `gauge-grad-${useId().replace(/:/g, "")}`;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -95,7 +103,7 @@ export default function RadialGauge({ label, value, displayValue, editable, onEd
                 with Recharts' ~1500ms default). */}
             <RadialBar
               dataKey="value"
-              cornerRadius={10}
+              cornerRadius={6}
               fill={`url(#${gradientId})`}
               background={{ fill: "var(--muted)" }}
               isAnimationActive
