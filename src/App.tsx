@@ -965,8 +965,8 @@ export default function App() {
             <div className="flex items-center gap-2.5 overflow-hidden">
               <BrandMark size="md" logoUrl={companyBranding.logoUrl} />
               {sidebarOpen && (
-                <div className="truncate leading-tight">
-                  <h1 className="text-sm font-black tracking-tight uppercase bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent truncate">
+                <div className="leading-tight min-w-0">
+                  <h1 className="text-xs font-bold tracking-tight uppercase bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent">
                     {companyBranding.name || "Fleet One"}
                   </h1>
                   <span className="block text-[10px] text-muted-foreground font-mono tracking-wider truncate">

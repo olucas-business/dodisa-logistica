@@ -3349,7 +3349,7 @@ export default function DashboardOverview({
                   <span className="text-xs font-black uppercase text-gray-900 dark:text-gray-100">Lucro líquido</span>
                   <span className={`font-mono font-black text-base ${calcLucro >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                     R$ {calcLucro.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    <span className="text-[10px] font-bold ml-1">({calcMargem.toFixed(1)}%)</span>
+                    <span className="text-base font-black ml-1">({calcMargem.toFixed(1)}%)</span>
                   </span>
                 </div>
               </div>

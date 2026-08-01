@@ -260,16 +260,10 @@ export default function LoginForm({ onLoginSuccess, initialMode = "login" }: Log
           <div className="relative z-10 flex items-center gap-3">
             <BrandMark size="lg" logoUrl={companyBranding.logoUrl} />
             <div>
-              {companyBranding.name ? (
-                <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent truncate max-w-[220px]">
-                  {companyBranding.name}
-                </h1>
-              ) : (
-                <h1 className="text-lg font-black tracking-tight flex items-center gap-1.5">
-                  <span className="bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent">Fleet</span>
-                  <span className="font-light text-muted-foreground dark:text-slate-400 tracking-tight">One</span>
-                </h1>
-              )}
+              <h1 className="text-lg font-black tracking-tight flex items-center gap-1.5">
+                <span className="bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent">Fleet</span>
+                <span className="font-light text-muted-foreground dark:text-slate-400 tracking-tight">One</span>
+              </h1>
               <p className="text-[9px] text-blue-600 dark:text-blue-400/80 font-mono tracking-wider font-extrabold uppercase">A maneira mais inteligente de gerenciar sua frota.</p>
             </div>
           </div>
@@ -352,7 +346,7 @@ export default function LoginForm({ onLoginSuccess, initialMode = "login" }: Log
             <div className="flex items-center gap-2.5">
               <BrandMark size="sm" logoUrl={companyBranding.logoUrl} />
               <div>
-                <h1 className="text-sm font-black text-foreground dark:text-white tracking-wider uppercase truncate max-w-[180px]">{companyBranding.name || "Fleet One"}</h1>
+                <h1 className="text-sm font-black text-foreground dark:text-white tracking-wider uppercase truncate max-w-[180px]">Fleet One</h1>
                 <p className="text-[8px] text-blue-600 dark:text-blue-400/80 font-mono tracking-widest font-extrabold">SYSTEM ACCESS</p>
               </div>
             </div>
