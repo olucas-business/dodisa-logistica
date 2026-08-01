@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from "recharts";
-import { Pencil } from "lucide-react";
+import { Pencil, AlertTriangle } from "lucide-react";
 
 interface RadialGaugeProps {
   label: string;
@@ -12,6 +12,12 @@ interface RadialGaugeProps {
 
 export default function RadialGauge({ label, value, displayValue, editable, onEdit }: RadialGaugeProps) {
   const isNegative = value < 0;
+  // A value over 100 (e.g. a mistyped tax rate, or commission that happens to
+  // exceed the month's billing) would otherwise saturate the ring at "full"
+  // with no sign that the real number is bigger than the ring can show —
+  // which reads as the ring being wrong relative to the number next to it.
+  // Flag it visually (amber ring + warning badge) instead of hiding it.
+  const isOverflow = !isNegative && value > 100;
   // Negative values (e.g. a loss instead of a profit margin) get their own
   // small-but-visible red arc instead of silently clamping to 0 — a 0-value
   // ring and a "-64%" ring looked identical before, which read as broken.
@@ -42,6 +48,14 @@ export default function RadialGauge({ label, value, displayValue, editable, onEd
           <Pencil className="w-3.5 h-3.5" />
         </button>
       )}
+      {isOverflow && (
+        <span
+          className="absolute top-2.5 left-2.5 text-amber-500"
+          title={`Valor real (${value.toFixed(1)}%) passa de 100% — o anel está cheio, mas o número ao lado mostra o valor verdadeiro.`}
+        >
+          <AlertTriangle className="w-3.5 h-3.5" />
+        </span>
+      )}
       <div className="relative w-40 h-40" style={{ filter: "drop-shadow(0 0 12px rgba(34,197,94,0.3)) drop-shadow(0 0 12px rgba(59,130,246,0.25))" }}>
         <ResponsiveContainer width="100%" height="100%">
           <RadialBarChart
@@ -58,6 +72,11 @@ export default function RadialGauge({ label, value, displayValue, editable, onEd
                   <>
                     <stop offset="0%" stopColor="#f87171" />
                     <stop offset="100%" stopColor="#ef4444" />
+                  </>
+                ) : isOverflow ? (
+                  <>
+                    <stop offset="0%" stopColor="#fbbf24" />
+                    <stop offset="100%" stopColor="#f97316" />
                   </>
                 ) : (
                   <>
@@ -103,7 +122,11 @@ export default function RadialGauge({ label, value, displayValue, editable, onEd
           ) : (
             <span
               className={`font-black font-mono bg-clip-text text-transparent text-center ${
-                isNegative ? "bg-gradient-to-br from-red-400 to-red-600" : "bg-gradient-to-br from-blue-400 to-emerald-400"
+                isNegative
+                  ? "bg-gradient-to-br from-red-400 to-red-600"
+                  : isOverflow
+                  ? "bg-gradient-to-br from-amber-400 to-orange-500"
+                  : "bg-gradient-to-br from-blue-400 to-emerald-400"
               } ${
                 // Arbitrary sizes on purpose — a plain `text-3xl` here would get
                 // silently forced to a fixed 30px/JetBrains-Mono by the app-wide
