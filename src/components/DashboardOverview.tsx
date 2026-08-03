@@ -1313,6 +1313,15 @@ export default function DashboardOverview({
             )}
           </div>
 
+          {/* Acesso rápido: estimar um novo frete antes de aceitar, sem sair do painel geral */}
+          <button
+            onClick={handleOpenRouteCalc}
+            className="shrink-0 px-4 py-2.5 bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold text-xs rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+          >
+            <Calculator className="w-4.5 h-4.5" />
+            Calcular Frete
+          </button>
+
           <div className="flex items-center gap-2.5 text-xs text-muted-foreground font-mono bg-muted px-3 py-1.5 rounded-lg border border-border">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -1322,15 +1331,6 @@ export default function DashboardOverview({
           </div>
         </div>
       </div>
-
-      {/* Acesso rápido: estimar um novo frete antes de aceitar, sem sair do painel geral */}
-      <button
-        onClick={handleOpenRouteCalc}
-        className="w-full sm:w-auto px-4 py-2.5 bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold text-xs rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
-      >
-        <Calculator className="w-4.5 h-4.5" />
-        Calcular Frete
-      </button>
 
       {/* 1b. INDICADORES DE PERFORMANCE (Anéis de Progresso, mesmo estilo do BI Analítico) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
