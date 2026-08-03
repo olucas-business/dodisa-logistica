@@ -1230,7 +1230,7 @@ export default function DashboardOverview({
         
         <div className="flex items-center gap-3 shrink-0 md:self-center">
           {/* Filtro de mês/ano */}
-          <div className="flex items-center gap-1 bg-muted px-1.5 py-1.5 rounded-lg border border-border">
+          <div className="flex items-center gap-1 h-9 bg-muted px-1.5 rounded-lg border border-border">
             <button
               onClick={goToPrevMonth}
               className="p-1 hover:bg-card rounded-md text-muted-foreground hover:text-foreground transition-all cursor-pointer"
@@ -1316,13 +1316,13 @@ export default function DashboardOverview({
           {/* Acesso rápido: estimar um novo frete antes de aceitar, sem sair do painel geral */}
           <button
             onClick={handleOpenRouteCalc}
-            className="shrink-0 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold text-sm rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+            className="shrink-0 h-9 px-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold text-sm rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
           >
-            <Calculator className="w-5 h-5" />
+            <Calculator className="w-4.5 h-4.5" />
             Calcular Frete
           </button>
 
-          <div className="flex items-center gap-2.5 text-xs text-muted-foreground font-mono bg-muted px-3 py-1.5 rounded-lg border border-border">
+          <div className="flex items-center gap-2.5 h-9 text-xs text-muted-foreground font-mono bg-muted px-3 rounded-lg border border-border">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -3228,105 +3228,113 @@ export default function DashboardOverview({
       {/* CALCULAR FRETE — estimativa rápida de lucro de uma rota, acessível direto do painel geral */}
       {showRouteCalc && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
-          <div className="bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-2xl w-full max-w-lg border border-gray-200 dark:border-slate-800 shadow-2xl p-4 sm:p-6 relative animate-scale-in my-auto">
-            <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-slate-850 pb-3 mb-4 flex items-center gap-1.5">
-              <Calculator className="w-4 h-4 text-blue-600" />
-              Calcular Frete
-            </h3>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-4">
-              Estime o lucro de uma rota antes de aceitar o frete. Isto não cria um manifesto — quando estiver satisfeito, vá para o Manifesto de Fretes e registre normalmente.
-            </p>
+          <div className="bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-2xl w-full max-w-lg border border-gray-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 relative animate-scale-in my-auto">
+            <div className="flex items-center gap-3 border-b border-gray-100 dark:border-slate-800 pb-4 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center shrink-0">
+                <Calculator className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                  Calcular Frete
+                </h3>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
+                  Estime o lucro de uma rota antes de aceitar. Isto não cria um manifesto.
+                </p>
+              </div>
+            </div>
 
-            <div className="space-y-3.5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Veículo</label>
-                  <select
-                    value={calcVehicleId}
-                    onChange={(e) => handleCalcVehicleChange(e.target.value)}
-                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none"
-                  >
-                    {vehicles.length === 0 && <option value="">Nenhum veículo cadastrado</option>}
-                    {vehicles.map(v => (
-                      <option key={v.id} value={v.id}>{v.brand} {v.model} ({v.plate})</option>
-                    ))}
-                  </select>
+            <div className="space-y-4">
+              <div className="bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl p-3.5 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1 min-w-0">
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Veículo</label>
+                    <select
+                      value={calcVehicleId}
+                      onChange={(e) => handleCalcVehicleChange(e.target.value)}
+                      className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2.5 text-xs outline-none"
+                    >
+                      {vehicles.length === 0 && <option value="">Nenhum veículo cadastrado</option>}
+                      {vehicles.map(v => (
+                        <option key={v.id} value={v.id}>{v.brand} {v.model} ({v.plate})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Distância (km)</label>
+                    <input
+                      type="number"
+                      step="1"
+                      value={calcDistancia}
+                      onChange={(e) => setCalcDistancia(e.target.value)}
+                      placeholder="1800"
+                      className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2.5 text-xs outline-none font-mono"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Distância (km)</label>
-                  <input
-                    type="number"
-                    step="1"
-                    value={calcDistancia}
-                    onChange={(e) => setCalcDistancia(e.target.value)}
-                    placeholder="1800"
-                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
-                  />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1 min-w-0">
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Consumo médio (km/l)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={calcConsumo}
+                      onChange={(e) => setCalcConsumo(e.target.value)}
+                      placeholder="2.5"
+                      className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2.5 text-xs outline-none font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Preço combustível (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={calcPrecoCombustivel}
+                      onChange={(e) => setCalcPrecoCombustivel(e.target.value)}
+                      placeholder="6.20"
+                      className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2.5 text-xs outline-none font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1 min-w-0">
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Frete (R$)</label>
+                    <input
+                      type="number"
+                      step="1"
+                      value={calcValorFrete}
+                      onChange={(e) => setCalcValorFrete(e.target.value)}
+                      placeholder="14000"
+                      className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2.5 text-xs outline-none font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Comissão (%)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={calcComissaoPct}
+                      onChange={(e) => setCalcComissaoPct(e.target.value)}
+                      placeholder="10"
+                      className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2.5 text-xs outline-none font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1 min-w-0">
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Pedágios (R$)</label>
+                    <input
+                      type="number"
+                      step="1"
+                      value={calcPedagio}
+                      onChange={(e) => setCalcPedagio(e.target.value)}
+                      placeholder="450"
+                      className="w-full min-w-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2.5 text-xs outline-none font-mono"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Consumo médio (km/l)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={calcConsumo}
-                    onChange={(e) => setCalcConsumo(e.target.value)}
-                    placeholder="2.5"
-                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
-                  />
-                </div>
-                <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Preço combustível (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={calcPrecoCombustivel}
-                    onChange={(e) => setCalcPrecoCombustivel(e.target.value)}
-                    placeholder="6.20"
-                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Frete (R$)</label>
-                  <input
-                    type="number"
-                    step="1"
-                    value={calcValorFrete}
-                    onChange={(e) => setCalcValorFrete(e.target.value)}
-                    placeholder="14000"
-                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
-                  />
-                </div>
-                <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Comissão (%)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={calcComissaoPct}
-                    onChange={(e) => setCalcComissaoPct(e.target.value)}
-                    placeholder="10"
-                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
-                  />
-                </div>
-                <div className="space-y-1 min-w-0">
-                  <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Pedágios (R$)</label>
-                  <input
-                    type="number"
-                    step="1"
-                    value={calcPedagio}
-                    onChange={(e) => setCalcPedagio(e.target.value)}
-                    placeholder="450"
-                    className="w-full min-w-0 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 text-gray-900 dark:text-gray-100 rounded-lg p-2 text-xs outline-none font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg p-3.5 space-y-2">
+              <div className="bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl p-3.5 space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-gray-500 dark:text-gray-400 font-semibold">Combustível estimado</span>
                   <span className="font-mono font-bold text-red-500">
@@ -3347,9 +3355,9 @@ export default function DashboardOverview({
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-slate-800">
                   <span className="text-xs font-black uppercase text-gray-900 dark:text-gray-100">Lucro líquido</span>
-                  <span className={`font-mono font-black text-base ${calcLucro >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                  <span className={`font-mono font-black text-base flex items-baseline gap-1.5 ${calcLucro >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                     R$ {calcLucro.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    <span className="text-base font-black ml-1">({calcMargem.toFixed(1)}%)</span>
+                    <span className="text-xs font-bold opacity-80">({calcMargem.toFixed(1)}%)</span>
                   </span>
                 </div>
               </div>
