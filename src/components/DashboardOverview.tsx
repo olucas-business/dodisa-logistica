@@ -1316,9 +1316,9 @@ export default function DashboardOverview({
           {/* Acesso rápido: estimar um novo frete antes de aceitar, sem sair do painel geral */}
           <button
             onClick={handleOpenRouteCalc}
-            className="shrink-0 px-4 py-2.5 bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold text-xs rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+            className="shrink-0 px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold text-sm rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
           >
-            <Calculator className="w-4.5 h-4.5" />
+            <Calculator className="w-5 h-5" />
             Calcular Frete
           </button>
 
@@ -1327,7 +1327,7 @@ export default function DashboardOverview({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span>Sincronizado: {CURRENT_DATE_STR}</span>
+            <span>{CURRENT_DATE_STR}</span>
           </div>
         </div>
       </div>
