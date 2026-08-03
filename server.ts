@@ -1,6 +1,8 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
+import { AsyncLocalStorage } from "async_hooks";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
@@ -19,6 +21,33 @@ const supabaseAuth = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_ANON_KEY!
 );
+
+// Multi-tenant: each authenticated request runs inside a tenant context
+// carrying the caller's companyId, resolved once by authMiddleware from their
+// Supabase access token. loadDB()/saveDB() read it from here instead of every
+// route having to thread a companyId parameter through by hand.
+interface TenantContext {
+  companyId: string;
+  userId: string;
+  role?: string;
+}
+const tenantContext = new AsyncLocalStorage<TenantContext>();
+
+function currentCompanyId(): string {
+  const store = tenantContext.getStore();
+  if (!store) {
+    throw new Error("Nenhum contexto de empresa no request atual — rota fora do authMiddleware?");
+  }
+  return store.companyId;
+}
+
+function currentUserId(): string {
+  const store = tenantContext.getStore();
+  if (!store) {
+    throw new Error("Nenhum contexto de usuário no request atual — rota fora do authMiddleware?");
+  }
+  return store.userId;
+}
 
 // Vercel serverless functions run in UTC, so `new Date().toISOString()` can
 // already be tomorrow (or, on month-end, next month) from the perspective of
@@ -1143,15 +1172,16 @@ export const DEPRECATED_DEFAULT_DB: any = {
 };
 
 async function loadDB(): Promise<Database> {
+  const companyId = currentCompanyId();
   try {
     const { data: row, error } = await supabase
       .from("app_state")
       .select("data")
-      .eq("id", 1)
+      .eq("company_id", companyId)
       .maybeSingle();
     if (error) throw error;
     if (!row) {
-      await supabase.from("app_state").insert({ id: 1, data: DEFAULT_DB });
+      await supabase.from("app_state").insert({ company_id: companyId, data: DEFAULT_DB });
       return DEFAULT_DB;
     }
     const db = row.data as Database;
@@ -1227,8 +1257,9 @@ async function loadDB(): Promise<Database> {
 }
 
 async function saveDB(db: Database): Promise<void> {
+  const companyId = currentCompanyId();
   try {
-    const { error } = await supabase.from("app_state").update({ data: db }).eq("id", 1);
+    const { error } = await supabase.from("app_state").update({ data: db }).eq("company_id", companyId);
     if (error) throw error;
   } catch (error) {
     console.error("Erro ao salvar DB:", error);
@@ -1253,48 +1284,77 @@ app.post("/api/auth/login", async (req, res) => {
       phone: meta.phone,
       role: meta.role,
       driverId: meta.driverId,
+      companyId: meta.companyId,
       token: data.session?.access_token
     }
   });
 });
 
+// Cada cadastro cria uma empresa nova e isolada (própria linha em app_state),
+// exceto motoristas entrando via link de convite, que se juntam à empresa de
+// quem os convidou (companyId vem no corpo, gerado por DriversManager).
 app.post("/api/auth/signup", async (req, res) => {
-  const { name, email, password, phone, role } = req.body;
-  const db = (await loadDB());
-  const finalRole = role || "Operador";
-  let driverId: string | undefined;
+  const { name, email, password, phone, role, companyId: invitedCompanyId } = req.body;
+  const finalRole = role === "Motorista" ? "Motorista" : (role || "Gerente");
+  let companyId: string;
 
   if (finalRole === "Motorista") {
-    const driver = db.drivers.find(d => d.email && d.email.toLowerCase() === email.toLowerCase());
-    if (driver) {
-      driverId = driver.id;
-    } else {
-      driverId = `drv_${Date.now()}`;
-      db.drivers.push({
-        id: driverId,
-        fullName: name,
-        email: email.toLowerCase(),
-        cpf: "Não cadastrado",
-        rg: "",
-        phone: phone || "",
-        whatsapp: phone || "",
-        address: "Não cadastrado",
-        city: "Não cadastrado",
-        state: "SP",
-        cnh: "Não cadastrado",
-        cnhCategory: "D",
-        cnhExpiration: "2030-12-31",
-        admissionDate: todayBrazilISO(),
-        status: "Ativo"
-      });
+    if (!invitedCompanyId) {
+      return res.status(400).json({ success: false, message: "Convite inválido: link sem empresa associada." });
     }
+    const { data: companyRow } = await supabase
+      .from("app_state")
+      .select("company_id")
+      .eq("company_id", invitedCompanyId)
+      .maybeSingle();
+    if (!companyRow) {
+      return res.status(400).json({ success: false, message: "Convite inválido ou expirado." });
+    }
+    companyId = invitedCompanyId;
+  } else {
+    companyId = crypto.randomUUID();
   }
+
+  let driverId: string | undefined;
+
+  await tenantContext.run({ companyId, userId: "" }, async () => {
+    if (finalRole === "Motorista") {
+      const db = await loadDB();
+      const driver = db.drivers.find(d => d.email && d.email.toLowerCase() === email.toLowerCase());
+      if (driver) {
+        driverId = driver.id;
+      } else {
+        driverId = `drv_${Date.now()}`;
+        db.drivers.push({
+          id: driverId,
+          fullName: name,
+          email: email.toLowerCase(),
+          cpf: "Não cadastrado",
+          rg: "",
+          phone: phone || "",
+          whatsapp: phone || "",
+          address: "Não cadastrado",
+          city: "Não cadastrado",
+          state: "SP",
+          cnh: "Não cadastrado",
+          cnhCategory: "D",
+          cnhExpiration: "2030-12-31",
+          admissionDate: todayBrazilISO(),
+          status: "Ativo"
+        });
+      }
+      await saveDB(db);
+    } else {
+      // Empresa nova: linha própria em app_state, começando do zero.
+      await supabase.from("app_state").insert({ company_id: companyId, data: DEFAULT_DB });
+    }
+  });
 
   const { data, error } = await supabase.auth.admin.createUser({
     email: email.toLowerCase(),
     password,
     email_confirm: true,
-    user_metadata: { name, phone, role: finalRole, driverId }
+    user_metadata: { name, phone, role: finalRole, driverId, companyId }
   });
 
   if (error || !data.user) {
@@ -1302,13 +1362,51 @@ app.post("/api/auth/signup", async (req, res) => {
     return res.status(400).json({ success: false, message: isDuplicate ? "Este e-mail já está cadastrado." : (error?.message || "Falha ao registrar usuário.") });
   }
 
-  if (finalRole === "Motorista") {
-    const drv = db.drivers.find(d => d.id === driverId);
-    if (drv) drv.authUserId = data.user.id;
+  if (finalRole === "Motorista" && driverId) {
+    await tenantContext.run({ companyId, userId: data.user.id }, async () => {
+      const db = await loadDB();
+      const drv = db.drivers.find(d => d.id === driverId);
+      if (drv) drv.authUserId = data.user.id;
+      await saveDB(db);
+    });
   }
 
-  await saveDB(db);
   res.json({ success: true, message: "Cadastro realizado com sucesso." });
+});
+
+// A partir daqui, toda rota /api/* exige um token válido e roda dentro do
+// contexto da empresa (companyId) do usuário autenticado — loadDB()/saveDB()
+// nunca mais tocam em dados de outra empresa.
+app.use("/api", async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) {
+    return res.status(401).json({ success: false, message: "Não autenticado." });
+  }
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user) {
+    return res.status(401).json({ success: false, message: "Sessão inválida ou expirada." });
+  }
+  const meta = data.user.user_metadata || {};
+  const companyId = meta.companyId;
+  if (!companyId) {
+    return res.status(403).json({ success: false, message: "Esta conta não está associada a nenhuma empresa." });
+  }
+  tenantContext.run({ companyId, userId: data.user.id, role: meta.role }, () => next());
+});
+
+// Troca de senha da própria conta logada — o id vem do token verificado pelo
+// middleware acima, nunca do corpo da requisição.
+app.post("/api/auth/change-password", async (req, res) => {
+  const { newPassword } = req.body;
+  if (!newPassword || String(newPassword).length < 6) {
+    return res.status(400).json({ success: false, message: "A nova senha precisa ter ao menos 6 caracteres." });
+  }
+  const { error } = await supabase.auth.admin.updateUserById(currentUserId(), { password: newPassword });
+  if (error) {
+    return res.status(500).json({ success: false, message: error.message || "Falha ao trocar a senha." });
+  }
+  res.json({ success: true, message: "Senha atualizada com sucesso." });
 });
 
 // Photo upload -> Supabase Storage, returns a public URL
@@ -1321,7 +1419,7 @@ app.post("/api/upload-photo", async (req, res) => {
   const mimeType = match ? match[1] : "image/jpeg";
   const base64Data = match ? match[2] : image;
   const ext = mimeType.split("/")[1] || "jpg";
-  const path = `${folder || "misc"}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const path = `${currentCompanyId()}/${folder || "misc"}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   const { error } = await supabase.storage
     .from("photos")
@@ -1345,7 +1443,7 @@ app.post("/api/upload-document", async (req, res) => {
   const mimeType = match ? match[1] : "application/octet-stream";
   const base64Data = match ? match[2] : file;
   const ext = (fileName && fileName.includes(".")) ? fileName.split(".").pop() : (mimeType.split("/")[1] || "bin");
-  const path = `${folder || "documents"}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const path = `${currentCompanyId()}/${folder || "documents"}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   const { error } = await supabase.storage
     .from("photos")

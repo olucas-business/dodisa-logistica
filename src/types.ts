@@ -6,6 +6,7 @@ export interface User {
   role: string;
   token?: string;
   driverId?: string; // Linked driver id
+  companyId?: string; // Empresa (tenant) à qual esta conta pertence
 }
 
 export interface DriverDocument {

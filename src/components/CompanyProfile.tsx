@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { CompanyProfile as CompanyProfileType } from "../types";
-import { Building2, FileText, Upload, Save, CheckCircle, Trash2, Download } from "lucide-react";
+import { CompanyProfile as CompanyProfileType, User } from "../types";
+import { apiFetch } from "../lib/apiFetch";
+import { Building2, FileText, Upload, Save, CheckCircle, Trash2, Download, UserCircle, KeyRound } from "lucide-react";
 
 const EMPTY_COMPANY: CompanyProfileType = {
   name: "",
@@ -17,7 +18,11 @@ const EMPTY_COMPANY: CompanyProfileType = {
   taxRate: ""
 };
 
-export default function CompanyProfile() {
+interface CompanyProfileProps {
+  user: User;
+}
+
+export default function CompanyProfile({ user }: CompanyProfileProps) {
   const [company, setCompany] = useState<CompanyProfileType>(EMPTY_COMPANY);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -25,14 +30,52 @@ export default function CompanyProfile() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
   useEffect(() => {
-    fetch("/api/company")
+    apiFetch("/api/company")
       .then(res => res.json())
       .then(data => {
         if (data.success) setCompany({ ...EMPTY_COMPANY, ...data.company });
       })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleChangePassword = async () => {
+    setPasswordError("");
+    setPasswordMsg("");
+    if (newPassword.length < 6) {
+      setPasswordError("A senha precisa ter ao menos 6 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("As senhas não coincidem.");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const res = await apiFetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPasswordMsg("Senha atualizada com sucesso.");
+        setNewPassword("");
+        setConfirmPassword("");
+        setTimeout(() => setPasswordMsg(""), 4000);
+      } else {
+        setPasswordError(data.message || "Falha ao trocar a senha.");
+      }
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   const handleChange = (field: keyof CompanyProfileType, value: string) => {
     setCompany(prev => ({ ...prev, [field]: value }));
@@ -42,7 +85,7 @@ export default function CompanyProfile() {
     setSaving(true);
     setSuccessMsg("");
     try {
-      const res = await fetch("/api/company", {
+      const res = await apiFetch("/api/company", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(company)
@@ -64,7 +107,7 @@ export default function CompanyProfile() {
     const reader = new FileReader();
     reader.onloadend = async () => {
       try {
-        const res = await fetch("/api/upload-document", {
+        const res = await apiFetch("/api/upload-document", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ file: reader.result, fileName: file.name, folder: "company" })
@@ -87,7 +130,7 @@ export default function CompanyProfile() {
     const reader = new FileReader();
     reader.onloadend = async () => {
       try {
-        const res = await fetch("/api/upload-document", {
+        const res = await apiFetch("/api/upload-document", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ file: reader.result, fileName: file.name, folder: "company-logo" })
@@ -126,12 +169,71 @@ export default function CompanyProfile() {
         </div>
       )}
 
+      <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-5">
+        <div className="flex items-center gap-3 border-b border-border pb-2.5">
+          <div className="p-2 bg-blue-600/10 text-blue-600 dark:text-blue-400 rounded-lg">
+            <UserCircle className="w-4.5 h-4.5" />
+          </div>
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Minha Conta</h3>
+            <p className="text-[11px] text-muted-foreground">Login e senha de acesso da sua conta pessoal.</p>
+          </div>
+        </div>
+
+        <div className="max-w-sm space-y-1.5">
+          <label className="text-[11px] font-bold text-muted-foreground uppercase">E-mail de login</label>
+          <div className="w-full bg-muted/40 border border-border rounded-lg px-3 py-2.5 text-sm text-foreground">
+            {user.email}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground uppercase">
+            <KeyRound className="w-3.5 h-3.5" />
+            Trocar senha
+          </div>
+          {passwordMsg && (
+            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-semibold">
+              {passwordMsg}
+            </div>
+          )}
+          {passwordError && (
+            <div className="p-2.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-lg text-xs font-semibold">
+              {passwordError}
+            </div>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg">
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Nova senha"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+            />
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirmar nova senha"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-500"
+            />
+          </div>
+          <button
+            onClick={handleChangePassword}
+            disabled={changingPassword || !newPassword}
+            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
+          >
+            {changingPassword ? "Salvando..." : "Atualizar senha"}
+          </button>
+        </div>
+      </div>
+
       <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-4">
         <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground border-b border-border pb-2.5">
           Logo da Empresa
         </h3>
         <p className="text-[11px] text-muted-foreground -mt-2">
-          Usada na barra lateral e na tela de login em vez da marca padrão do Fleet One.
+          Usada na barra lateral do sistema.
         </p>
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-xl overflow-hidden border border-border bg-muted/40 flex items-center justify-center flex-shrink-0">

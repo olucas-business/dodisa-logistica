@@ -29,21 +29,10 @@ export default function LoginForm({ onLoginSuccess, initialMode = "login" }: Log
   const [mode, setMode] = useState<"login" | "signup" | "recovery">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [companyBranding, setCompanyBranding] = useState<{ name: string; logoUrl: string }>({ name: "", logoUrl: "" });
-
-  useEffect(() => {
-    fetch("/api/company")
-      .then(res => res.json())
-      .then((data: { success: boolean; company?: { name?: string; logoUrl?: string } }) => {
-        if (data.success && data.company) {
-          setCompanyBranding({ name: data.company.name || "", logoUrl: data.company.logoUrl || "" });
-        }
-      })
-      .catch(() => {});
-  }, []);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState("Gerente");
+  const [inviteCompanyId, setInviteCompanyId] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   
@@ -92,9 +81,11 @@ export default function LoginForm({ onLoginSuccess, initialMode = "login" }: Log
         const invitedName = params.get("name") || "";
         const invitedEmail = params.get("email") || "";
         const invitedPhone = params.get("phone") || "";
+        const invitedCompanyId = params.get("companyId") || "";
         if (invitedName) setName(invitedName);
         if (invitedEmail) setEmail(invitedEmail);
         if (invitedPhone) setPhone(invitedPhone);
+        setInviteCompanyId(invitedCompanyId);
         setRole("Motorista");
         setSuccessMsg(`Convite ativo para ${invitedName}! Preencha seus dados adicionais e sua senha de acesso.`);
       }
@@ -180,7 +171,7 @@ export default function LoginForm({ onLoginSuccess, initialMode = "login" }: Log
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, phone, role })
+        body: JSON.stringify({ name, email, password, phone, role, companyId: role === "Motorista" ? inviteCompanyId : undefined })
       });
       const data = await response.json();
 
@@ -258,7 +249,7 @@ export default function LoginForm({ onLoginSuccess, initialMode = "login" }: Log
 
           {/* Top Brand Logo */}
           <div className="relative z-10 flex items-center gap-3">
-            <BrandMark size="lg" logoUrl={companyBranding.logoUrl} />
+            <BrandMark size="lg" />
             <div>
               <h1 className="text-lg font-black tracking-tight flex items-center gap-1.5">
                 <span className="bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent">Fleet</span>
@@ -344,7 +335,7 @@ export default function LoginForm({ onLoginSuccess, initialMode = "login" }: Log
           {/* Mobile Brand Header */}
           <div className="flex md:hidden items-center justify-between mb-8 pb-4 border-b border-border dark:border-[#1F2E4D]">
             <div className="flex items-center gap-2.5">
-              <BrandMark size="sm" logoUrl={companyBranding.logoUrl} />
+              <BrandMark size="sm" />
               <div>
                 <h1 className="text-sm font-black text-foreground dark:text-white tracking-wider uppercase truncate max-w-[180px]">Fleet One</h1>
                 <p className="text-[8px] text-blue-600 dark:text-blue-400/80 font-mono tracking-widest font-extrabold">SYSTEM ACCESS</p>
@@ -605,7 +596,11 @@ export default function LoginForm({ onLoginSuccess, initialMode = "login" }: Log
                           <option value="Coordenador" className="text-foreground bg-card">Coordenador</option>
                           <option value="Operador Logístico" className="text-foreground bg-card">Operador Logístico</option>
                           <option value="Financeiro" className="text-foreground bg-card">Financeiro</option>
-                          <option value="Motorista" className="text-foreground bg-card">Motorista</option>
+                          {/* Só aparece quando o cadastro veio de um link de convite — motorista
+                              sempre entra na empresa de quem convidou, nunca cria uma própria. */}
+                          {inviteCompanyId && (
+                            <option value="Motorista" className="text-foreground bg-card">Motorista</option>
+                          )}
                         </select>
                       </div>
                     </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { User, Driver, Vehicle, Freight, Refuel, Expense, Tire, Debt, TruckCashTransaction, CaixaCaminhao, CaixaMovimentacao, MaintenanceLog, InternationalCost, CompanyContact, CompanyProfile as CompanyProfileData } from "./types";
+import { apiFetch } from "./lib/apiFetch";
 import LoginForm from "./components/LoginForm";
 import LandingPage from "./components/landing/LandingPage";
 import useSimpleRouter from "./hooks/useSimpleRouter";
@@ -108,9 +109,12 @@ export default function App() {
   const [caixaMovimentacoes, setCaixaMovimentacoes] = useState<CaixaMovimentacao[]>([]);
   const [companyBranding, setCompanyBranding] = useState<{ name: string; logoUrl: string }>({ name: "", logoUrl: "" });
 
-  // Company name/logo (public, used for sidebar + login branding regardless of auth state)
+  // Company name/logo for the sidebar — scoped to the logged-in company, so
+  // it can only load once there's a session (the login screen itself now
+  // shows generic branding, since it's shared across every company).
   useEffect(() => {
-    fetch("/api/company")
+    if (!user) return;
+    apiFetch("/api/company")
       .then(res => res.json())
       .then((data: { success: boolean; company?: CompanyProfileData }) => {
         if (data.success && data.company) {
@@ -118,7 +122,7 @@ export default function App() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [user]);
 
   // Premium Reset Modal & Notification Toast states
   const [resetModalOpen, setResetModalOpen] = useState(false);
@@ -154,17 +158,17 @@ export default function App() {
     setErrorMsg("");
     try {
       const [drvRes, vhcRes, frtRes, refRes, expRes, tirRes, debRes, tcRes, maintRes, intCostRes, contactRes] = await Promise.all([
-        fetch("/api/drivers"),
-        fetch("/api/vehicles"),
-        fetch("/api/freights"),
-        fetch("/api/refuels"),
-        fetch("/api/expenses"),
-        fetch("/api/tires"),
-        fetch("/api/debts"),
-        fetch("/api/caixa-caminhao"),
-        fetch("/api/maintenance-logs"),
-        fetch("/api/international-costs"),
-        fetch("/api/company-contacts")
+        apiFetch("/api/drivers"),
+        apiFetch("/api/vehicles"),
+        apiFetch("/api/freights"),
+        apiFetch("/api/refuels"),
+        apiFetch("/api/expenses"),
+        apiFetch("/api/tires"),
+        apiFetch("/api/debts"),
+        apiFetch("/api/caixa-caminhao"),
+        apiFetch("/api/maintenance-logs"),
+        apiFetch("/api/international-costs"),
+        apiFetch("/api/company-contacts")
       ]);
 
       const [drvData, vhcData, frtData, refData, expData, tirData, debData, tcData, maintData, intCostData, contactData] = await Promise.all([
@@ -209,7 +213,7 @@ export default function App() {
   // Operational Action Handles (CRUD Bridge)
   const handleAddDriver = async (payload: Partial<Driver>) => {
     try {
-      const res = await fetch("/api/drivers", {
+      const res = await apiFetch("/api/drivers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -228,7 +232,7 @@ export default function App() {
 
   const handleUpdateDriver = async (id: string, payload: Partial<Driver>) => {
     try {
-      const res = await fetch(`/api/drivers/${id}`, {
+      const res = await apiFetch(`/api/drivers/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -247,7 +251,7 @@ export default function App() {
 
   const handleDeleteDriver = async (id: string) => {
     try {
-      const res = await fetch(`/api/drivers/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/drivers/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         await fetchAllData();
@@ -262,7 +266,7 @@ export default function App() {
 
   const handleAddVehicle = async (payload: Partial<Vehicle>) => {
     try {
-      const res = await fetch("/api/vehicles", {
+      const res = await apiFetch("/api/vehicles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -281,7 +285,7 @@ export default function App() {
 
   const handleUpdateVehicle = async (id: string, payload: Partial<Vehicle>) => {
     try {
-      const res = await fetch(`/api/vehicles/${id}`, {
+      const res = await apiFetch(`/api/vehicles/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -300,7 +304,7 @@ export default function App() {
 
   const handleDeleteVehicle = async (id: string) => {
     try {
-      const res = await fetch(`/api/vehicles/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/vehicles/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         await fetchAllData();
@@ -315,7 +319,7 @@ export default function App() {
 
   const handleAddFreight = async (payload: Partial<Freight>) => {
     try {
-      const res = await fetch("/api/freights", {
+      const res = await apiFetch("/api/freights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -334,7 +338,7 @@ export default function App() {
 
   const handleUpdateFreight = async (id: string, payload: Partial<Freight>) => {
     try {
-      const res = await fetch(`/api/freights/${id}`, {
+      const res = await apiFetch(`/api/freights/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -353,7 +357,7 @@ export default function App() {
 
   const handleDeleteFreight = async (id: string) => {
     try {
-      const res = await fetch(`/api/freights/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/freights/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         await fetchAllData();
@@ -368,7 +372,7 @@ export default function App() {
 
   const handleAddRefuel = async (payload: Partial<Refuel>) => {
     try {
-      const res = await fetch("/api/refuels", {
+      const res = await apiFetch("/api/refuels", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -387,7 +391,7 @@ export default function App() {
 
   const handleUpdateRefuel = async (id: string, payload: Partial<Refuel>) => {
     try {
-      const res = await fetch(`/api/refuels/${id}`, {
+      const res = await apiFetch(`/api/refuels/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -406,7 +410,7 @@ export default function App() {
 
   const handleDeleteRefuel = async (id: string) => {
     try {
-      const res = await fetch(`/api/refuels/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/refuels/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         await fetchAllData();
@@ -421,7 +425,7 @@ export default function App() {
 
   const handleAddExpense = async (payload: Partial<Expense>) => {
     try {
-      const res = await fetch("/api/expenses", {
+      const res = await apiFetch("/api/expenses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -440,7 +444,7 @@ export default function App() {
 
   const handleUpdateExpense = async (id: string, payload: Partial<Expense>) => {
     try {
-      const res = await fetch(`/api/expenses/${id}`, {
+      const res = await apiFetch(`/api/expenses/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -459,7 +463,7 @@ export default function App() {
 
   const handleDeleteExpense = async (id: string) => {
     try {
-      const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/expenses/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         await fetchAllData();
@@ -474,7 +478,7 @@ export default function App() {
 
   const handleAddTire = async (payload: Partial<Tire>) => {
     try {
-      const res = await fetch("/api/tires", {
+      const res = await apiFetch("/api/tires", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -493,7 +497,7 @@ export default function App() {
 
   const handleUpdateTire = async (id: string, payload: Partial<Tire>) => {
     try {
-      const res = await fetch(`/api/tires/${id}`, {
+      const res = await apiFetch(`/api/tires/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -512,7 +516,7 @@ export default function App() {
 
   const handleDeleteTire = async (id: string) => {
     try {
-      const res = await fetch(`/api/tires/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/tires/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         await fetchAllData();
@@ -527,7 +531,7 @@ export default function App() {
 
   const handleRecordChange = async (id: string, payload: any) => {
     try {
-      const res = await fetch(`/api/tires/${id}/changes`, {
+      const res = await apiFetch(`/api/tires/${id}/changes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -546,7 +550,7 @@ export default function App() {
 
   const handleRecordRotation = async (id: string, payload: any) => {
     try {
-      const res = await fetch(`/api/tires/${id}/rotations`, {
+      const res = await apiFetch(`/api/tires/${id}/rotations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -565,7 +569,7 @@ export default function App() {
 
   const handleAddDebt = async (payload: Partial<Debt>) => {
     try {
-      const res = await fetch("/api/debts", {
+      const res = await apiFetch("/api/debts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -584,7 +588,7 @@ export default function App() {
 
   const handleUpdateDebt = async (id: string, payload: Partial<Debt>) => {
     try {
-      const res = await fetch(`/api/debts/${id}`, {
+      const res = await apiFetch(`/api/debts/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -603,7 +607,7 @@ export default function App() {
 
   const handleDeleteDebt = async (id: string) => {
     try {
-      const res = await fetch(`/api/debts/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/debts/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         await fetchAllData();
@@ -618,7 +622,7 @@ export default function App() {
 
   const handleAddInternationalCost = async (payload: Partial<InternationalCost>) => {
     try {
-      const res = await fetch("/api/international-costs", {
+      const res = await apiFetch("/api/international-costs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -637,7 +641,7 @@ export default function App() {
 
   const handleUpdateInternationalCost = async (id: string, payload: Partial<InternationalCost>) => {
     try {
-      const res = await fetch(`/api/international-costs/${id}`, {
+      const res = await apiFetch(`/api/international-costs/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -656,7 +660,7 @@ export default function App() {
 
   const handleDeleteInternationalCost = async (id: string) => {
     try {
-      const res = await fetch(`/api/international-costs/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/international-costs/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         await fetchAllData();
@@ -671,7 +675,7 @@ export default function App() {
 
   const handleAddContact = async (payload: Partial<CompanyContact>) => {
     try {
-      const res = await fetch("/api/company-contacts", {
+      const res = await apiFetch("/api/company-contacts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -690,7 +694,7 @@ export default function App() {
 
   const handleUpdateContact = async (id: string, payload: Partial<CompanyContact>) => {
     try {
-      const res = await fetch(`/api/company-contacts/${id}`, {
+      const res = await apiFetch(`/api/company-contacts/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -709,7 +713,7 @@ export default function App() {
 
   const handleDeleteContact = async (id: string) => {
     try {
-      const res = await fetch(`/api/company-contacts/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/company-contacts/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         await fetchAllData();
@@ -724,7 +728,7 @@ export default function App() {
 
   const handleAddMaintenanceLog = async (payload: Partial<MaintenanceLog>) => {
     try {
-      const res = await fetch("/api/maintenance-logs", {
+      const res = await apiFetch("/api/maintenance-logs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -743,7 +747,7 @@ export default function App() {
 
   const handleDeleteMaintenanceLog = async (id: string) => {
     try {
-      const res = await fetch(`/api/maintenance-logs/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/maintenance-logs/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         await fetchAllData();
@@ -758,7 +762,7 @@ export default function App() {
 
   const handleDefinirSaldo = async (payload: { veiculo_id: string; saldo_inicial: number; observacao?: string }) => {
     try {
-      const res = await fetch("/api/caixa-caminhao/saldo", {
+      const res = await apiFetch("/api/caixa-caminhao/saldo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -777,7 +781,7 @@ export default function App() {
 
   const handleAddGasto = async (payload: { caixa_id: string; categoria: string; valor: number; descricao: string; data: string; anexo?: string; moeda?: string; valorOriginal?: number; cotacao?: number }) => {
     try {
-      const res = await fetch("/api/caixa-caminhao/gasto", {
+      const res = await apiFetch("/api/caixa-caminhao/gasto", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -796,7 +800,7 @@ export default function App() {
 
   const handleUpdateGasto = async (id: string, payload: { categoria: string; valor: number; descricao: string; data: string; anexo?: string; moeda?: string; valorOriginal?: number; cotacao?: number }) => {
     try {
-      const res = await fetch(`/api/caixa-caminhao/gasto/${id}`, {
+      const res = await apiFetch(`/api/caixa-caminhao/gasto/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -815,7 +819,7 @@ export default function App() {
 
   const handleDeleteGasto = async (id: string) => {
     try {
-      const res = await fetch(`/api/caixa-caminhao/gasto/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/caixa-caminhao/gasto/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         await fetchAllData();
@@ -860,7 +864,7 @@ export default function App() {
     const activeMapping = TAB_RESET_MAPPING[tab] || { label: "todos os dados", key: "all" };
     
     try {
-      const res = await fetch(`/api/reset/${activeMapping.key}`, { method: "POST" });
+      const res = await apiFetch(`/api/reset/${activeMapping.key}`, { method: "POST" });
       const data = await res.json();
       if (data.success) {
         // Trigger beautiful success toast
@@ -1159,6 +1163,7 @@ export default function App() {
                   drivers={drivers}
                   freights={freights}
                   refuels={refuels}
+                  companyId={user?.companyId}
                   onAddDriver={handleAddDriver}
                   onUpdateDriver={handleUpdateDriver}
                   onDeleteDriver={handleDeleteDriver}
@@ -1253,7 +1258,7 @@ export default function App() {
 
               {tab === "tracking" && <VehicleTracking />}
 
-              {tab === "company" && <CompanyProfile />}
+              {tab === "company" && <CompanyProfile user={user} />}
 
               {tab === "analytics" && (
                 <AnalyticsBI

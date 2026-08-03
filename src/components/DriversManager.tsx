@@ -8,6 +8,7 @@ interface DriversManagerProps {
   drivers: Driver[];
   freights: Freight[];
   refuels: Refuel[];
+  companyId?: string;
   onAddDriver: (d: Partial<Driver>) => Promise<boolean>;
   onUpdateDriver: (id: string, d: Partial<Driver>) => Promise<boolean>;
   onDeleteDriver: (id: string) => Promise<boolean>;
@@ -18,6 +19,7 @@ export default function DriversManager({
   drivers,
   freights,
   refuels,
+  companyId,
   onAddDriver,
   onUpdateDriver,
   onDeleteDriver,
@@ -50,7 +52,7 @@ export default function DriversManager({
       return;
     }
 
-    const inviteUrl = `${window.location.origin}/?invite=driver&name=${encodeURIComponent(inviteName)}&email=${encodeURIComponent(inviteEmail)}&phone=${encodeURIComponent(invitePhone)}`;
+    const inviteUrl = `${window.location.origin}/?invite=driver&companyId=${encodeURIComponent(companyId || "")}&name=${encodeURIComponent(inviteName)}&email=${encodeURIComponent(inviteEmail)}&phone=${encodeURIComponent(invitePhone)}`;
     
     let tempPass = undefined;
     if (preCreateLogin) {
