@@ -16,5 +16,14 @@ export function apiFetch(input: RequestInfo | URL, init: RequestInit = {}): Prom
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  return fetch(input, { ...init, headers });
+  return fetch(input, { ...init, headers }).then((res) => {
+    // A sessão expirou (ou ficou inválida) — sem isso, as telas simplesmente
+    // ficam vazias em silêncio, parecendo que os dados sumiram, em vez de
+    // pedir login de novo.
+    if (res.status === 401 && localStorage.getItem("erp_session")) {
+      localStorage.removeItem("erp_session");
+      window.location.href = "/";
+    }
+    return res;
+  });
 }
