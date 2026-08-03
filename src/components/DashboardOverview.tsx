@@ -3228,7 +3228,7 @@ export default function DashboardOverview({
       {/* CALCULAR FRETE — estimativa rápida de lucro de uma rota, acessível direto do painel geral */}
       {showRouteCalc && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in overflow-y-auto">
-          <div className="bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-2xl w-full max-w-lg border border-gray-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 relative animate-scale-in my-auto">
+          <div className="bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-2xl w-full max-w-xl border border-gray-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 relative animate-scale-in my-auto">
             <div className="flex items-center gap-3 border-b border-gray-100 dark:border-slate-800 pb-4 mb-4">
               <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center shrink-0">
                 <Calculator className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -3247,7 +3247,7 @@ export default function DashboardOverview({
               <div className="bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl p-3.5 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1 min-w-0">
-                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Veículo</label>
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wide whitespace-nowrap">Veículo</label>
                     <select
                       value={calcVehicleId}
                       onChange={(e) => handleCalcVehicleChange(e.target.value)}
@@ -3260,7 +3260,7 @@ export default function DashboardOverview({
                     </select>
                   </div>
                   <div className="space-y-1 min-w-0">
-                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Distância (km)</label>
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wide whitespace-nowrap">Distância (km)</label>
                     <input
                       type="number"
                       step="1"
@@ -3274,7 +3274,7 @@ export default function DashboardOverview({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1 min-w-0">
-                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Consumo médio (km/l)</label>
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wide whitespace-nowrap">Consumo (km/l)</label>
                     <input
                       type="number"
                       step="0.1"
@@ -3285,7 +3285,7 @@ export default function DashboardOverview({
                     />
                   </div>
                   <div className="space-y-1 min-w-0">
-                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Preço combustível (R$)</label>
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wide whitespace-nowrap">Combustível (R$)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -3299,7 +3299,7 @@ export default function DashboardOverview({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1 min-w-0">
-                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Frete (R$)</label>
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wide whitespace-nowrap">Frete (R$)</label>
                     <input
                       type="number"
                       step="1"
@@ -3310,7 +3310,7 @@ export default function DashboardOverview({
                     />
                   </div>
                   <div className="space-y-1 min-w-0">
-                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Comissão (%)</label>
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wide whitespace-nowrap">Comissão (%)</label>
                     <input
                       type="number"
                       step="0.5"
@@ -3321,7 +3321,7 @@ export default function DashboardOverview({
                     />
                   </div>
                   <div className="space-y-1 min-w-0">
-                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wider">Pedágios (R$)</label>
+                    <label className="text-[10px] uppercase font-mono font-bold text-gray-500 dark:text-gray-400 tracking-wide whitespace-nowrap">Pedágios (R$)</label>
                     <input
                       type="number"
                       step="1"
