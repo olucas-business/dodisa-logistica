@@ -1230,7 +1230,7 @@ export default function DashboardOverview({
         
         <div className="flex items-center gap-3 shrink-0 md:self-center">
           {/* Filtro de mês/ano */}
-          <div className="flex items-center gap-1 h-9 bg-muted px-1.5 rounded-lg border border-border">
+          <div className="flex items-center gap-1 h-10 bg-muted px-2 rounded-lg border border-border">
             <button
               onClick={goToPrevMonth}
               className="p-1 hover:bg-card rounded-md text-muted-foreground hover:text-foreground transition-all cursor-pointer"
@@ -1316,19 +1316,11 @@ export default function DashboardOverview({
           {/* Acesso rápido: estimar um novo frete antes de aceitar, sem sair do painel geral */}
           <button
             onClick={handleOpenRouteCalc}
-            className="shrink-0 h-9 px-3.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold text-sm rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+            className="shrink-0 h-10 px-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-semibold text-sm rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
           >
-            <Calculator className="w-4.5 h-4.5" />
+            <Calculator className="w-5 h-5" />
             Calcular Frete
           </button>
-
-          <div className="flex items-center gap-2.5 h-9 text-xs text-muted-foreground font-mono bg-muted px-3 rounded-lg border border-border">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span>{CURRENT_DATE_STR}</span>
-          </div>
         </div>
       </div>
 
