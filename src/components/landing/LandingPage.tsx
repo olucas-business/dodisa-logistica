@@ -67,7 +67,7 @@ export default function LandingPage({ onNavigateLogin, onNavigateSignup }: Landi
 
       {/* Benefícios → prova prática do benefício #1 → como funciona → prova social. */}
       <BeneficiosSection reduced={reduced} />
-      <FreightCalculatorSection reduced={reduced} />
+      <FreightCalculatorSection reduced={reduced} onNavigateSignup={onNavigateSignup} />
       <HowItWorksSection reduced={reduced} />
       <LogisticsBreakSection reduced={reduced} />
       <TestimonialsSection reduced={reduced} />

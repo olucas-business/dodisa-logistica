@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import BrandMark from "../../BrandMark";
 
 interface SectionProps {
   reduced: boolean;
+  onNavigateSignup: () => void;
 }
 
 interface Inputs {
@@ -60,7 +62,7 @@ function NumberField({
 // full tool (that lives inside the platform, with tolls, driver commission
 // settings, saved history, etc.). This just proves the "saiba quanto custa
 // cada viagem" benefit is real, with three fields instead of the full form.
-export default function FreightCalculatorSection({ reduced }: SectionProps) {
+export default function FreightCalculatorSection({ reduced, onNavigateSignup }: SectionProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-15% 0px -15% 0px" });
   const [inputs, setInputs] = useState<Inputs>(DEFAULTS);
@@ -79,6 +81,9 @@ export default function FreightCalculatorSection({ reduced }: SectionProps) {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="text-center max-w-lg mx-auto mb-14"
       >
+        <span className="inline-flex items-center gap-1.5 bg-primary/10 border border-primary/25 text-primary text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full mb-4">
+          <Sparkles className="w-3.5 h-3.5" /> Teste grátis, sem cadastro
+        </span>
         <h2>Quanto vale esse frete, de verdade?</h2>
       </motion.div>
 
@@ -90,12 +95,12 @@ export default function FreightCalculatorSection({ reduced }: SectionProps) {
         className="relative"
       >
         <div
-          className="absolute -inset-8 rounded-[2.5rem] pointer-events-none"
-          style={{ background: "radial-gradient(closest-side, rgba(79,70,229,0.18), transparent)" }}
+          className="absolute -inset-10 rounded-[2.5rem] pointer-events-none"
+          style={{ background: "radial-gradient(closest-side, rgba(79,70,229,0.28), transparent)" }}
           aria-hidden="true"
         />
         <div
-          className="relative rounded-3xl border border-white/10 shadow-2xl p-6 md:p-10"
+          className="relative rounded-3xl border border-primary/30 shadow-2xl shadow-primary/10 p-6 md:p-10"
           style={{ backgroundColor: "rgba(2,6,23,0.96)" }}
         >
           <div className="flex items-center justify-between border-b border-white/10 pb-5 mb-8">
@@ -129,9 +134,18 @@ export default function FreightCalculatorSection({ reduced }: SectionProps) {
             </div>
           </div>
 
-          <p className="text-[11px] text-slate-500 mt-8 text-center">
-            Amostra simplificada — a calculadora completa, com pedágios, comissão configurável e histórico, fica dentro da plataforma.
-          </p>
+          <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-slate-400 text-center sm:text-left">
+              Gostou do resultado? Crie sua conta grátis e calcule com pedágio, comissão real e histórico.
+            </p>
+            <button
+              onClick={onNavigateSignup}
+              className="shrink-0 flex items-center gap-2 bg-primary hover:opacity-90 text-primary-foreground text-xs font-black uppercase tracking-wider px-5 py-3 rounded-xl transition-all group"
+            >
+              Testar minha rota grátis
+              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
         </div>
       </motion.div>
     </section>

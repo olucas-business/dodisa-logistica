@@ -114,31 +114,45 @@ export default function BeforeAfterSection({ reduced }: SectionProps) {
           <span className="absolute top-6 left-6 text-[11px] font-black uppercase tracking-widest text-emerald-600">
             Com Fleet One
           </span>
-          {/* Anchored to the left (where the wipe reveal starts) so every card
+          {/* Anchored to the left (where the wipe reveal starts) so the panel
               is fully visible early in the transition instead of popping in
-              piecemeal once the reveal crosses the panel's centre. */}
-          <div className="absolute inset-0 flex flex-col items-start justify-center gap-3 p-6 md:p-14">
-            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 min-w-[170px]">
-              <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Caminhões ativos</span>
-              <p className="text-2xl font-black font-mono text-slate-900 mt-1">
-                <CountUp value={depoisStats.trucksActive} />
-              </p>
+              piecemeal once the reveal crosses the panel's centre. One
+              cohesive widget (not separate floating cards) reads as a real
+              product screenshot rather than a promise. */}
+          <div className="absolute inset-0 flex flex-col items-start justify-center p-6 md:p-14">
+            <div className="bg-white/95 backdrop-blur-sm border border-slate-200/80 shadow-2xl rounded-2xl w-[260px] sm:w-[300px] overflow-hidden">
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100 bg-slate-50/80">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Painel em tempo real</span>
+              </div>
+              <div className="grid grid-cols-2 gap-px bg-slate-100">
+                <div className="bg-white p-4">
+                  <span className="text-[9px] uppercase tracking-wider font-bold text-slate-400">Caminhões ativos</span>
+                  <p className="text-xl font-black font-mono text-slate-900 mt-1">
+                    <CountUp value={depoisStats.trucksActive} />
+                  </p>
+                </div>
+                <div className="bg-white p-4">
+                  <span className="text-[9px] uppercase tracking-wider font-bold text-slate-400">Motoristas ativos</span>
+                  <p className="text-xl font-black font-mono text-slate-900 mt-1">
+                    <CountUp value={depoisStats.driversActive} />
+                  </p>
+                </div>
+                <div className="bg-white p-4 col-span-2">
+                  <span className="text-[9px] uppercase tracking-wider font-bold text-slate-400">Faturamento do mês</span>
+                  <p className="text-2xl font-black font-mono text-emerald-600 mt-1">
+                    <CountUp value={depoisStats.billingMonth} prefix="R$ " />
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-50 border-t border-emerald-100 text-emerald-700">
+                <Coins className="w-3.5 h-3.5 shrink-0" />
+                <span className="text-[11px] font-bold">Financeiro em dia</span>
+              </div>
             </div>
-            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 min-w-[170px]">
-              <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Motoristas ativos</span>
-              <p className="text-2xl font-black font-mono text-slate-900 mt-1">
-                <CountUp value={depoisStats.driversActive} />
-              </p>
-            </div>
-            <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-5 min-w-[170px]">
-              <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">Faturamento do mês</span>
-              <p className="text-2xl font-black font-mono text-slate-900 mt-1">
-                R$ <CountUp value={depoisStats.billingMonth} />
-              </p>
-            </div>
-            <span className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-3 py-2 rounded-full whitespace-nowrap">
-              <Coins className="w-3.5 h-3.5" /> Financeiro em dia
-            </span>
           </div>
         </div>
 

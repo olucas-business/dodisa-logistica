@@ -189,7 +189,7 @@ export default function DashboardOverview({
   const [calcComissaoPct, setCalcComissaoPct] = useState("10");
   const [calcPedagio, setCalcPedagio] = useState("");
 
-  const handleOpenRouteCalc = () => {
+  const loadCalcDefaults = () => {
     const saved = loadRouteCalcState();
     if (saved) {
       setCalcVehicleId(saved.vehicleId);
@@ -209,6 +209,18 @@ export default function DashboardOverview({
       setCalcComissaoPct("10");
       setCalcPedagio("");
     }
+  };
+
+  // A calculadora agora também fica exposta direto no painel (acima do
+  // gráfico Faturamento vs Custos), então os valores precisam existir desde
+  // o carregamento — não só quando o modal "Calcular Frete" é aberto.
+  useEffect(() => {
+    loadCalcDefaults();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleOpenRouteCalc = () => {
+    loadCalcDefaults();
     setShowRouteCalc(true);
   };
 
@@ -218,11 +230,9 @@ export default function DashboardOverview({
     if (v) setCalcConsumo(v.averageConsumption || "");
   };
 
-  // Memoriza a simulação a cada alteração, enquanto a calculadora está
-  // aberta — assim reabrir (aqui ou no Manifesto de Fretes) retoma de onde
-  // parou, em vez de sempre voltar aos valores padrão.
+  // Memoriza a simulação a cada alteração — tanto o card exposto no painel
+  // quanto o modal e o Manifesto de Fretes retomam de onde parou.
   useEffect(() => {
-    if (!showRouteCalc) return;
     saveRouteCalcState({
       vehicleId: calcVehicleId,
       distancia: calcDistancia,
@@ -232,7 +242,7 @@ export default function DashboardOverview({
       comissaoPct: calcComissaoPct,
       pedagio: calcPedagio,
     });
-  }, [showRouteCalc, calcVehicleId, calcDistancia, calcConsumo, calcPrecoCombustivel, calcValorFrete, calcComissaoPct, calcPedagio]);
+  }, [calcVehicleId, calcDistancia, calcConsumo, calcPrecoCombustivel, calcValorFrete, calcComissaoPct, calcPedagio]);
 
   const calcDistNum = Number(calcDistancia) || 0;
   const calcConsumoNum = Number(calcConsumo) || 0;
@@ -1334,6 +1344,166 @@ export default function DashboardOverview({
             mesma métrica (gasto/faturamento), uma em R$ e outra em %. */}
         <RadialGauge label="Combustível" value={fuelSpendRingPercentage} displayValue={`R$ ${totalFuelSpendMonth.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} />
         <RadialGauge label="% Combustível" value={fuelSpendPercentageOfBilling} />
+      </div>
+
+      {/* 1b2. CALCULADORA DE FRETE EXPOSTA — mesma calculadora do modal "Calcular
+          Frete" (estado compartilhado), só que sempre visível aqui em vez de
+          precisar abrir o popup. */}
+      <div className="bg-card border border-border rounded-2xl p-5 sm:p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center shrink-0">
+            <Calculator className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-foreground leading-tight">Calcular Frete</h3>
+            <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">Estime o lucro de uma rota antes de aceitar. Isto não cria um manifesto.</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="bg-muted/40 border border-border rounded-xl p-3.5 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1 min-w-0">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wide whitespace-nowrap">Veículo</label>
+                <select
+                  value={calcVehicleId}
+                  onChange={(e) => handleCalcVehicleChange(e.target.value)}
+                  className="w-full min-w-0 bg-card border border-border text-foreground rounded-lg p-2.5 text-xs outline-none"
+                >
+                  {vehicles.length === 0 && <option value="">Nenhum veículo cadastrado</option>}
+                  {vehicles.map(v => (
+                    <option key={v.id} value={v.id}>{v.brand} {v.model} ({v.plate})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1 min-w-0">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wide whitespace-nowrap">Distância (km)</label>
+                <input
+                  type="number"
+                  step="1"
+                  value={calcDistancia}
+                  onChange={(e) => setCalcDistancia(e.target.value)}
+                  placeholder="1800"
+                  className="w-full min-w-0 bg-card border border-border text-foreground rounded-lg p-2.5 text-xs outline-none font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1 min-w-0">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wide whitespace-nowrap">Consumo (km/l)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={calcConsumo}
+                  onChange={(e) => setCalcConsumo(e.target.value)}
+                  placeholder="2.5"
+                  className="w-full min-w-0 bg-card border border-border text-foreground rounded-lg p-2.5 text-xs outline-none font-mono"
+                />
+              </div>
+              <div className="space-y-1 min-w-0">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wide whitespace-nowrap">Combustível (R$)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={calcPrecoCombustivel}
+                  onChange={(e) => setCalcPrecoCombustivel(e.target.value)}
+                  placeholder="6.20"
+                  className="w-full min-w-0 bg-card border border-border text-foreground rounded-lg p-2.5 text-xs outline-none font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1 min-w-0">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wide whitespace-nowrap">Frete (R$)</label>
+                <input
+                  type="number"
+                  step="1"
+                  value={calcValorFrete}
+                  onChange={(e) => setCalcValorFrete(e.target.value)}
+                  placeholder="14000"
+                  className="w-full min-w-0 bg-card border border-border text-foreground rounded-lg p-2.5 text-xs outline-none font-mono"
+                />
+              </div>
+              <div className="space-y-1 min-w-0">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wide whitespace-nowrap">Comissão (%)</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={calcComissaoPct}
+                  onChange={(e) => setCalcComissaoPct(e.target.value)}
+                  placeholder="10"
+                  className="w-full min-w-0 bg-card border border-border text-foreground rounded-lg p-2.5 text-xs outline-none font-mono"
+                />
+              </div>
+              <div className="space-y-1 min-w-0">
+                <label className="text-[10px] uppercase font-mono font-bold text-muted-foreground tracking-wide whitespace-nowrap">Pedágios (R$)</label>
+                <input
+                  type="number"
+                  step="1"
+                  value={calcPedagio}
+                  onChange={(e) => setCalcPedagio(e.target.value)}
+                  placeholder="450"
+                  className="w-full min-w-0 bg-card border border-border text-foreground rounded-lg p-2.5 text-xs outline-none font-mono"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-muted/40 border border-border rounded-xl p-3.5 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground font-semibold">Combustível estimado</span>
+              <span className="font-mono font-bold text-red-500">
+                -R$ {calcCustoCombustivel.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground font-semibold">Comissão do motorista</span>
+              <span className="font-mono font-bold text-red-500">
+                -R$ {calcComissaoValor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground font-semibold">Pedágios</span>
+              <span className="font-mono font-bold text-red-500">
+                -R$ {calcPedagioNum.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-border">
+              <span className="text-xs font-black uppercase text-foreground">Lucro líquido</span>
+              <span className={`font-mono font-black text-base flex items-baseline gap-1.5 ${calcLucro >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                R$ {calcLucro.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <span className="text-xs font-bold opacity-80">({calcMargem.toFixed(1)}%)</span>
+              </span>
+            </div>
+          </div>
+
+          {calcValorFreteNum > 0 && (
+            calcMargem < 20 ? (
+              <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-400 text-xs font-semibold px-3 py-2.5 rounded-lg">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                Margem apertada — revise os valores antes de aceitar esse frete.
+              </div>
+            ) : (
+              <div className="flex items-start gap-2 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-xs font-semibold px-3 py-2.5 rounded-lg">
+                <TrendingUp className="w-4 h-4 shrink-0 mt-0.5" />
+                Margem saudável para essa rota.
+              </div>
+            )
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => onNavigateTo("freights")}
+              disabled={!calcValorFreteNum || vehicles.length === 0}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50"
+            >
+              Ir para Manifesto de Fretes
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* 1c. HERO CHART: Faturamento vs Custos ao longo do ano (destaque visual principal) */}
