@@ -970,7 +970,14 @@ export default function App() {
               <BrandMark size="md" logoUrl={companyBranding.logoUrl} />
               {sidebarOpen && (
                 <div className="leading-tight min-w-0">
-                  <h1 className="text-xs font-bold tracking-tight uppercase bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent">
+                  <h1
+                    title={companyBranding.name || "Fleet One"}
+                    className={
+                      companyBranding.name
+                        ? "text-[11px] font-semibold tracking-tight uppercase text-muted-foreground truncate"
+                        : "text-xs font-bold tracking-tight uppercase bg-gradient-to-r from-[#0B3D5C] to-[#2455D9] dark:from-[#5B8DEF] dark:to-[#8FB2F5] bg-clip-text text-transparent truncate"
+                    }
+                  >
                     {companyBranding.name || "Fleet One"}
                   </h1>
                   <span className="block text-[10px] text-muted-foreground font-mono tracking-wider truncate">
